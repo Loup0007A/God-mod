@@ -183,6 +183,7 @@ public final class CrateSystem {
         if (ROLLS.stream().anyMatch(r -> r.player == player)) return "Une ouverture est déjà en cours.";
         addKey(p, c, -1);
         p.cratesOpened++;
+        QuestSystem.progress(player, List.of("crate:any"), 1);
         GodData.dirty();
         List<Reward> list = rewards(c);
         Reward win = pick(list);

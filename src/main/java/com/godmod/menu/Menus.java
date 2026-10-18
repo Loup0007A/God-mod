@@ -648,10 +648,13 @@ public final class Menus {
 
     public static void openJobs(ServerPlayer player) {
         PlayerProfile p = GodData.get(player);
+        com.godmod.data.Job featured = com.godmod.progress.JobSystem.featured();
         Page page = new Page("Métiers — " + com.godmod.progress.JobSystem.totalLevels(p) + " niveaux").frame(Items.GREEN_STAINED_GLASS_PANE);
         page.set(4, Page.icon(Items.EXPERIENCE_BOTTLE, "Vos métiers", ChatFormatting.GREEN,
                 "§7Chaque action donne de l'XP de métier", "§7et de l'Essence divine (½ de l'XP).",
-                "§7Chaque niveau : pièces + Essence.", "§7Tous les 5 niveaux : une clé de caisse."));
+                "§7Chaque niveau : pièces + Essence. Tous les 5 niveaux : une clé.",
+                "§7Des talents se débloquent en montant.",
+                "§6Métier en vogue aujourd'hui : " + featured.icon + " " + featured.label + " (XP ×1,5)"));
         int[] slots = {20, 21, 22, 23, 24};
         com.godmod.data.Job[] jobs = com.godmod.data.Job.values();
         for (int i = 0; i < jobs.length; i++) {
@@ -659,76 +662,174 @@ public final class Menus {
             int lvl = com.godmod.progress.JobSystem.level(p, job);
             double xp = com.godmod.progress.JobSystem.xp(p, job);
             double need = com.godmod.data.Job.needed(lvl);
-            int filled = lvl >= com.godmod.data.Job.MAX_LEVEL ? 20 : (int) Math.round(20 * xp / need);
-            String bar = "§a" + "|".repeat(Math.max(0, filled)) + "§8" + "|".repeat(Math.max(0, 20 - filled));
-            page.set(slots[i], Page.icon(job.item, Math.max(1, Math.min(64, lvl)), job.icon + " " + job.label + " — niveau " + lvl, job.color, List.of(
-                    Page.line(bar),
-                    Page.line(lvl >= com.godmod.data.Job.MAX_LEVEL ? "§6Niveau maximum !" : "§7XP : " + (int) xp + " / " + (int) need),
-                    Page.line(""),
-                    Page.line("§eComment gagner : §f" + job.how),
-                    Page.line("§dAvantages : §f" + job.perks),
-                    Page.line("§7Prochain niveau : +" + 25 * (lvl + 1) + " pièces, +" + 15 * (lvl + 1) + " Essence")), lvl >= 25));
+            boolean max = lvl >= com.godmod.data.Job.MAX_LEVEL;
+            int filled = max ? 20 : (int) Math.round(20 * xp / need);
+            com.godmod.progress.JobSystem.Perk next = com.godmod.progress.JobSystem.nextPerk(p, job);
+            int unlocked = 0;
+            for (com.godmod.progress.JobSystem.Perk k : com.godmod.progress.JobSystem.PERKS.get(job)) if (lvl >= k.level()) unlocked++;
+            List<Component> lore = new ArrayList<>();
+            lore.add(Page.line("§a" + "|".repeat(Math.max(0, filled)) + "§8" + "|".repeat(Math.max(0, 20 - filled))));
+            lore.add(Page.line(max ? "§6Niveau maximum !" : "§7XP : " + (int) xp + " / " + (int) need + " (" + (int) (100 * xp / need) + " %)"));
+            lore.add(Page.line("§7Talents : §d" + unlocked + "/" + com.godmod.progress.JobSystem.PERKS.get(job).size()));
+            if (next != null) lore.add(Page.line("§7Prochain : §f" + next.name() + " §8(niv. " + next.level() + ")"));
+            if (job == featured) lore.add(Page.line("§6✦ En vogue aujourd'hui : XP ×1,5"));
+            lore.add(Page.line(""));
+            lore.add(Page.line("§eCliquez : talents, barème et classement"));
+            page.set(slots[i], Page.icon(job.item, Math.max(1, Math.min(64, lvl)), job.icon + " " + job.label + " — niveau " + lvl,
+                    job.color, lore, job == featured), (sp, c) -> later(sp, () -> openJobDetail(sp, job)));
         }
-        page.set(31, Page.icon(Items.BOOK, "Barème d'XP", ChatFormatting.YELLOW,
-                "§7Mineur : pierre 0,25 · charbon 4 · fer 8 · or 12", "§7   lapis 10 · diamant 35 · émeraude 45",
-                "§7Bûcheron : bûche 2,5 · Fermier : culture mûre 3",
-                "§7Chasseur : monstre 7 · animal 2,5 · boss 300", "§7Pêcheur : prise 10",
-                "§8Les blocs posés par un joueur ne rapportent rien."));
+        page.set(31, Page.icon(Items.WRITABLE_BOOK, "Quêtes liées aux métiers", ChatFormatting.YELLOW,
+                "§7Les quêtes du jour donnent aussi de l'XP", "§7de métier. Cliquez pour les voir."), (sp, c) -> later(sp, () -> openQuests(sp)));
         page.back((sp, c) -> later(sp, () -> openMain(sp))).close();
+        page.open(player);
+    }
+
+    private static final java.util.Map<com.godmod.data.Job, String[]> XP_TABLE = new java.util.EnumMap<>(java.util.Map.of(
+            com.godmod.data.Job.MINEUR, new String[]{"§7Pierre, ardoise, granite… : 0,25", "§7Charbon / cuivre : 4-5 · fer : 8-9", "§7Redstone : 7-8 · lapis : 10-11 · or : 12-13",
+                    "§7Diamant : 35-38 · émeraude : 45-48", "§7Lingot sorti du four : 0,5"},
+            com.godmod.data.Job.BUCHERON, new String[]{"§7Bûche : 2,5", "§7Bûche abattue d'un coup : 1,2"},
+            com.godmod.data.Job.FERMIER, new String[]{"§7Culture mûre : 3", "§7Pastèque, citrouille, canne, cactus, cacao : 1,5", "§7Animal né : 6"},
+            com.godmod.data.Job.CHASSEUR, new String[]{"§7Monstre : 7 · animal : 2,5", "§7Wither, dragon, Warden : 300"},
+            com.godmod.data.Job.PECHEUR, new String[]{"§7Prise : 10"}));
+
+    public static void openJobDetail(ServerPlayer player, com.godmod.data.Job job) {
+        PlayerProfile p = GodData.get(player);
+        int lvl = com.godmod.progress.JobSystem.level(p, job);
+        Page page = new Page(job.icon + " " + job.label + " — niveau " + lvl).frame(Items.LIME_STAINED_GLASS_PANE);
+        double xp = com.godmod.progress.JobSystem.xp(p, job), need = com.godmod.data.Job.needed(lvl);
+        boolean max = lvl >= com.godmod.data.Job.MAX_LEVEL;
+        int filled = max ? 20 : (int) Math.round(20 * xp / need);
+        page.set(4, Page.icon(job.item, Math.max(1, Math.min(64, lvl)), job.label + " niveau " + lvl, job.color, List.of(
+                Page.line("§a" + "|".repeat(Math.max(0, filled)) + "§8" + "|".repeat(Math.max(0, 20 - filled))),
+                Page.line(max ? "§6Niveau maximum : l'XP devient de l'Essence ×1,5" : "§7XP : " + (int) xp + " / " + (int) need),
+                Page.line("§7Comment gagner : §f" + job.how),
+                Page.line("§7Prochain niveau : §6+" + 25 * (lvl + 1) + " pièces §7· §d+" + 15 * (lvl + 1) + " Essence")), true));
+        List<com.godmod.progress.JobSystem.Perk> perks = com.godmod.progress.JobSystem.PERKS.get(job);
+        int[] slots = {19, 20, 21, 22, 23, 24, 25};
+        for (int i = 0; i < perks.size() && i < slots.length; i++) {
+            com.godmod.progress.JobSystem.Perk k = perks.get(i);
+            boolean on = lvl >= k.level();
+            page.set(slots[i], Page.icon(on ? Items.ENCHANTED_BOOK : Items.BOOK, Math.max(1, k.level()), (on ? "✔ " : "✖ ") + k.name(),
+                    on ? ChatFormatting.LIGHT_PURPLE : ChatFormatting.DARK_GRAY, List.of(
+                            Page.line("§7" + k.description()),
+                            Page.line(on ? "§aDébloqué" : "§8Débloqué au niveau " + k.level() + " (encore " + (k.level() - lvl) + ")")), on));
+        }
+        String[] table = XP_TABLE.get(job);
+        page.set(38, Page.icon(Items.PAPER, "Barème d'XP", ChatFormatting.YELLOW, table));
+        List<Component> lore = new ArrayList<>();
+        int rank = 1;
+        for (PlayerProfile o : com.godmod.progress.JobSystem.top(job, 5)) {
+            lore.add(Page.line((rank == 1 ? "§6" : "§7") + rank + ". " + o.name + " — niveau " + com.godmod.progress.JobSystem.level(o, job)));
+            rank++;
+        }
+        page.set(42, Page.icon(Items.GOLD_INGOT, 1, "Meilleurs " + job.label.toLowerCase() + "s", ChatFormatting.GOLD, lore, false));
+        page.set(40, Page.icon(Items.CLOCK, "Bonus actuels", ChatFormatting.AQUA,
+                job == com.godmod.progress.JobSystem.featured() ? "§6Métier en vogue : XP ×1,5" : "§7En vogue aujourd'hui : " + com.godmod.progress.JobSystem.featured().label,
+                com.godmod.progress.EventSystem.jobXpMultiplier() > 1 ? "§aÉvénement : XP ×2 !" : "§7Aucun événement d'XP en cours",
+                "§7Les blocs posés par un joueur ne rapportent rien."));
+        page.back((sp, c) -> later(sp, () -> openJobs(sp))).close();
         page.open(player);
     }
 
     // ================================================================== Quêtes
 
+    private static List<Component> questLore(PlayerProfile p, com.godmod.progress.QuestSystem.Quest q, com.godmod.data.QuestProgress qp, String... tail) {
+        List<Component> lore = new ArrayList<>();
+        lore.add(Page.line("§7" + q.description()));
+        lore.add(Page.line("§7Difficulté : ").append(Component.literal(q.difficulty().stars + " " + q.difficulty().label).withStyle(q.difficulty().color)));
+        if (qp != null) {
+            int filled = (int) Math.round(20.0 * qp.progress / q.amount());
+            lore.add(Page.line("§a" + "|".repeat(filled) + "§8" + "|".repeat(20 - filled) + " §f" + qp.progress + "/" + q.amount()));
+        }
+        lore.add(Page.line(com.godmod.progress.QuestSystem.rewardLine(p, q)));
+        for (String t : tail) lore.add(Page.line(t));
+        return lore;
+    }
+
     public static void openQuests(ServerPlayer player) {
         PlayerProfile p = GodData.get(player);
         com.godmod.progress.QuestSystem.refreshOffers(p);
-        Page page = new Page("Quêtes — " + p.quests.size() + "/" + com.godmod.progress.QuestSystem.MAX_ACTIVE + " en cours").frame(Items.YELLOW_STAINED_GLASS_PANE);
+        com.godmod.progress.AscensionQuests.check(player);
+        int max = com.godmod.progress.QuestSystem.MAX_ACTIVE;
+        Page page = new Page("Quêtes — " + p.quests.size() + "/" + max + " en cours").frame(Items.YELLOW_STAINED_GLASS_PANE);
         page.set(4, Page.icon(Items.WRITABLE_BOOK, "Quêtes du jour", ChatFormatting.YELLOW,
-                "§7Acceptez jusqu'à " + com.godmod.progress.QuestSystem.MAX_ACTIVE + " quêtes. Elles avancent toutes seules",
-                "§7pendant que vous jouez. Nouvelles quêtes chaque jour.",
-                "§7Toutes les 10 quêtes : une clé Rare en bonus.", "§7Accomplies : " + p.questsDone));
-        int[] active = {10, 11, 12, 13, 14};
+                "§7Acceptez jusqu'à " + max + " quêtes : elles avancent toutes seules.",
+                "§7Plus elles sont difficiles, plus elles rapportent,", "§7et les gains montent avec votre palier (+20 %/palier).",
+                "§7Aujourd'hui : §e" + p.questsToday + "§7 accomplie(s) · bonus à 3 et 5",
+                "§7Total : §e" + p.questsDone + "§7 · une clé Rare toutes les 10",
+                "§7Nouvelles quêtes dans " + Msg.time(com.godmod.progress.QuestSystem.untilTomorrow())));
+        int[] active = {11, 12, 13, 14, 15};
         for (int i = 0; i < active.length; i++) {
             if (i < p.quests.size()) {
                 com.godmod.data.QuestProgress qp = p.quests.get(i);
                 com.godmod.progress.QuestSystem.Quest q = com.godmod.progress.QuestSystem.QUESTS.get(qp.id);
                 if (q == null) continue;
-                int filled = (int) Math.round(20.0 * qp.progress / q.amount());
-                page.set(active[i], Page.icon(q.icon(), 1, q.title(), ChatFormatting.GOLD, List.of(
-                        Page.line("§7" + q.description()),
-                        Page.line("§a" + "|".repeat(filled) + "§8" + "|".repeat(20 - filled) + " §f" + qp.progress + "/" + q.amount()),
-                        Page.line(rewardLine(q)),
-                        Page.line(""), Page.line("§cMaj + clic : abandonner")), true), (sp, c) -> {
+                page.set(active[i], Page.icon(q.icon(), 1, q.title(), q.difficulty().color, questLore(p, q, qp, "", "§cMaj + clic : abandonner"), true), (sp, c) -> {
                     if (c == GodMenu.Click.SHIFT) {
                         report(sp, com.godmod.progress.QuestSystem.abandon(sp, qp.id));
                         later(sp, () -> openQuests(sp));
                     }
                 });
             } else {
-                page.set(active[i], Page.icon(Items.GRAY_DYE, "Emplacement libre", ChatFormatting.DARK_GRAY, "§7Acceptez une quête ci-dessous"));
+                page.set(active[i], Page.icon(Items.LIGHT_GRAY_STAINED_GLASS_PANE, "Emplacement libre", ChatFormatting.GRAY, "§7Acceptez une quête ci-dessous"));
             }
         }
-        page.set(22, Page.icon(Items.PAPER, "Quêtes proposées aujourd'hui", ChatFormatting.WHITE, "§7Cliquez sur une quête pour l'accepter"));
+        page.set(22, Page.icon(Items.PAPER, "Propositions du jour", ChatFormatting.WHITE, "§7Cliquez sur une quête pour l'accepter"));
         int[] offers = {28, 29, 30, 31, 32, 33, 34};
         for (int i = 0; i < offers.length && i < p.questOffers.size(); i++) {
             String id = p.questOffers.get(i);
             com.godmod.progress.QuestSystem.Quest q = com.godmod.progress.QuestSystem.QUESTS.get(id);
             if (q == null) continue;
-            page.set(offers[i], Page.icon(q.icon(), 1, q.title(), ChatFormatting.YELLOW, List.of(
-                    Page.line("§7" + q.description()), Page.line(rewardLine(q)),
-                    Page.line("§7Métier : " + (q.job() == null ? "—" : q.job().label)),
-                    Page.line(""), Page.line("§eCliquez pour accepter")), false), (sp, c) -> {
+            page.set(offers[i], Page.icon(q.icon(), 1, q.difficulty().stars + " " + q.title(), q.difficulty().color,
+                    questLore(p, q, null, "§7Métier : " + (q.job() == null ? "—" : q.job().label), "", "§eCliquez pour accepter"), false), (sp, c) -> {
                 report(sp, com.godmod.progress.QuestSystem.accept(sp, id));
                 later(sp, () -> openQuests(sp));
             });
         }
+        if (p.questOffers.isEmpty()) {
+            page.set(31, Page.icon(Items.BARRIER, "Plus de propositions", ChatFormatting.GRAY, "§7Renouvelez-les ou revenez demain."));
+        }
+        long price = com.godmod.progress.QuestSystem.rerollPrice(p);
+        page.set(40, Page.icon(Items.ENDER_EYE, "Renouveler les propositions", ChatFormatting.AQUA,
+                "§7Tire 7 nouvelles quêtes (les quêtes en cours restent).",
+                price == 0 ? "§aGratuit (1 fois par jour)" : "§6Prix : " + Msg.money(price), "", "§eCliquez pour renouveler"), (sp, c) -> {
+            report(sp, com.godmod.progress.QuestSystem.reroll(sp));
+            later(sp, () -> openQuests(sp));
+        });
+        com.godmod.progress.AscensionQuests.Step step = com.godmod.progress.AscensionQuests.current(p);
+        page.set(38, Page.icon(Items.ENCHANTED_BOOK, 1, "Quêtes d'ascension", ChatFormatting.LIGHT_PURPLE, List.of(
+                Page.line("§7Le fil rouge de mortel à dieu suprême"),
+                Page.line(step == null ? "§aTerminées !" : "§dÉtape " + (p.storyStep + 1) + " : " + step.title()),
+                Page.line(step == null ? "" : "§7" + step.goal() + " (" + com.godmod.progress.AscensionQuests.progress(p, step) + "/" + step.target() + ")"),
+                Page.line(""), Page.line("§eCliquez pour voir le chemin")), true), (sp, c) -> later(sp, () -> com.godmod.progress.AscensionQuests.open(sp)));
+        int weeklyDone = 0;
+        for (com.godmod.data.QuestProgress w : p.weekly) if (w.done) weeklyDone++;
+        page.set(42, Page.icon(Items.HEART_OF_THE_SEA, 1, "Défis de la semaine", ChatFormatting.AQUA, List.of(
+                Page.line("§73 grands objectifs, actifs d'office"),
+                Page.line("§7Relevés : §b" + weeklyDone + "/" + p.weekly.size() + (p.weeklyBonus ? " §a(bonus Épique obtenu)" : "")),
+                Page.line("§7Renouvelés dans " + Msg.time(com.godmod.progress.QuestSystem.untilNextWeek())),
+                Page.line(""), Page.line("§eCliquez pour les voir")), weeklyDone < p.weekly.size()), (sp, c) -> later(sp, () -> openWeekly(sp)));
         page.back((sp, c) -> later(sp, () -> openMain(sp))).close();
         page.open(player);
     }
 
-    private static String rewardLine(com.godmod.progress.QuestSystem.Quest q) {
-        return "§6+" + q.money() + " pièces §d+" + q.essence() + " Essence" + (q.key() != null ? " §a+1 clé " + q.key().label : "");
+    public static void openWeekly(ServerPlayer player) {
+        PlayerProfile p = GodData.get(player);
+        com.godmod.progress.QuestSystem.refreshOffers(p);
+        Page page = new Page("Défis de la semaine").frame(Items.CYAN_STAINED_GLASS_PANE);
+        page.set(4, Page.icon(Items.HEART_OF_THE_SEA, "Défis de la semaine", ChatFormatting.AQUA,
+                "§7Ils avancent tout seuls, sans les accepter.", "§7Chacun : beaucoup de pièces, d'Essence et une clé Rare.",
+                "§7Les 3 relevés : une clé Épique en bonus.", "§7Renouvelés lundi (dans " + Msg.time(com.godmod.progress.QuestSystem.untilNextWeek()) + ")"));
+        int[] slots = {20, 22, 24};
+        for (int i = 0; i < slots.length && i < p.weekly.size(); i++) {
+            com.godmod.data.QuestProgress qp = p.weekly.get(i);
+            com.godmod.progress.QuestSystem.Quest q = com.godmod.progress.QuestSystem.WEEKLIES.get(qp.id);
+            if (q == null) continue;
+            page.set(slots[i], Page.icon(qp.done ? Items.LIME_DYE : q.icon(), 1, (qp.done ? "✔ " : "") + q.title(), qp.done ? ChatFormatting.GREEN : ChatFormatting.AQUA,
+                    questLore(p, q, qp, qp.done ? "§aRelevé !" : ""), !qp.done));
+        }
+        page.back((sp, c) -> later(sp, () -> openQuests(sp))).close();
+        page.open(player);
     }
 
     // ================================================================== Clés & caisses

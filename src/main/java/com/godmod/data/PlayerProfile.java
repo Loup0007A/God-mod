@@ -91,6 +91,20 @@ public class PlayerProfile {
     public String questDay = "";
     public java.util.List<String> questOffers = new java.util.ArrayList<>();
     public int questsDone = 0;
+    /** Renouvellements des propositions aujourd'hui (le premier est gratuit). */
+    public int questRerolls = 0;
+    /** Quêtes accomplies aujourd'hui (bonus d'assiduité à 3 et 5). */
+    public int questsToday = 0;
+    /** Défis de la semaine. */
+    public String weekId = "";
+    public java.util.List<QuestProgress> weekly = new java.util.ArrayList<>();
+    public boolean weeklyBonus = false;
+    /** Défis de la semaine relevés depuis le début. */
+    public int weeklyDone = 0;
+    /** Prochaine étape des quêtes d'ascension. */
+    public int storyStep = 0;
+    /** Animaux nés grâce au joueur, objets fabriqués (statistiques pour l'ascension). */
+    public int bred = 0;
 
     // --- Caisses ---
     /** Clés de caisse : type -> nombre. */

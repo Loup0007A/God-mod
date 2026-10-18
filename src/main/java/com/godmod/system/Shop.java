@@ -206,6 +206,7 @@ public final class Shop {
         stack.shrink(n);
         PlayerProfile p = GodData.get(player);
         PowerSystem.earnMoney(player.level().getServer(), p, unit * n);
+        com.godmod.progress.QuestSystem.progress(player, java.util.List.of("sell:any"), n);
         Msg.ok(player, "Vendu : " + n + " × " + name + " pour " + Msg.money(unit * n) + "."
                 + (com.godmod.progress.EventSystem.sellMultiplier() > 1 ? " (Ruée vers l'or : +50 %)" : ""));
         return null;
@@ -231,6 +232,7 @@ public final class Shop {
         }
         if (n == 0) return "Rien à vendre.";
         PowerSystem.earnMoney(player.level().getServer(), GodData.get(player), unit * n);
+        com.godmod.progress.QuestSystem.progress(player, java.util.List.of("sell:any"), n);
         Msg.ok(player, "Vendu : " + n + " × " + name + " pour " + Msg.money(unit * n) + ".");
         return null;
     }

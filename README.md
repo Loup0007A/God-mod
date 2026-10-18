@@ -159,25 +159,37 @@ Essence et fidèles requis) et un **tableau à droite** (argent, Foi, métier, q
 **Essence** : métiers (0,5 par point d'XP), quêtes, montées de niveau, temps de jeu, PvP,
 conversions, déicide, tournois.
 
-### Métiers (`/metiers`)
+### Métiers (`/metiers`, `/metiers <métier>`)
 
-| Métier | Gagne de l'XP en… | Bonus |
+50 niveaux par métier. Chaque niveau rapporte argent + Essence ; des **clés** tous les 5 niveaux (Rare tous
+les 10, Épique au 25 et 40, Divine au 50). Les blocs posés par un joueur ne rapportent rien (anti-farm).
+Chaque jour, un **métier en vogue** gagne 50 % d'XP en plus. Cliquer sur un métier montre ses talents,
+son barème d'XP et le classement des 5 meilleurs. Au niveau 50, l'XP devient de l'Essence ×1,5.
+
+| Métier | XP | Talents (niveau) |
 |---|---|---|
-| ⛏ Mineur | cassant pierre et minerais | Célérité, double butin |
-| ♣ Bûcheron | coupant des bûches | double butin, abattage d'arbre entier au niv. 20 (s'accroupir pour l'éviter) |
-| ✿ Fermier | récoltant des cultures mûres | replantation automatique au niv. 5, double récolte |
-| ⚔ Chasseur | tuant des créatures | double butin |
-| ≈ Pêcheur | pêchant | prises doublées |
+| ⛏ Mineur | pierre, minerais, lingots sortis du four | minerai doublé (1) · vision nocturne en profondeur (10) · Célérité I (15) · **filon** : les minerais reliés partent ensemble (25) · Célérité II (35) · fortune divine (50) |
+| ♣ Bûcheron | bûches | bûche doublée (1) · Vitesse I (10) · **abattage** de l'arbre entier (20) · pommes et pousses (30) · abattage 160 bûches + Force I (40) |
+| ✿ Fermier | cultures mûres, élevage | récolte doublée (1) · replantation (5) · faim qui remonte (10) · **engrais divin** autour de soi (20) · **moisson 3×3** à la houe (30) · carottes dorées (40) |
+| ⚔ Chasseur | créatures | prime en pièces (1) · Régénération (10) · Force après chaque monstre (20) · clés trophées (30) · **générateur du monstre tué** (40) · prime doublée (50) |
+| ≈ Pêcheur | prises | prise doublée (1) · clés à l'hameçon (10) · effet Chance (20) · trésors engloutis (30) · respiration + grâce du dauphin (40) · clés Rares (50) |
 
-50 niveaux par métier. Chaque niveau rapporte argent + Essence ; des **clés de caisse** tous les
-5 niveaux (Rare tous les 10, Épique au 25, Divine au 40 et 50). Les blocs posés par un joueur ne
-rapportent pas d'XP (anti-farm).
+S'accroupir désactive l'abattage, le filon et la moisson large. Ces talents respectent les permissions des îles.
 
 ### Quêtes (`/quetes`)
 
-7 quêtes proposées chaque jour, **5 actives maximum**. Récompenses : argent, Essence, XP de métier,
-parfois une clé. Une clé Rare bonus toutes les 10 quêtes terminées. Le pupitre du spawn ouvre aussi
-le menu des quêtes.
+- **Quêtes du jour** : 7 propositions chaque jour (2 ★ faciles, 3 ★★ normales, 1 ★★★ difficile, 1 ★★★★ épique),
+  **5 actives au maximum**. Les gains montent avec la difficulté (de 300 à 3 000 pièces, clé Commune ou Rare pour les
+  plus dures) et avec votre palier (+20 % par palier). Objectifs variés : minage, coupe, récolte, élevage, chasse, pêche,
+  artisanat, fonte et cuisson, échanges avec les villageois, ventes au marchand, caisses, PvP, temps de jeu.
+- `/quetes renouveler` : nouvelles propositions (gratuit 1 fois par jour, puis payant).
+- **Bonus d'assiduité** : 3 quêtes dans la journée → clé Commune + 500 pièces ; 5 quêtes → clé Rare + 1 500 pièces.
+  Une clé Rare toutes les 10 quêtes.
+- **Défis de la semaine** (`/quetes semaine`) : 3 grands objectifs actifs d'office, renouvelés le lundi
+  (6 000 pièces, 1 800 Essence et une clé Rare chacun ; clé Épique si les 3 sont relevés).
+- **Quêtes d'ascension** (`/ascension`) : un fil rouge de 18 étapes, de « Premiers pas » à « Légende », qui guide
+  de mortel à dieu suprême et se valide tout seul.
+- La quête la plus avancée et l'étape d'ascension s'affichent dans le tableau à droite ; `/quetes liste` résume tout dans le chat.
 
 ### Caisses et clés (`/caisses`, `/cles`)
 

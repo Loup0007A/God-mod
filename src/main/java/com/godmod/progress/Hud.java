@@ -112,9 +112,11 @@ public final class Hud {
         Job best = JobSystem.best(p);
         lines.add(kv("Métier", Component.literal(best.icon + " " + best.label + " " + JobSystem.level(p, best)
                 + " (" + JobSystem.totalLevels(p) + " niv.)").withStyle(best.color)));
-        lines.add(kv("Quêtes", Component.literal(p.quests.size() + " / " + QuestSystem.MAX_ACTIVE).withStyle(ChatFormatting.YELLOW)));
+        String tracked = QuestSystem.tracked(p);
+        lines.add(kv("Quêtes " + p.quests.size() + "/" + QuestSystem.MAX_ACTIVE, Component.literal(tracked == null ? "aucune (/quetes)" : tracked).withStyle(ChatFormatting.YELLOW)));
+        String asc = AscensionQuests.hud(p);
+        if (asc != null) lines.add(kv("Ascension", Component.literal(asc).withStyle(ChatFormatting.LIGHT_PURPLE)));
         lines.add(kv("Clés", Component.literal(String.valueOf(CrateSystem.totalKeys(p))).withStyle(ChatFormatting.GREEN)));
-        lines.add(Component.literal("   "));
         if (p.master != null) {
             PlayerProfile m = GodData.find(p.master);
             lines.add(kv("Dieu", Component.literal(m == null ? "?" : m.name).withStyle(ChatFormatting.GOLD)));

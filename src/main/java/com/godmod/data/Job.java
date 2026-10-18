@@ -7,20 +7,20 @@ import net.minecraft.world.item.Items;
 /** Les métiers : chacun monte de niveau (1 à 50) en pratiquant son activité. */
 public enum Job {
     MINEUR("Mineur", "⛏", ChatFormatting.GRAY, Items.IRON_PICKAXE,
-            "Miner des minerais et de la pierre (monde ressource)",
-            "Butin de minerai doublé (chance) · Célérité au niv. 15 et 35"),
+            "Miner des minerais et de la pierre, fondre des lingots",
+            "Minerai doublé · Vision nocturne · Célérité · Filon"),
     BUCHERON("Bûcheron", "♣", ChatFormatting.GOLD, Items.IRON_AXE,
             "Couper des bûches",
-            "Bûches doublées (chance) · Abattage de l'arbre entier au niv. 20"),
+            "Bûches doublées · Vitesse · Abattage · Cueilleur · Force"),
     FERMIER("Fermier", "✿", ChatFormatting.GREEN, Items.WHEAT,
-            "Récolter des cultures mûres",
-            "Récolte doublée (chance) · Replantation automatique au niv. 5"),
+            "Récolter des cultures mûres, élever des animaux",
+            "Replantation · Engrais divin · Moisson 3×3 · Carottes dorées"),
     CHASSEUR("Chasseur", "⚔", ChatFormatting.RED, Items.IRON_SWORD,
             "Tuer des créatures",
-            "Pièces bonus par victime · Butin bonus (chance)"),
+            "Prime · Régénération · Furie · Trophées · Générateurs"),
     PECHEUR("Pêcheur", "≈", ChatFormatting.AQUA, Items.FISHING_ROD,
             "Pêcher",
-            "Prises doublées (chance) · Clés de caisse à la pêche");
+            "Prises doublées · Clés · Chance · Trésors · Respiration");
 
     public static final int MAX_LEVEL = 50;
 

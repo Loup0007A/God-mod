@@ -179,6 +179,21 @@ public final class GameEvents {
                         || (DivineItems.isDivine(e.getItemStack()) && !SpawnerSystem.KIND.equals(DivineItems.kind(e.getItemStack())))
                         || hubGrief(e.getEntity(), e.getItemStack()) || blockInteractDenied(e.getEntity(), e.getPos(), e.getItemStack()));
 
+        // Artisanat, fonte, élevage, commerce : quêtes et métiers.
+        PlayerEvent.ItemCraftedEvent.BUS.addListener((Consumer<PlayerEvent.ItemCraftedEvent>) e -> {
+            if (e.getEntity() instanceof ServerPlayer sp && GodData.ready() && !AuthSystem.isLocked(sp)) JobSystem.onCraft(sp, e.getCrafting());
+        });
+        PlayerEvent.ItemSmeltedEvent.BUS.addListener((Consumer<PlayerEvent.ItemSmeltedEvent>) e -> {
+            if (e.getEntity() instanceof ServerPlayer sp && GodData.ready() && !AuthSystem.isLocked(sp)) JobSystem.onSmelt(sp, e.getSmelting());
+        });
+        net.minecraftforge.event.entity.living.BabyEntitySpawnEvent.BUS.addListener((Predicate<net.minecraftforge.event.entity.living.BabyEntitySpawnEvent>) e -> {
+            if (GodData.ready() && e.getCausedByPlayer() instanceof ServerPlayer sp && e.getChild() != null) JobSystem.onBreed(sp, e.getChild());
+            return false;
+        });
+        net.minecraftforge.event.entity.player.TradeWithVillagerEvent.BUS.addListener((Consumer<net.minecraftforge.event.entity.player.TradeWithVillagerEvent>) e -> {
+            if (GodData.ready() && e.getEntity() instanceof ServerPlayer sp) JobSystem.onTrade(sp);
+        });
+
         // Pêche : métier Pêcheur.
         ItemFishedEvent.BUS.addListener((Predicate<ItemFishedEvent>) e -> {
             if (e.getEntity() instanceof ServerPlayer sp && GodData.ready()) JobSystem.onFish(sp, e.getDrops());
@@ -444,7 +459,10 @@ public final class GameEvents {
             p.playTicks += 20;
             DivineWorld.syncBorder(sp);
             Hud.update(sp);
-            if (five) JobSystem.perks(sp);
+            if (five) {
+                JobSystem.perks(sp);
+                com.godmod.progress.AscensionQuests.check(sp);
+            }
             if (minute) Ranks.refresh(sp);
             if (five) PowerSystem.periodic(sp);
             if (minute) PowerSystem.perMinute(sp);

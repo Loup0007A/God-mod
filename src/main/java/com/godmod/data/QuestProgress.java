@@ -4,6 +4,8 @@ package com.godmod.data;
 public class QuestProgress {
     public String id;
     public int progress;
+    /** Défi de la semaine déjà relevé. */
+    public boolean done;
 
     public QuestProgress() {
     }

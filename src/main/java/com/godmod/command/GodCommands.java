@@ -461,8 +461,47 @@ public final class GodCommands {
     // ------------------------------------------------------------------ Progression : métiers, quêtes, caisses, HUD, récompense
 
     private static void registerProgress(CommandDispatcher<CommandSourceStack> d) {
-        for (String name : new String[]{"metiers", "metier", "jobs"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, Menus::openJobs)));
-        for (String name : new String[]{"quetes", "quete", "quests"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, Menus::openQuests)));
+        for (String name : new String[]{"metiers", "metier", "jobs"}) {
+            d.register(Commands.literal(name)
+                    .executes(ctx -> open(ctx, Menus::openJobs))
+                    .then(Commands.argument("metier", StringArgumentType.word()).suggests(words("mineur", "bucheron", "fermier", "chasseur", "pecheur"))
+                            .executes(ctx -> run(ctx, p -> {
+                                Job job = Job.parse(StringArgumentType.getString(ctx, "metier"));
+                                if (job == null) job = Job.parse(com.godmod.progress.EventSystem.normalize(StringArgumentType.getString(ctx, "metier")).toUpperCase());
+                                if (job == null) return "Métier inconnu : mineur, bucheron, fermier, chasseur, pecheur.";
+                                Menus.openJobDetail(p, job);
+                                return null;
+                            }))));
+        }
+        for (String name : new String[]{"quetes", "quete", "quests"}) {
+            d.register(Commands.literal(name)
+                    .executes(ctx -> open(ctx, Menus::openQuests))
+                    .then(Commands.literal("renouveler").executes(ctx -> run(ctx, com.godmod.progress.QuestSystem::reroll)))
+                    .then(Commands.literal("semaine").executes(ctx -> open(ctx, Menus::openWeekly)))
+                    .then(Commands.literal("ascension").executes(ctx -> open(ctx, com.godmod.progress.AscensionQuests::open)))
+                    .then(Commands.literal("liste").executes(ctx -> run(ctx, p -> {
+                        PlayerProfile pr = GodData.get(p);
+                        com.godmod.progress.QuestSystem.refreshOffers(pr);
+                        p.sendSystemMessage(Msg.header("Vos quêtes"));
+                        if (pr.quests.isEmpty()) p.sendSystemMessage(Msg.text("Aucune quête en cours. ", ChatFormatting.GRAY)
+                                .append(Msg.button("Choisir", "/quetes", "Ouvrir les quêtes", ChatFormatting.YELLOW)));
+                        for (var qp : pr.quests) {
+                            var q = com.godmod.progress.QuestSystem.QUESTS.get(qp.id);
+                            if (q != null) p.sendSystemMessage(Msg.text(q.difficulty().stars + " " + q.title(), q.difficulty().color)
+                                    .append(Msg.text(" — " + qp.progress + "/" + q.amount() + " · " + q.description(), ChatFormatting.GRAY)));
+                        }
+                        for (var qp : pr.weekly) {
+                            var q = com.godmod.progress.QuestSystem.WEEKLIES.get(qp.id);
+                            if (q != null) p.sendSystemMessage(Msg.text("✦ " + q.title(), qp.done ? ChatFormatting.GREEN : ChatFormatting.AQUA)
+                                    .append(Msg.text(" — " + (qp.done ? "relevé" : qp.progress + "/" + q.amount()) + " · " + q.description(), ChatFormatting.GRAY)));
+                        }
+                        var step = com.godmod.progress.AscensionQuests.current(pr);
+                        if (step != null) p.sendSystemMessage(Msg.text("Ascension : " + step.title(), ChatFormatting.LIGHT_PURPLE)
+                                .append(Msg.text(" — " + step.goal() + " (" + com.godmod.progress.AscensionQuests.progress(pr, step) + "/" + step.target() + ")", ChatFormatting.GRAY)));
+                        return null;
+                    }))));
+        }
+        d.register(Commands.literal("ascension").executes(ctx -> open(ctx, com.godmod.progress.AscensionQuests::open)));
         for (String name : new String[]{"caisses", "cles", "keys"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, Menus::openKeys)));
         for (String name : new String[]{"progression", "guide"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, Menus::openGuide)));
         for (String name : new String[]{"recompense", "daily", "quotidien"}) {

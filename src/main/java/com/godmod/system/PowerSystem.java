@@ -203,6 +203,7 @@ public final class PowerSystem {
     public static void perMinute(ServerPlayer player) {
         PlayerProfile p = GodData.get(player);
         addEssence(player, 2, "temps de jeu");
+        com.godmod.progress.QuestSystem.progress(player, java.util.List.of("play:minute"), 1);
         // Revenu passif : 2 pièces par minute.
         earnMoney(player.level().getServer(), p, 2);
     }

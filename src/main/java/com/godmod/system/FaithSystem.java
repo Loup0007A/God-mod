@@ -30,6 +30,7 @@ public final class FaithSystem {
         victim.deaths++;
         GodData.dirty();
         PowerSystem.addEssence(killerPlayer, 25, "victoire");
+        com.godmod.progress.QuestSystem.progress(killerPlayer, java.util.List.of("pvp:kill"), 1);
         GodData.log("PVP : " + killer.name + " (" + killer.tier.label + ") a tué " + victim.name + " (" + victim.tier.label + ")");
 
         // 1) Rébellion en cours entre ces deux joueurs ?
