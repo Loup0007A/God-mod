@@ -58,6 +58,10 @@ public class PlayerProfile {
     public String banReason = null;
     public String bannedBy = null;
     public java.util.List<String> warnings = new java.util.ArrayList<>();
+    /** Position réelle du joueur pendant qu'il attend de se connecter au spawn (restaurée après /login). */
+    public boolean hasAuthReturn = false;
+    public String authReturnDim = null;
+    public double authReturnX, authReturnY, authReturnZ;
 
     // --- Monde divin ---
     public int plotIndex = -1;

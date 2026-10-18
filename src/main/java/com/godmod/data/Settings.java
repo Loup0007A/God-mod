@@ -36,6 +36,9 @@ public class Settings {
     // --- Structuration du monde ---
     /** Vrai une fois le Sanctuaire et l'arène construits. */
     public boolean worldStructured = false;
+    /** Version du décor construit (2 = temple céleste). Une version plus ancienne est remplacée au démarrage. */
+    public int structureVersion = 0;
+    public double oldHubX, oldHubY, oldHubZ;
     public boolean hubSet = false;
     public double hubX, hubY, hubZ;
 }

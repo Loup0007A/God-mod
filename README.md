@@ -15,20 +15,43 @@ et doit survivre aux rébellions de ses propres fidèles.
 2. Déposer `godmod-x.y.z.jar` dans le dossier `mods/` du serveur, puis démarrer.
 3. Se donner les droits : `op TonPseudo` dans la console (les opérateurs sont admins du mod).
 
-Au **premier démarrage**, le mod construit automatiquement :
-- le **Sanctuaire** (place centrale à piliers) au point d'apparition, qui devient le spawn ;
-- l'**Arène des tournois** à 48 blocs à l'est, reliée par une allée éclairée ;
-- la **dimension divine** (`godmod:divine`) où chaque joueur reçoit sa parcelle.
+Au **premier démarrage**, le mod construit automatiquement (en arrière-plan, sans bloquer le serveur) :
+- le **Sanctuaire**, temple céleste sur une île flottante ~50 blocs au-dessus du spawn : place en mosaïque
+  quartz/or/violet, fontaine surmontée d'un trident d'or et d'une spirale d'eau, temple à colonnade et bannières
+  violettes, portail-vortex, faisceau violet, monuments Océan / Ciel / Cosmos, jardin et petites îles autour ;
+- l'**île de l'Arène des tournois**, reliée au Sanctuaire par un pont ;
+- la **dimension divine** (`godmod:divine`) et le **monde ressource** (`godmod:ressources`, Overworld classique).
 
-`/structurer` (admin) reconstruit le Sanctuaire et l'arène à votre position.
+Le Sanctuaire est protégé (pas de construction, de seaux, de feu, d'explosions ni de monstres) ; une chute depuis
+les îles ramène au Sanctuaire. Un Sanctuaire v0.2 (au sol) est automatiquement démonté et remplacé.
+`/structurer` (admin) reconstruit le Sanctuaire au-dessus de votre position.
+
+## Déplacements
+
+- `/spawn` : Sanctuaire · `/mine` : monde ressource (endroit aléatoire et sûr) · `/monde` : votre monde divin.
+- `/setwarp <nom>` : warp public à votre position (1 pour un mortel → 10 pour un dieu suprême) ·
+  `/warp [nom]` (sans nom : liste cliquable) · `/warps` · `/delwarp <nom>`.
+
+## Monde divin
+
+- **Réservé aux dieux** : un mortel n'en a pas ; il le reçoit en passant Dieu.
+- Chaque monde a une **bordure visible** (world border) à sa taille. Impossible de la franchir : on est simplement
+  repoussé à sa dernière position. Seule une chute dans le vide ramène au centre.
+- Les pistons ne peuvent pas faire passer de blocs de l'autre côté de la bordure.
+- Visiteurs : seigneurs, fidèles, ennemis en guerre, et tout le monde si le dieu y a posé un warp.
+
+## Codex divin et rangs
+
+- Le Codex reste dans la **9ᵉ case de la barre rapide** : impossible de le jeter, de le ranger ou de le perdre.
+- La liste des joueurs (Tab) et le chat affichent le rang : `[Admin]`/`[Modo]` puis le palier (`[✦ Dieu]`…).
 
 ## Comptes protégés par mot de passe
 
-À chaque connexion, le joueur est figé, aveuglé et invulnérable jusqu'à :
+À chaque connexion, le joueur est envoyé au Sanctuaire, figé, aveuglé et invulnérable jusqu'à :
 - `/register <motdepasse> <motdepasse>` la première fois ;
 - `/login <motdepasse>` ensuite (raccourci `/l`).
 
-Chat, commandes et interactions sont bloqués avant connexion. 3 erreurs ou 90 s sans connexion = expulsion.
+Après `/login`, il retrouve l'endroit où il s'était déconnecté. Chat, commandes et interactions sont bloqués avant connexion. 3 erreurs ou 90 s sans connexion = expulsion.
 Reconnexion automatique depuis la même adresse IP pendant 12 h (`/auth session <heures>`, 0 = jamais).
 Mots de passe hachés (PBKDF2-SHA256 salé), jamais stockés en clair. `/motdepasse <ancien> <nouveau>` pour changer.
 Admins : `/auth on|off`, `/auth reset <joueur>`.
@@ -49,7 +72,9 @@ Admins : `/auth on|off`, `/auth reset <joueur>`.
 | `/mod unban` · `/mod warn` · `/mod freeze` · `/mod tp` · `/mod info` | ✔ | ✔ |
 | `/mod journal [lignes]` · `/sc <message>` (chat d'équipe) | ✔ | ✔ |
 | `/tournoi creer [prix]` · `/tournoi annuler` | ✔ | ✔ |
+| `/delwarp` sur n'importe quel warp | ✔ | ✔ |
 | `/staff`, `/auth`, `/structurer`, `/godadmin`, `/pay` | | ✔ |
+| `/godadmin clearile <joueur>` (remet un monde divin à zéro) · `/godadmin clearzone <rayon> [hauteur]` | | ✔ |
 
 Tout joueur peut faire `/signaler <joueur> <raison>` : l'équipe connectée est prévenue.
 Un membre de l'équipe ne peut pas sanctionner quelqu'un de rang supérieur.

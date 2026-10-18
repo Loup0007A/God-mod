@@ -61,6 +61,7 @@ public final class Moderation {
         ServerPlayer sp = PowerSystem.online(server, target.uuid);
         if (sp != null) {
             server.getCommands().sendCommands(sp);
+            Ranks.refresh(sp);
             Msg.ok(sp, "Votre rang est désormais : " + role.label + ".");
         }
         return target.name + " est désormais " + role.label + ".";

@@ -76,8 +76,40 @@ public final class AuthSystem {
             Msg.ok(player, "Reconnexion automatique (même adresse, session encore valide).");
             return;
         }
-        PENDING.put(player.getUUID(), new Pending(player));
+        lock(player, p);
         remind(player, p);
+    }
+
+    /**
+     * Verrouille le joueur au Sanctuaire. Sa vraie position est mémorisée (et sauvegardée, au cas où il se
+     * déconnecterait) pour lui être rendue après /login.
+     */
+    private static void lock(ServerPlayer player, PlayerProfile p) {
+        if (!p.hasAuthReturn && p.codexGiven) {
+            p.hasAuthReturn = true;
+            p.authReturnDim = player.level().dimension().identifier().toString();
+            p.authReturnX = player.getX();
+            p.authReturnY = player.getY();
+            p.authReturnZ = player.getZ();
+            GodData.dirty();
+        }
+        if (Hub.ready()) Hub.teleport(player);
+        PENDING.put(player.getUUID(), new Pending(player));
+    }
+
+    /** Rend au joueur la position qu'il avait avant d'être verrouillé au Sanctuaire. */
+    private static void restore(ServerPlayer player, PlayerProfile p) {
+        if (!p.hasAuthReturn) return;
+        p.hasAuthReturn = false;
+        GodData.dirty();
+        try {
+            var key = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION,
+                    net.minecraft.resources.Identifier.parse(p.authReturnDim));
+            ServerLevel level = player.level().getServer().getLevel(key);
+            if (level != null) Teleport.to(player, level, p.authReturnX, p.authReturnY, p.authReturnZ);
+        } catch (Exception e) {
+            com.godmod.GodMod.LOGGER.warn("[God Mod] Position de retour invalide pour {}", p.name);
+        }
     }
 
     public static void onLogout(ServerPlayer player) {
@@ -109,6 +141,7 @@ public final class AuthSystem {
         setPassword(p, pass);
         GodData.log("COMPTE : " + p.name + " s'inscrit");
         unlock(player, p);
+        restore(player, p);
         Msg.ok(player, "Compte protégé ! Retenez bien votre mot de passe.");
         return null;
     }
@@ -128,6 +161,7 @@ public final class AuthSystem {
             return "Mot de passe incorrect (" + (MAX_ATTEMPTS - pending.attempts) + " essai(s) restant(s)).";
         }
         unlock(player, p);
+        restore(player, p);
         Msg.ok(player, "Connecté. Bon jeu !");
         return null;
     }
@@ -153,7 +187,7 @@ public final class AuthSystem {
         GodData.dirty();
         ServerPlayer sp = PowerSystem.online(server, p.uuid);
         if (sp != null) {
-            PENDING.put(sp.getUUID(), new Pending(sp));
+            lock(sp, p);
             Msg.err(sp, "Votre mot de passe a été réinitialisé par un administrateur.");
             remind(sp, p);
         }

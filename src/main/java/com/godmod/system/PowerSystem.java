@@ -97,7 +97,13 @@ public final class PowerSystem {
             Msg.broadcast(server, p.name + " est déchu : " + old.label + " → " + tier.label + ".", ChatFormatting.RED);
         }
         ServerPlayer sp = online(server, p.uuid);
-        if (sp != null) applyAttributes(sp);
+        if (sp != null) {
+            if (tier.isGod()) DivineWorld.grant(sp, p);
+            applyAttributes(sp);
+            Ranks.refresh(sp);
+        } else if (tier.isGod()) {
+            DivineWorld.ensurePlot(p);
+        }
     }
 
     // ------------------------------------------------------------------ Caractéristiques

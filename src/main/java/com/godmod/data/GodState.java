@@ -13,4 +13,6 @@ public class GodState {
     public int nextPlotIndex = 0;
     /** Journal pour les modérateurs (anticheat / suivi). */
     public List<String> log = new ArrayList<>();
+    /** Warps publics des joueurs (clé = nom en minuscules). */
+    public Map<String, Warp> warps = new HashMap<>();
 }

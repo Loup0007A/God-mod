@@ -41,6 +41,7 @@ public class GodSavedData extends SavedData {
                 if (loaded.settings == null) loaded.settings = new Settings();
                 if (loaded.players == null) loaded.players = new java.util.HashMap<>();
                 if (loaded.log == null) loaded.log = new java.util.ArrayList<>();
+                if (loaded.warps == null) loaded.warps = new java.util.HashMap<>();
                 data.state = loaded;
             }
         } catch (Exception e) {

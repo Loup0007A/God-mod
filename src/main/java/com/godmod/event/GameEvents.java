@@ -44,6 +44,15 @@ import net.minecraftforge.event.entity.EntityTravelToDimensionEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.level.BlockEvent;
+import net.minecraftforge.event.level.PistonEvent;
+import net.minecraftforge.event.level.ExplosionEvent;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.event.entity.item.ItemTossEvent;
+import net.minecraftforge.event.entity.living.LivingDropsEvent;
+import com.godmod.system.BlockJobs;
+import com.godmod.system.CodexGuard;
+import com.godmod.system.Hub;
+import com.godmod.system.Ranks;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 
@@ -69,8 +78,31 @@ public final class GameEvents {
             if (e.getEntity() instanceof ServerPlayer sp && GodData.ready()) PowerSystem.applyAttributes(sp);
         });
         PlayerEvent.PlayerChangedDimensionEvent.BUS.addListener((Consumer<PlayerEvent.PlayerChangedDimensionEvent>) e -> {
-            if (e.getEntity() instanceof ServerPlayer sp && GodData.ready()) PowerSystem.applyAttributes(sp);
+            if (e.getEntity() instanceof ServerPlayer sp && GodData.ready()) {
+                DivineWorld.onDimensionChange(sp);
+                PowerSystem.applyAttributes(sp);
+            }
         });
+
+        // Rang affiché dans la liste des joueurs (Tab) et dans le chat.
+        PlayerEvent.TabListNameFormat.BUS.addListener((Consumer<PlayerEvent.TabListNameFormat>) e -> {
+            if (e.getEntity() instanceof ServerPlayer sp && GodData.ready()) e.setDisplayName(Ranks.decorate(sp, sp.getName()));
+        });
+        PlayerEvent.NameFormat.BUS.addListener((Consumer<PlayerEvent.NameFormat>) e -> {
+            if (e.getEntity() instanceof ServerPlayer sp && GodData.ready()) e.setDisplayname(Ranks.decorate(sp, e.getUsername()));
+        });
+
+        // Codex : impossible à jeter, ne tombe pas à la mort (il revient tout seul dans sa case).
+        ItemTossEvent.BUS.addListener((Predicate<ItemTossEvent>) e -> CodexGuard.isCodex(e.getEntity().getItem()));
+        LivingDropsEvent.BUS.addListener((Predicate<LivingDropsEvent>) e -> {
+            e.getDrops().removeIf(item -> CodexGuard.isCodex(item.getItem()));
+            return false;
+        });
+
+        // Pistons : aucun bloc ne passe la bordure d'un monde divin.
+        PistonEvent.Pre.BUS.addListener((Predicate<PistonEvent.Pre>) e -> e.getLevel() instanceof Level level && GodData.ready()
+                && DivineWorld.isDivine(level)
+                && DivineWorld.pistonCrossesBorder(level, e.getPos(), e.getDirection(), e.getPistonMoveType().isExtend()));
 
         TickEvent.ServerTickEvent.Post.BUS.addListener((Consumer<TickEvent.ServerTickEvent.Post>) e -> onServerTick(e.server()));
 
@@ -86,12 +118,29 @@ public final class GameEvents {
         PlayerInteractEvent.RightClickItem.BUS.addListener((Predicate<PlayerInteractEvent.RightClickItem>) GameEvents::onRightClickItem);
         PlayerInteractEvent.RightClickBlock.BUS.addListener((Predicate<PlayerInteractEvent.RightClickBlock>) e ->
                 // Objet divin sur un bloc : on bloque l'interaction ; le clic sur l'objet suit (RightClickItem).
-                locked(e.getEntity()) || DivineItems.isDivine(e.getItemStack()));
+                locked(e.getEntity()) || DivineItems.isDivine(e.getItemStack()) || hubGrief(e.getEntity(), e.getItemStack()));
+
+        // Sanctuaire : pas de monstres, et les explosions n'y cassent rien.
+        EntityJoinLevelEvent.BUS.addListener((Predicate<EntityJoinLevelEvent>) e -> GodData.ready() && !e.loadedFromDisk()
+                && e.getEntity() instanceof Enemy && Hub.isProtected(e.getLevel(), e.getEntity().blockPosition()));
+        ExplosionEvent.Detonate.BUS.addListener((Consumer<ExplosionEvent.Detonate>) e -> {
+            if (GodData.ready()) e.getAffectedBlocks().removeIf(pos -> Hub.isProtected(e.getLevel(), pos));
+        });
         PlayerInteractEvent.LeftClickBlock.BUS.addListener((Predicate<PlayerInteractEvent.LeftClickBlock>) e -> locked(e.getEntity()));
         PlayerInteractEvent.EntityInteract.BUS.addListener((Predicate<PlayerInteractEvent.EntityInteract>) e -> locked(e.getEntity()));
         AttackEntityEvent.BUS.addListener((Predicate<AttackEntityEvent>) e -> locked(e.getEntity()) || frozen(e.getEntity()));
         EntityItemPickupEvent.BUS.addListener((Predicate<EntityItemPickupEvent>) e -> locked(e.getEntity()));
         LivingAttackEvent.BUS.addListener((Predicate<LivingAttackEvent>) e -> locked(e.getEntity()) || locked(e.getSource().getEntity()));
+    }
+
+    /** Seaux (lave, eau…), briquet et boules de feu sont interdits dans le Sanctuaire. */
+    private static boolean hubGrief(Entity e, ItemStack stack) {
+        if (!(e instanceof ServerPlayer sp) || !GodData.ready() || Hub.canEditHub(sp)) return false;
+        if (!Hub.isProtected(sp.level(), sp.blockPosition())) return false;
+        boolean risky = stack.getItem() instanceof net.minecraft.world.item.BucketItem
+                || stack.is(net.minecraft.world.item.Items.FLINT_AND_STEEL) || stack.is(net.minecraft.world.item.Items.FIRE_CHARGE);
+        if (risky) sp.displayClientMessage(Msg.text("Le Sanctuaire est protégé par les dieux.", ChatFormatting.RED), true);
+        return risky;
     }
 
     private static boolean locked(Entity e) {
@@ -149,6 +198,7 @@ public final class GameEvents {
 
     private static boolean onRightClickItem(PlayerInteractEvent.RightClickItem e) {
         if (locked(e.getEntity())) return true;
+        if (hubGrief(e.getEntity(), e.getItemStack())) return true;
         ItemStack stack = e.getItemStack();
         if (!DivineItems.isDivine(stack)) return false;
         return useDivine(e.getEntity(), stack);
@@ -189,6 +239,7 @@ public final class GameEvents {
         boolean wasLocked = AuthSystem.isLocked(sp);
         AuthSystem.onLogout(sp);
         Moderation.onLogout(sp);
+        DivineWorld.onLogout(sp);
         PlayerProfile p = GodData.get(sp);
         p.lastSeen = System.currentTimeMillis();
         GodData.dirty();
@@ -203,6 +254,13 @@ public final class GameEvents {
         AuthSystem.tick(server);
         Moderation.tick(server);
         ArtifactEffects.tick(server);
+        BlockJobs.tick(server);
+        for (ServerPlayer sp : server.getPlayerList().getPlayers()) {
+            if (AuthSystem.isLocked(sp)) continue;
+            DivineWorld.enforce(sp);
+            CodexGuard.tick(sp);
+            Hub.fallNet(sp);
+        }
         if (tickCounter % 20 != 0) return;
 
         RebellionSystem.tick(server);
@@ -214,7 +272,8 @@ public final class GameEvents {
             if (AuthSystem.isLocked(sp)) continue;
             PlayerProfile p = GodData.get(sp);
             p.playTicks += 20;
-            DivineWorld.enforce(sp);
+            DivineWorld.syncBorder(sp);
+            if (minute) Ranks.refresh(sp);
             if (five) PowerSystem.periodic(sp);
             if (minute) PowerSystem.perMinute(sp);
         }
@@ -257,6 +316,11 @@ public final class GameEvents {
 
     private static boolean onBreak(BlockEvent.BreakEvent e) {
         if (locked(e.getPlayer())) return true;
+        if (GodData.ready() && e.getLevel() instanceof Level hl && e.getPlayer() instanceof ServerPlayer hp
+                && Hub.isProtected(hl, e.getPos()) && !Hub.canEditHub(hp)) {
+            hp.displayClientMessage(Msg.text("Le Sanctuaire est protégé par les dieux.", ChatFormatting.RED), true);
+            return true;
+        }
         if (!GodData.ready() || !(e.getLevel() instanceof Level level) || !DivineWorld.isDivine(level)) return false;
         if (!(e.getPlayer() instanceof ServerPlayer sp) || sp.isCreative()) return false;
         PlayerProfile actor = GodData.get(sp);
@@ -274,6 +338,11 @@ public final class GameEvents {
 
     private static boolean onPlace(net.minecraft.world.level.LevelAccessor levelAccessor, BlockPos pos, Entity entity) {
         if (locked(entity)) return true;
+        if (GodData.ready() && levelAccessor instanceof Level hl && entity instanceof ServerPlayer hp
+                && Hub.isProtected(hl, pos) && !Hub.canEditHub(hp)) {
+            hp.displayClientMessage(Msg.text("Le Sanctuaire est protégé par les dieux.", ChatFormatting.RED), true);
+            return true;
+        }
         if (!GodData.ready() || !(levelAccessor instanceof Level level) || !DivineWorld.isDivine(level)) return false;
         if (!(entity instanceof ServerPlayer sp)) return false;
         PlayerProfile actor = GodData.get(sp);

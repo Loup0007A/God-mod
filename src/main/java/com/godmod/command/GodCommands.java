@@ -80,6 +80,7 @@ public final class GodCommands {
     public static void register(CommandDispatcher<CommandSourceStack> d) {
         registerGod(d);
         registerWorld(d);
+        registerTravel(d);
         registerShop(d);
         registerConflicts(d);
         registerAdmin(d);
@@ -222,10 +223,7 @@ public final class GodCommands {
 
     private static void registerWorld(CommandDispatcher<CommandSourceStack> d) {
         d.register(Commands.literal("monde")
-                .executes(ctx -> run(ctx, p -> {
-                    DivineWorld.sendHome(p);
-                    return null;
-                }))
+                .executes(ctx -> run(ctx, DivineWorld::sendHome))
                 .then(Commands.literal("quitter").executes(ctx -> run(ctx, p -> {
                     DivineWorld.leave(p);
                     return null;
@@ -237,6 +235,40 @@ public final class GodCommands {
                                     if (t == null) return "Joueur inconnu.";
                                     return DivineWorld.visit(p, t);
                                 })))));
+    }
+
+    // ------------------------------------------------------------------ Spawn, monde ressource, warps
+
+    private static final SuggestionProvider<CommandSourceStack> WARPS = (ctx, b) -> {
+        List<String> names = new ArrayList<>();
+        if (GodData.ready()) for (com.godmod.data.Warp w : GodData.state().warps.values()) names.add(w.name);
+        return SharedSuggestionProvider.suggest(names, b);
+    };
+
+    private static void registerTravel(CommandDispatcher<CommandSourceStack> d) {
+        d.register(Commands.literal("spawn").executes(ctx -> run(ctx, p -> {
+            com.godmod.system.Hub.teleport(p);
+            Msg.ok(p, "Bienvenue au Sanctuaire.");
+            return null;
+        })));
+        d.register(Commands.literal("mine").executes(ctx -> run(ctx, com.godmod.system.Hub::toMine)));
+        d.register(Commands.literal("ressources").executes(ctx -> run(ctx, com.godmod.system.Hub::toMine)));
+
+        d.register(Commands.literal("setwarp").then(Commands.argument("nom", StringArgumentType.word())
+                .executes(ctx -> run(ctx, p -> com.godmod.system.WarpSystem.set(p, StringArgumentType.getString(ctx, "nom"))))));
+        d.register(Commands.literal("warp")
+                .executes(ctx -> run(ctx, p -> {
+                    Menus.openWarps(p, 0);
+                    return null;
+                }))
+                .then(Commands.argument("nom", StringArgumentType.word()).suggests(WARPS)
+                        .executes(ctx -> run(ctx, p -> com.godmod.system.WarpSystem.go(p, StringArgumentType.getString(ctx, "nom"))))));
+        d.register(Commands.literal("warps").executes(ctx -> run(ctx, p -> {
+            Menus.openWarps(p, 0);
+            return null;
+        })));
+        d.register(Commands.literal("delwarp").then(Commands.argument("nom", StringArgumentType.word()).suggests(WARPS)
+                .executes(ctx -> run(ctx, p -> com.godmod.system.WarpSystem.delete(p, StringArgumentType.getString(ctx, "nom"))))));
     }
 
     // ------------------------------------------------------------------ /shop
@@ -408,6 +440,34 @@ public final class GodCommands {
                                     if (sp != null) PowerSystem.applyAttributes(sp);
                                     return "Profil de " + t.name + " réinitialisé.";
                                 }))))
+                .then(Commands.literal("clearile")
+                        .then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                                .executes(ctx -> adminEdit(ctx, t -> {
+                                    if (t.plotIndex < 0) return "!" + t.name + " n'a pas de monde divin.";
+                                    var divine = DivineWorld.level(ctx.getSource().getServer());
+                                    if (divine == null) return "!Monde divin non chargé.";
+                                    var core = DivineWorld.core(t);
+                                    int r = DivineWorld.radius(t) + 2;
+                                    String who = t.name;
+                                    var src = ctx.getSource();
+                                    com.godmod.system.BlockJobs.submit(divine, "Nettoyage du monde de " + who,
+                                            com.godmod.system.BlockJobs.clearColumns(divine, core.getX() - r, core.getZ() - r,
+                                                    core.getX() + r + 1, core.getZ() + r + 1, divine.getMinY(), divine.getMaxY(), 0),
+                                            () -> {
+                                                t.plotStarted = false;
+                                                DivineWorld.preparePlot(divine, t);
+                                                GodData.dirty();
+                                                src.sendSuccess(() -> Msg.prefix().append(Msg.text("Monde de " + who + " nettoyé.", ChatFormatting.GREEN)), true);
+                                            },
+                                            msg -> src.sendSuccess(() -> Msg.text(msg, ChatFormatting.GRAY), false));
+                                    return "Nettoyage du monde divin de " + t.name + " lancé (il est remis à son bloc de terre initial).";
+                                }))))
+                .then(Commands.literal("clearzone")
+                        .then(Commands.argument("rayon", IntegerArgumentType.integer(1, 96))
+                                .executes(ctx -> clearZone(ctx, IntegerArgumentType.getInteger(ctx, "rayon"), 64))
+                                .then(Commands.argument("hauteur", IntegerArgumentType.integer(1, 384))
+                                        .executes(ctx -> clearZone(ctx, IntegerArgumentType.getInteger(ctx, "rayon"),
+                                                IntegerArgumentType.getInteger(ctx, "hauteur"))))))
                 .then(Commands.literal("arene").executes(ctx -> {
                     ServerPlayer p = ctx.getSource().getPlayerOrException();
                     Settings s = GodData.settings();
@@ -443,6 +503,23 @@ public final class GodCommands {
                         .executes(ctx -> showLog(ctx, 15))
                         .then(Commands.argument("lignes", IntegerArgumentType.integer(1, 100))
                                 .executes(ctx -> showLog(ctx, IntegerArgumentType.getInteger(ctx, "lignes"))))));
+    }
+
+    /** Efface un cylindre (rayon, hauteur centrée sur l'admin) dans le monde où il se trouve : îles, constructions… */
+    private static int clearZone(CommandContext<CommandSourceStack> ctx, int radius, int height) throws CommandSyntaxException {
+        ServerPlayer p = ctx.getSource().getPlayerOrException();
+        var level = (net.minecraft.server.level.ServerLevel) p.level();
+        var center = p.blockPosition();
+        int y1 = Math.max(level.getMinY(), center.getY() - height / 2), y2 = Math.min(level.getMaxY(), center.getY() + height / 2);
+        var src = ctx.getSource();
+        com.godmod.system.BlockJobs.submit(level, "Nettoyage de zone", com.godmod.system.BlockJobs.clearColumns(level, center.getX() - radius, center.getZ() - radius,
+                        center.getX() + radius, center.getZ() + radius, y1, y2, radius),
+                () -> src.sendSuccess(() -> Msg.prefix().append(Msg.text("Zone nettoyée.", ChatFormatting.GREEN)), true),
+                msg -> src.sendSuccess(() -> Msg.text(msg, ChatFormatting.GRAY), false));
+        GodData.log("ADMIN " + src.getTextName() + " : clearzone r=" + radius + " h=" + height + " en " + center.getX() + " " + center.getY() + " " + center.getZ()
+                + " (" + level.dimension().identifier() + ")");
+        reply(ctx, "Nettoyage lancé : rayon " + radius + ", de y=" + y1 + " à y=" + y2 + ". Le travail est étalé pour ne pas faire laguer.");
+        return 1;
     }
 
     private static int fail(CommandContext<CommandSourceStack> ctx, String msg) {

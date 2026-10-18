@@ -18,9 +18,8 @@ public final class GameStart {
     public static void afterAuth(ServerPlayer sp, PlayerProfile p) {
         Settings s = GodData.settings();
         if (!p.codexGiven) {
-            p.codexGiven = true;
-            Shop.give(sp, DivineItems.codex());
-            if (s.hubSet) Teleport.to(sp, sp.level().getServer().overworld(), s.hubX, s.hubY, s.hubZ);
+            p.codexGiven = true; // le Codex est placé dans sa case par CodexGuard
+            if (s.hubSet) Hub.teleport(sp);
             Msg.send(sp, Msg.text("Bienvenue au Sanctuaire, mortel. Votre ascension commence. Ouvrez le Codex divin (clic droit) ou tapez ", ChatFormatting.GOLD)
                     .append(Msg.button("/dieu", "/dieu", "Ouvrir le Panthéon", ChatFormatting.YELLOW)));
             GodData.log("NOUVEAU JOUEUR : " + p.name);
@@ -34,5 +33,6 @@ public final class GameStart {
         }
         GodData.dirty();
         PowerSystem.applyAttributes(sp);
+        Ranks.refresh(sp);
     }
 }

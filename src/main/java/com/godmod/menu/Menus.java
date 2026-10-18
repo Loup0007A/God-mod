@@ -76,13 +76,32 @@ public final class Menus {
         page.set(23, Page.icon(Items.TOTEM_OF_UNDYING, "Fidèles", ChatFormatting.YELLOW,
                 "§7Directs : " + GodData.followersOf(p.uuid).size() + "  Total : " + GodData.totalFollowers(p.uuid),
                 "", "§eCliquez pour ouvrir"), (sp, c) -> later(sp, () -> openFollowers(sp, 0)));
-        page.set(25, Page.icon(Items.GRASS_BLOCK, "Monde divin", ChatFormatting.GREEN,
-                "§7" + DivineWorld.describe(p), "", "§eClic gauche : y aller", "§eClic droit : revenir au monde principal"),
-                (sp, c) -> {
-                    sp.closeContainer();
-                    if (c == GodMenu.Click.RIGHT) DivineWorld.leave(sp);
-                    else DivineWorld.sendHome(sp);
-                });
+        if (DivineWorld.hasWorld(p)) {
+            page.set(25, Page.icon(Items.GRASS_BLOCK, "Monde divin", ChatFormatting.GREEN,
+                    "§7" + DivineWorld.describe(p), "", "§eClic gauche : y aller", "§eClic droit : revenir au monde principal"),
+                    (sp, c) -> {
+                        sp.closeContainer();
+                        if (c == GodMenu.Click.RIGHT) DivineWorld.leave(sp);
+                        else report(sp, DivineWorld.sendHome(sp));
+                    });
+        } else {
+            page.set(25, Page.icon(Items.DIRT, "Monde divin (verrouillé)", ChatFormatting.DARK_GRAY,
+                    "§7Les mortels n'ont pas de monde divin.", "§eDevenez Dieu pour recevoir le vôtre.",
+                    "§7Vous pouvez visiter celui de votre dieu : /monde visiter <dieu>"));
+        }
+        page.set(11, Page.icon(Items.BEACON, "Sanctuaire (spawn)", ChatFormatting.LIGHT_PURPLE,
+                "§7Retour au temple céleste", "", "§eCliquez pour y aller  §8(/spawn)"), (sp, c) -> {
+            sp.closeContainer();
+            com.godmod.system.Hub.teleport(sp);
+        });
+        page.set(15, Page.icon(Items.DIAMOND_PICKAXE, "Monde ressource", ChatFormatting.AQUA,
+                "§7Un monde sauvage pour miner et récolter", "", "§eCliquez pour y aller  §8(/mine)"), (sp, c) -> {
+            sp.closeContainer();
+            report(sp, com.godmod.system.Hub.toMine(sp));
+        });
+        page.set(37, Page.icon(Items.ENDER_PEARL, "Warps des joueurs", ChatFormatting.DARK_AQUA,
+                "§7" + GodData.state().warps.size() + " warp(s) publics",
+                "§7Créez le vôtre : /setwarp <nom>", "", "§eCliquez pour ouvrir"), (sp, c) -> later(sp, () -> openWarps(sp, 0)));
 
         page.set(29, Page.icon(Items.EMERALD, "Boutique", ChatFormatting.GREEN,
                 "§7Nether, End, ressources, artefacts", "§6Solde : " + p.money + " pièces", "", "§eCliquez pour ouvrir"),
@@ -561,6 +580,46 @@ public final class Menus {
             page.set(INNER[i], Page.icon(icon, i + 1, "#" + (i + 1) + " " + o.name, o.tier.color, lore, i == 0));
         }
         page.back((sp, c) -> later(sp, () -> openMain(sp))).close();
+        page.open(player);
+    }
+
+    // ================================================================== Warps
+
+    public static void openWarps(ServerPlayer player, int pageIndex) {
+        PlayerProfile p = GodData.get(player);
+        List<com.godmod.data.Warp> warps = com.godmod.system.WarpSystem.all();
+        Page page = new Page("Warps (" + warps.size() + ")").frame(Items.CYAN_STAINED_GLASS_PANE);
+        page.set(4, Page.icon(Items.ENDER_EYE, "Warps des joueurs", ChatFormatting.DARK_AQUA,
+                "§7Créer ou déplacer : /setwarp <nom>", "§7Supprimer : /delwarp <nom>",
+                "§7Vos warps : " + com.godmod.system.WarpSystem.owned(p.uuid).size() + " / "
+                        + com.godmod.system.WarpSystem.limit(p, com.godmod.system.Moderation.roleOf(player))));
+        int start = pageIndex * INNER.length;
+        for (int i = 0; i < INNER.length && start + i < warps.size(); i++) {
+            com.godmod.data.Warp w = warps.get(start + i);
+            boolean mine = w.owner.equals(p.uuid);
+            Item icon = w.dimension.endsWith("divine") ? Items.GRASS_BLOCK : w.dimension.endsWith("ressources") ? Items.IRON_PICKAXE : Items.COMPASS;
+            page.set(INNER[i], Page.icon(icon, 1, w.name, mine ? ChatFormatting.GREEN : ChatFormatting.AQUA, List.of(
+                    Page.line("§7Par " + w.ownerName),
+                    Page.line("§7" + com.godmod.system.WarpSystem.describe(w)),
+                    Page.line("§7Visites : " + w.visits),
+                    Page.line(""),
+                    Page.line("§eCliquez pour y aller"),
+                    Page.line(mine ? "§cMaj + clic : supprimer" : "")), mine), (sp, c) -> {
+                sp.closeContainer();
+                if (c == GodMenu.Click.SHIFT && w.owner.equals(sp.getUUID().toString())) report(sp, com.godmod.system.WarpSystem.delete(sp, w.name));
+                else report(sp, com.godmod.system.WarpSystem.go(sp, w.name));
+            });
+        }
+        if (warps.isEmpty()) {
+            page.set(22, Page.icon(Items.MAP, "Aucun warp", ChatFormatting.GRAY, "§7Soyez le premier : /setwarp <nom>"));
+        }
+        if (start + INNER.length < warps.size()) {
+            page.set(53, Page.icon(Items.SPECTRAL_ARROW, "Page suivante →", ChatFormatting.YELLOW), (sp, c) -> later(sp, () -> openWarps(sp, pageIndex + 1)));
+        }
+        page.back((sp, c) -> later(sp, () -> {
+            if (pageIndex > 0) openWarps(sp, pageIndex - 1);
+            else openMain(sp);
+        })).close();
         page.open(player);
     }
 
