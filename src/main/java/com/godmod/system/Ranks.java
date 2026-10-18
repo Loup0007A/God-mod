@@ -12,6 +12,8 @@ import net.minecraft.server.level.ServerPlayer;
 
 /** Rang affiché devant le pseudo : dans la liste des joueurs (Tab) et dans le chat. */
 public final class Ranks {
+    private static final ThreadLocal<Boolean> BUSY = ThreadLocal.withInitial(() -> false);
+
     private Ranks() {
     }
 
@@ -27,6 +29,20 @@ public final class Ranks {
 
     /** Ex. : « [Admin] [✦ Dieu] Pseudo ». */
     public static MutableComponent decorate(ServerPlayer player, Component name) {
+        // Sécurité anti-boucle : si le calcul du rang redemande le nom affiché, on renvoie le nom brut.
+        if (BUSY.get()) return name.copy();
+        BUSY.set(true);
+        try {
+            return build(player, name);
+        } catch (Exception e) {
+            com.godmod.GodMod.LOGGER.error("[God Mod] Impossible d'afficher le rang de " + name.getString(), e);
+            return name.copy();
+        } finally {
+            BUSY.set(false);
+        }
+    }
+
+    private static MutableComponent build(ServerPlayer player, Component name) {
         PlayerProfile p = GodData.get(player);
         MutableComponent c = Component.empty();
         Role role = Moderation.roleOf(player);

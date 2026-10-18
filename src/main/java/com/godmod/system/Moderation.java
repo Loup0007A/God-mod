@@ -36,7 +36,9 @@ public final class Moderation {
     public static Role roleOf(ServerPlayer player) {
         PlayerProfile p = GodData.get(player);
         if (p.role == Role.ADMIN) return Role.ADMIN;
-        if (OP.test(player.createCommandSourceStack())) return Role.ADMIN;
+        // Ne pas passer par createCommandSourceStack() : il demande le nom affiché du joueur,
+        // qui lui-même demande le rang (boucle infinie -> crash du serveur).
+        if (player.level().getServer().getPlayerList().isOp(player.nameAndId())) return Role.ADMIN;
         return p.role == null ? Role.JOUEUR : p.role;
     }
 

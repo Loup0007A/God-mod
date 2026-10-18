@@ -62,6 +62,7 @@ import java.util.function.Predicate;
 /** Branche toutes les mécaniques du mod sur les événements du jeu (côté serveur). */
 public final class GameEvents {
     private static long tickCounter = 0;
+    private static long lastTickError = 0;
 
     private GameEvents() {
     }
@@ -104,7 +105,18 @@ public final class GameEvents {
                 && DivineWorld.isDivine(level)
                 && DivineWorld.pistonCrossesBorder(level, e.getPos(), e.getDirection(), e.getPistonMoveType().isExtend()));
 
-        TickEvent.ServerTickEvent.Post.BUS.addListener((Consumer<TickEvent.ServerTickEvent.Post>) e -> onServerTick(e.server()));
+        TickEvent.ServerTickEvent.Post.BUS.addListener((Consumer<TickEvent.ServerTickEvent.Post>) e -> {
+            // Une erreur dans le mod ne doit jamais faire planter tout le serveur : on la note et on continue.
+            try {
+                onServerTick(e.server());
+            } catch (Exception ex) {
+                long now = System.currentTimeMillis();
+                if (now - lastTickError > 10_000) {
+                    lastTickError = now;
+                    GodMod.LOGGER.error("[God Mod] Erreur pendant le tick (le serveur continue)", ex);
+                }
+            }
+        });
 
         LivingDeathEvent.BUS.addListener((Predicate<LivingDeathEvent>) GameEvents::onDeath);
         BlockEvent.BreakEvent.BUS.addListener((Predicate<BlockEvent.BreakEvent>) GameEvents::onBreak);
