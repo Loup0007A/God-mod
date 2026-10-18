@@ -132,7 +132,7 @@ blocs tirés au sort selon le **prestige du générateur** du propriétaire de l
 | XV – XX | obsidienne, diamant des abîmes, débris antiques, quartz |
 
 Chaque prestige augmente aussi la part des minerais déjà débloqués. Prix : de 2 000 pièces (II) à environ
-600 000 (XX), et il faut un niveau de Mineur (2 × le prestige visé − 2). Les minerais du générateur donnent de
+440 000 (XX), et il faut un niveau de Mineur (2 × le prestige visé − 2). Les minerais du générateur donnent de
 l'XP de Mineur. Le menu montre la production actuelle (en %) et celle du prestige suivant.
 
 ## Anti-lag
