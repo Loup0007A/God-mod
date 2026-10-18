@@ -25,19 +25,19 @@ public final class Msg {
     }
 
     public static void info(Player p, String s) {
-        p.sendSystemMessage(prefix().append(text(s, ChatFormatting.WHITE)));
+        send(p, text(s, ChatFormatting.WHITE));
     }
 
     public static void ok(Player p, String s) {
-        p.sendSystemMessage(prefix().append(text(s, ChatFormatting.GREEN)));
+        send(p, text(s, ChatFormatting.GREEN));
     }
 
     public static void err(Player p, String s) {
-        p.sendSystemMessage(prefix().append(text(s, ChatFormatting.RED)));
+        send(p, text(s, ChatFormatting.RED));
     }
 
     public static void send(Player p, Component c) {
-        p.sendSystemMessage(prefix().append(c));
+        if (p instanceof ServerPlayer sp) sp.sendSystemMessage(prefix().append(c));
     }
 
     public static void broadcast(MinecraftServer server, String s, ChatFormatting color) {
