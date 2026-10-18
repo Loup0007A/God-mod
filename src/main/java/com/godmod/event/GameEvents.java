@@ -195,6 +195,18 @@ public final class GameEvents {
             if (GodData.ready() && e.getEntity() instanceof ServerPlayer sp) JobSystem.onTrade(sp);
         });
 
+        // Générateur lave + eau : la production dépend du prestige du propriétaire de l'île.
+        BlockEvent.FluidPlaceBlockEvent.BUS.addListener((Predicate<BlockEvent.FluidPlaceBlockEvent>) e -> {
+            if (GodData.ready() && e.getLevel() instanceof Level fl) {
+                net.minecraft.world.level.block.state.BlockState rep = com.godmod.system.GeneratorSystem.onFluidPlace(fl, e.getPos(), e.getNewState());
+                if (rep != null) e.setNewState(rep);
+            }
+            return false;
+        });
+        // Anti-lag : 15 créatures d'un même type par chunk au plus.
+        EntityJoinLevelEvent.BUS.addListener((Predicate<EntityJoinLevelEvent>) e -> GodData.ready() && !e.loadedFromDisk()
+                && com.godmod.system.LagControl.tooMany(e.getLevel(), e.getEntity()));
+
         // Pêche : métier Pêcheur.
         ItemFishedEvent.BUS.addListener((Predicate<ItemFishedEvent>) e -> {
             if (e.getEntity() instanceof ServerPlayer sp && GodData.ready()) JobSystem.onFish(sp, e.getDrops());
@@ -459,6 +471,7 @@ public final class GameEvents {
         boolean five = tickCounter % 100 == 0;
         boolean minute = tickCounter % 1200 == 0;
         com.godmod.system.AfkSystem.tickSecond(server, minute);
+        com.godmod.system.LagControl.tickSecond(server);
         for (ServerPlayer sp : server.getPlayerList().getPlayers()) {
             if (AuthSystem.isLocked(sp)) continue;
             PlayerProfile p = GodData.get(sp);

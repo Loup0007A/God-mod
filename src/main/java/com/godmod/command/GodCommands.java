@@ -209,6 +209,30 @@ public final class GodCommands {
                                 return null;
                             }))));
         }
+        for (String n : new String[]{"generateur", "prestige", "gen"}) {
+            d.register(Commands.literal(n)
+                    .executes(ctx -> open(ctx, com.godmod.system.GeneratorSystem::open))
+                    .then(Commands.literal("ameliorer").executes(ctx -> run(ctx, com.godmod.system.GeneratorSystem::upgrade))));
+        }
+        d.register(Commands.literal("clearlag").requires(Moderation.require(Role.ADMIN))
+                .executes(ctx -> {
+                    reply(ctx, "❄ Nettoyage immédiat : " + com.godmod.system.LagControl.clearNow(ctx.getSource().getServer()) + " objet(s) supprimé(s).");
+                    return 1;
+                })
+                .then(Commands.literal("intervalle").then(Commands.argument("secondes", IntegerArgumentType.integer(0, 3600)).executes(ctx -> {
+                    GodData.settings().clearlagSeconds = IntegerArgumentType.getInteger(ctx, "secondes");
+                    GodData.dirty();
+                    int s = GodData.settings().clearlagSeconds;
+                    reply(ctx, s == 0 ? "Nettoyage automatique désactivé." : "Nettoyage des objets au sol toutes les " + s + " secondes.");
+                    return 1;
+                })))
+                .then(Commands.literal("entites").then(Commands.argument("max", IntegerArgumentType.integer(0, 500)).executes(ctx -> {
+                    GodData.settings().entityChunkLimit = IntegerArgumentType.getInteger(ctx, "max");
+                    GodData.dirty();
+                    int m = GodData.settings().entityChunkLimit;
+                    reply(ctx, m == 0 ? "Limite de créatures par chunk désactivée." : "Au plus " + m + " créatures d'un même type par chunk.");
+                    return 1;
+                }))));
         d.register(Commands.literal("afk").executes(ctx -> run(ctx, com.godmod.system.AfkSystem::toggle)));
         for (String name : new String[]{"afkshop", "boutiqueafk"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, com.godmod.progress.AfkShop::open)));
         d.register(Commands.literal("privileges").executes(ctx -> open(ctx, Menus::openPerkShop)));

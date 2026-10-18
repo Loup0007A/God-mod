@@ -118,6 +118,31 @@ Un membre de l'équipe ne peut pas sanctionner quelqu'un de rang supérieur.
 
 En local : `./gradlew build` (le .jar est dans `build/libs/`).
 
+## Générateur de l'île (`/generateur`)
+
+Dans un monde divin, un générateur lave + eau ne produit plus seulement de la pierre : il fait apparaître des
+blocs tirés au sort selon le **prestige du générateur** du propriétaire de l'île (I à XX).
+
+| Prestige | Nouveaux blocs |
+|---|---|
+| II | pierre, charbon |
+| III – V | cuivre, fer, andésite, diorite, granite |
+| VI – IX | lapis, redstone, or, ardoise des abîmes |
+| X – XIV | diamant, émeraude, améthyste |
+| XV – XX | obsidienne, diamant des abîmes, débris antiques, quartz |
+
+Chaque prestige augmente aussi la part des minerais déjà débloqués. Prix : de 2 000 pièces (II) à environ
+600 000 (XX), et il faut un niveau de Mineur (2 × le prestige visé − 2). Les minerais du générateur donnent de
+l'XP de Mineur. Le menu montre la production actuelle (en %) et celle du prestige suivant.
+
+## Anti-lag
+
+- **15 créatures d'un même type par chunk au plus** (villageois, golems, animaux apprivoisés ou nommés, Titan exceptés) :
+  au-delà, les nouvelles n'apparaissent plus (spawners, élevage, apparitions naturelles).
+- **Nettoyage des objets au sol toutes les 90 secondes**. Le compte à rebours est affiché en permanence dans le
+  tableau à droite (❄ Nettoyage : 1:12), avec des alertes à 30 s, 10 s et 5 s.
+- Admins : `/clearlag` (tout de suite) · `/clearlag intervalle <secondes>` (0 = désactivé) · `/clearlag entites <max>` (0 = sans limite).
+
 ## Statistiques (`/stats`)
 
 `/stats [joueur]` ouvre un panneau complet : combat (victoires, morts, ratio, monstres), récolte (blocs minés,

@@ -6,6 +6,7 @@ import com.godmod.data.PlayerProfile;
 import com.godmod.data.Tier;
 import com.godmod.system.PowerSystem;
 import com.godmod.system.Ranks;
+import com.godmod.util.Msg;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -126,7 +127,10 @@ public final class Hud {
         EventSystem.Type ev = EventSystem.current();
         if (ev != null) lines.add(kv("Événement", Component.literal(ev.label).withStyle(ev.color)));
         if (DailyReward.available(p)) lines.add(Component.literal("★ /recompense disponible").withStyle(ChatFormatting.GOLD));
-        lines.add(Component.literal("/dieu · /aide · /event").withStyle(ChatFormatting.DARK_GRAY));
+        long clear = com.godmod.system.LagControl.secondsLeft();
+        if (clear >= 0) lines.add(Component.literal("❄ Nettoyage : ").withStyle(ChatFormatting.AQUA)
+                .append(Component.literal(Msg.clock(clear * 1000)).withStyle(clear <= 10 ? ChatFormatting.RED : ChatFormatting.WHITE)));
+        else lines.add(Component.literal("/dieu · /aide · /event").withStyle(ChatFormatting.DARK_GRAY));
 
         boolean fresh = !SENT_LINES.containsKey(player.getUUID());
         if (fresh) {

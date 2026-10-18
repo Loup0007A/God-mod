@@ -126,6 +126,13 @@ public final class Menus {
                 if (err != null) Msg.info(sp, err);
             } else com.godmod.progress.EventSystem.info(sp);
         });
+        if (DivineWorld.hasWorld(p)) {
+            int gl = com.godmod.system.GeneratorSystem.level(p);
+            page.set(38, Page.icon(Items.LAVA_BUCKET, 1, "Générateur — prestige " + com.godmod.system.GeneratorSystem.roman(gl), ChatFormatting.GOLD, List.of(
+                    Page.line("§7Lave + eau sur votre île : des minerais"),
+                    Page.line("§7selon le prestige (I à XX)"),
+                    Page.line(""), Page.line("§eCliquez pour ouvrir  §8(/generateur)")), gl > 1), (sp, c) -> later(sp, () -> com.godmod.system.GeneratorSystem.open(sp)));
+        }
         page.set(28, Page.icon(Items.WRITABLE_BOOK, "Statistiques", ChatFormatting.AQUA,
                 "§7Combat, récolte, artisanat, temps de jeu…", "§7et les records du serveur", "", "§eCliquez pour ouvrir  §8(/stats)"),
                 (sp, c) -> later(sp, () -> com.godmod.progress.StatsSystem.open(sp, GodData.get(sp))));

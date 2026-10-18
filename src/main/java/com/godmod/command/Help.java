@@ -54,6 +54,7 @@ public final class Help {
                 p("/event rejoindre", "Rejoindre l'événement en cours (Titan, chasse au trésor)"),
                 p("/hud [on|off]", "Affiche ou masque la barre de progression et le tableau latéral"),
                 p("/stats [joueur|serveur]", "Panneau de statistiques (combat, récolte, artisanat, temps) et records"),
+                p("/generateur", "Prestige du générateur lave + eau de votre île (I à XX)"),
                 p("/afk", "Zone AFK : 1 jeton et 5 pièces par minute, sans être expulsé"),
                 p("/afkshop", "Dépenser ses jetons AFK : clés, boosts, générateurs, privilèges"),
                 p("/dieu codex", "Récupérer un Codex divin perdu"));
@@ -150,6 +151,7 @@ public final class Help {
                 a("/godadmin point placer <type> · retirer", "Caisses et pupitres (bloc visé)"),
                 a("/godadmin clearile <joueur> · clearzone <rayon> [hauteur]", "Nettoyer une île ou une zone"),
                 a("/mine reset [maintenant]", "Régénérer le monde ressource"),
+                a("/clearlag · /clearlag intervalle <s> · /clearlag entites <max>", "Nettoyer les objets au sol, régler le délai et la limite de créatures par chunk"),
                 a("/auth on|off|session <h>|reset <joueur>", "Mots de passe"),
                 a("/pay enable|disable|status", "Boutique premium"),
                 a("/godadmin mode serveur|petit", "Équilibrage (gros serveur ou petite survie)"));

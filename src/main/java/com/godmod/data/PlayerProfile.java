@@ -80,6 +80,8 @@ public class PlayerProfile {
     public java.util.List<String> islandVisitorPerms = new java.util.ArrayList<>();
     /** Combats entre joueurs autorisés sur l'île (hors guerre, rébellion et tournoi). */
     public boolean islandPvp = false;
+    /** Prestige du générateur lave + eau de l'île (1 à 20). */
+    public int generatorLevel = 1;
 
     // --- Métiers ---
     public java.util.Map<String, Double> jobXp = new java.util.HashMap<>();

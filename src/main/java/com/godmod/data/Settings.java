@@ -49,6 +49,12 @@ public class Settings {
     /** Zone AFK construite dans le Sanctuaire. */
     public boolean afkZoneBuilt = false;
 
+    // --- Anti-lag ---
+    /** Créatures d'un même type au plus par chunk (villageois, animaux apprivoisés et nommés exceptés). */
+    public int entityChunkLimit = 15;
+    /** Secondes entre deux nettoyages des objets au sol (0 = désactivé). */
+    public int clearlagSeconds = 90;
+
     // --- Événements ---
     /** Lance automatiquement un événement à intervalle régulier. */
     public boolean eventsAuto = true;
