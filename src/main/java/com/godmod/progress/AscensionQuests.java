@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.function.ToLongFunction;
 
 /**
- * Quêtes d'ascension : un fil rouge de 18 étapes qui guide le joueur de mortel à dieu suprême.
+ * Quêtes d'ascension : un fil rouge de 21 étapes qui guide le joueur de mortel à Créateur.
  * Une seule étape à la fois ; elle se valide toute seule dès que l'objectif est atteint.
  */
 public final class AscensionQuests {
@@ -85,7 +85,13 @@ public final class AscensionQuests {
             new Step("Dieu suprême", "Atteindre le palier Dieu suprême", Items.DRAGON_HEAD,
                     p -> tier(p, Tier.DIEU_SUPREME), 1, 15000, 0, CrateSystem.Crate.DIVINE),
             new Step("Légende", "Atteindre le niveau 50 dans un métier", Items.NETHERITE_PICKAXE,
-                    AscensionQuests::maxJob, 50, 20000, 3000, CrateSystem.Crate.DIVINE));
+                    AscensionQuests::maxJob, 50, 20000, 3000, CrateSystem.Crate.DIVINE),
+            new Step("Transcendance", "Devenir Titan (/transcender)", Items.WITHER_SKELETON_SKULL,
+                    p -> tier(p, Tier.TITAN), 1, 30000, 5000, CrateSystem.Crate.DIVINE),
+            new Step("Divinité astrale", "Devenir Divinité astrale", Items.END_CRYSTAL,
+                    p -> tier(p, Tier.ASTRAL), 1, 60000, 10000, CrateSystem.Crate.DIVINE),
+            new Step("Créateur", "Devenir Créateur, le palier ultime", Items.BEACON,
+                    p -> tier(p, Tier.CREATEUR), 1, 150000, 25000, CrateSystem.Crate.DIVINE));
 
     public static Step current(PlayerProfile p) {
         return p.storyStep < STEPS.size() ? STEPS.get(p.storyStep) : null;

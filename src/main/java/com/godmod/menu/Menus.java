@@ -56,6 +56,11 @@ public final class Menus {
             case DEMI_DIEU -> Items.LIGHT_BLUE_STAINED_GLASS_PANE;
             case DIEU -> Items.ORANGE_STAINED_GLASS_PANE;
             case DIEU_SUPREME -> Items.MAGENTA_STAINED_GLASS_PANE;
+            case TITAN -> Items.RED_STAINED_GLASS_PANE;
+            case PRIMORDIAL -> Items.CYAN_STAINED_GLASS_PANE;
+            case ASTRAL -> Items.BLUE_STAINED_GLASS_PANE;
+            case ETERNEL -> Items.YELLOW_STAINED_GLASS_PANE;
+            case CREATEUR -> Items.WHITE_STAINED_GLASS_PANE;
         };
     }
 
@@ -133,6 +138,15 @@ public final class Menus {
                     Page.line("§7selon le prestige (I à XX)"),
                     Page.line(""), Page.line("§eCliquez pour ouvrir  §8(/generateur)")), gl > 1), (sp, c) -> later(sp, () -> com.godmod.system.GeneratorSystem.open(sp)));
         }
+        com.godmod.data.Tier nt = p.tier.next();
+        boolean canT = nt != null && com.godmod.system.Transcendence.ready(p, nt);
+        page.set(32, Page.icon(Items.BEACON, 1, "Transcendance", ChatFormatting.WHITE, List.of(
+                Page.line("§7Les paliers au-delà du Dieu suprême :"),
+                Page.line("§7Titan, Primordial, Divinité astrale,"),
+                Page.line("§7Éternel et Créateur"),
+                Page.line(p.tier.isTranscendent() ? "§dVous êtes " + p.tier.label + " (+" + 5 * p.tier.transcendence() + " %)" : ""),
+                Page.line(canT ? "§aVous pouvez transcender !" : ""),
+                Page.line("§eCliquez pour voir  §8(/transcender)")), canT), (sp, c) -> later(sp, () -> com.godmod.system.Transcendence.open(sp)));
         page.set(28, Page.icon(Items.WRITABLE_BOOK, "Statistiques", ChatFormatting.AQUA,
                 "§7Combat, récolte, artisanat, temps de jeu…", "§7et les records du serveur", "", "§eCliquez pour ouvrir  §8(/stats)"),
                 (sp, c) -> later(sp, () -> com.godmod.progress.StatsSystem.open(sp, GodData.get(sp))));
@@ -946,12 +960,13 @@ public final class Menus {
                     com.godmod.progress.EventSystem.info(sp);
                 });
         int i = 0;
-        int[] tierSlots = {37, 38, 39, 40, 41};
+        int[] tierSlots = {30, 31, 32, 33, 34, 37, 38, 39, 40, 41};
         for (com.godmod.data.Tier t : com.godmod.data.Tier.values()) {
             boolean reached = p.tier.atLeast(t);
             page.set(tierSlots[i++], Page.icon(reached ? Items.LIME_DYE : Items.GRAY_DYE, 1, t.label, t.color, List.of(
-                    Page.line("§7Essence : " + com.godmod.system.PowerSystem.threshold(t)),
-                    Page.line(t.followers > 0 ? "§7Fidèles : " + t.followers : "§7Aucun fidèle requis"),
+                    Page.line("§7Essence : " + Msg.num(com.godmod.system.PowerSystem.threshold(t))),
+                    Page.line(t.followers > 0 ? "§7Fidèles" + (t.countsAllFollowers() ? " (au total)" : "") + " : " + t.followers : "§7Aucun fidèle requis"),
+                    Page.line(t.isTranscendent() ? "§7+ " + t.jobLevels + " niv. de métier, générateur " + t.generator + ", offrande " + Msg.money(t.offering) : ""),
                     Page.line("§7Plafond de caractéristique : " + t.statCap),
                     Page.line(reached ? "§aAtteint" : (t == next ? "§eProchain palier" : "§8À venir"))), t == next));
         }

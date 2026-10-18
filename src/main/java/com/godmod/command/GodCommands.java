@@ -233,6 +233,11 @@ public final class GodCommands {
                     reply(ctx, m == 0 ? "Limite de créatures par chunk désactivée." : "Au plus " + m + " créatures d'un même type par chunk.");
                     return 1;
                 }))));
+        for (String n : new String[]{"transcender", "transcendance"}) {
+            d.register(Commands.literal(n)
+                    .executes(ctx -> open(ctx, com.godmod.system.Transcendence::open))
+                    .then(Commands.literal("confirmer").executes(ctx -> run(ctx, com.godmod.system.Transcendence::transcend))));
+        }
         d.register(Commands.literal("afk").executes(ctx -> run(ctx, com.godmod.system.AfkSystem::toggle)));
         for (String name : new String[]{"afkshop", "boutiqueafk"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, com.godmod.progress.AfkShop::open)));
         d.register(Commands.literal("privileges").executes(ctx -> open(ctx, Menus::openPerkShop)));
@@ -1104,10 +1109,10 @@ public final class GodCommands {
                 .then(Commands.literal("palier")
                         .then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
                                 .then(Commands.argument("palier", StringArgumentType.word())
-                                        .suggests(words("mortel", "eveille", "demi_dieu", "dieu", "dieu_supreme"))
+                                        .suggests(words("mortel", "eveille", "demi_dieu", "dieu", "dieu_supreme", "titan", "primordial", "astral", "eternel", "createur"))
                                         .executes(ctx -> adminEdit(ctx, t -> {
                                             Tier tier = Tier.parse(StringArgumentType.getString(ctx, "palier"));
-                                            if (tier == null) return "!Palier inconnu : mortel, eveille, demi_dieu, dieu, dieu_supreme.";
+                                            if (tier == null) return "!Palier inconnu : mortel, eveille, demi_dieu, dieu, dieu_supreme, titan, primordial, astral, eternel, createur.";
                                             PowerSystem.setTier(ctx.getSource().getServer(), t, tier, "fixé par un admin :");
                                             return "Palier de " + t.name + " = " + tier.label;
                                         })))))

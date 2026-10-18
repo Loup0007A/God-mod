@@ -82,6 +82,8 @@ public class PlayerProfile {
     public boolean islandPvp = false;
     /** Prestige du générateur lave + eau de l'île (1 à 20). */
     public int generatorLevel = 1;
+    /** Déjà prévenu qu'il peut transcender vers le palier suivant. */
+    public boolean transcendNotified = false;
 
     // --- Métiers ---
     public java.util.Map<String, Double> jobXp = new java.util.HashMap<>();

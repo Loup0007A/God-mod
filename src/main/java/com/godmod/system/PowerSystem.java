@@ -44,6 +44,7 @@ public final class PowerSystem {
         if (GodData.settings().payEnabled && System.currentTimeMillis() < p.boostUntil) mult *= 2;
         if (p.isOathbreaker()) mult *= 0.5;
         mult *= com.godmod.progress.EventSystem.essenceMultiplier();
+        mult *= Transcendence.bonus(p);
         long gain = Math.max(1, Math.round(amount * mult));
         p.essence += gain;
         GodData.dirty();
@@ -65,7 +66,17 @@ public final class PowerSystem {
             changed = false;
             Tier next = p.tier.next();
             if (next == null) break;
-            int followers = next == Tier.DIEU_SUPREME ? GodData.totalFollowers(p.uuid) : GodData.followersOf(p.uuid).size();
+            if (next.isTranscendent()) {
+                // Au-delà du Dieu suprême, on monte volontairement (offrande) : on prévient seulement.
+                if (!p.transcendNotified && Transcendence.ready(p, next)) {
+                    p.transcendNotified = true;
+                    GodData.dirty();
+                    Msg.send(player, Msg.text("✦ Vous pouvez transcender et devenir " + next.label + " ! ", next.color, ChatFormatting.BOLD)
+                            .append(Msg.button("Transcender", "/transcender", "Voir les conditions et l'offrande", ChatFormatting.GOLD)));
+                }
+                break;
+            }
+            int followers = next.countsAllFollowers() ? GodData.totalFollowers(p.uuid) : GodData.followersOf(p.uuid).size();
             if (p.essence >= threshold(next) && followers >= next.followers) {
                 setTier(player.level().getServer(), p, next, "a atteint le palier");
                 changed = true;

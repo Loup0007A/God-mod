@@ -34,6 +34,11 @@ public final class WarpSystem {
             case DEMI_DIEU -> 3;
             case DIEU -> 5;
             case DIEU_SUPREME -> 10;
+            case TITAN -> 12;
+            case PRIMORDIAL -> 14;
+            case ASTRAL -> 16;
+            case ETERNEL -> 18;
+            case CREATEUR -> 20;
         };
     }
 

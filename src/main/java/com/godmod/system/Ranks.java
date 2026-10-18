@@ -24,6 +24,11 @@ public final class Ranks {
             case DEMI_DIEU -> "Demi-dieu";
             case DIEU -> "✦ Dieu";
             case DIEU_SUPREME -> "✦✦ Dieu suprême";
+            case TITAN -> "⚡ Titan";
+            case PRIMORDIAL -> "✺ Primordial";
+            case ASTRAL -> "✧ Divinité astrale";
+            case ETERNEL -> "∞ Éternel";
+            case CREATEUR -> "☀ Créateur";
         };
     }
 

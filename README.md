@@ -216,6 +216,16 @@ Essence et fidèles requis) et un **tableau à droite** (argent, Foi, métier, q
 | Demi-dieu | 2 500 | peut convertir (3 fidèles max) | 10 |
 | Dieu | 8 000 | 1 fidèle direct · obtient son monde divin | 15 |
 | Dieu suprême | 30 000 | 8 fidèles au total | 25 |
+| ⚡ Titan | 80 000 | transcendance : 8 fidèles, 100 niv. de métier, générateur V, offrande 100 000 | 30 |
+| ✺ Primordial | 200 000 | 9 fidèles, 140 niv., générateur VIII, offrande 250 000 | 35 |
+| ✧ Divinité astrale | 450 000 | 10 fidèles, 180 niv., générateur XII, offrande 600 000 | 40 |
+| ∞ Éternel | 1 000 000 | 11 fidèles, 220 niv., générateur XVI, offrande 1 500 000 | 45 |
+| ☀ Créateur | 2 500 000 | 12 fidèles, 250 niv. (tous les métiers au max), générateur XX, offrande 4 000 000 | 50 |
+
+**Transcendance** (`/transcender`) : au-delà du Dieu suprême, on ne monte plus tout seul. Quand toutes les
+conditions sont réunies, le joueur est prévenu et fait l'offrande (les pièces sont dépensées). Chaque palier
+transcendant donne +5 % d'XP de métier et d'Essence, des caractéristiques plus hautes, plus de Foi, un monde
+divin plus grand et plus de warps (jusqu'à 20). Les fidèles sont comptés au total à partir du Dieu suprême.
 
 **Essence** : métiers (0,5 par point d'XP), quêtes, montées de niveau, temps de jeu, PvP,
 conversions, déicide, tournois.
@@ -248,7 +258,7 @@ S'accroupir désactive l'abattage, le filon et la moisson large. Ces talents res
   Une clé Rare toutes les 10 quêtes.
 - **Défis de la semaine** (`/quetes semaine`) : 3 grands objectifs actifs d'office, renouvelés le lundi
   (6 000 pièces, 1 800 Essence et une clé Rare chacun ; clé Épique si les 3 sont relevés).
-- **Quêtes d'ascension** (`/ascension`) : un fil rouge de 18 étapes, de « Premiers pas » à « Légende », qui guide
+- **Quêtes d'ascension** (`/ascension`) : un fil rouge de 21 étapes, de « Premiers pas » à « Créateur », qui guide
   de mortel à dieu suprême et se valide tout seul.
 - La quête la plus avancée et l'étape d'ascension s'affichent dans le tableau à droite ; `/quetes liste` résume tout dans le chat.
 

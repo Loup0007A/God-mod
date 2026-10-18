@@ -196,6 +196,7 @@ public final class JobSystem {
         if (GodData.settings().payEnabled && System.currentTimeMillis() < p.boostUntil) mult *= 2;
         if (job == featured()) mult *= 1.5;
         if (System.currentTimeMillis() < p.jobBoostUntil) mult *= 1.5;
+        mult *= com.godmod.system.Transcendence.bonus(p);
         amount *= mult * EventSystem.jobXpMultiplier();
         EventSystem.onJobXp(player, job, amount);
         int lvl = level(p, job);

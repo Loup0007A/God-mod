@@ -85,8 +85,12 @@ public final class Hud {
                     .append(Component.literal("   Essence " + p.essence + " / " + to).withStyle(ChatFormatting.LIGHT_PURPLE));
             int need = next.followers;
             if (need > 0) {
-                int have = next == Tier.DIEU_SUPREME ? GodData.totalFollowers(p.uuid) : GodData.followersOf(p.uuid).size();
+                int have = next.countsAllFollowers() ? GodData.totalFollowers(p.uuid) : GodData.followersOf(p.uuid).size();
                 name.append(Component.literal("   Fidèles " + have + "/" + need).withStyle(have >= need ? ChatFormatting.GREEN : ChatFormatting.RED));
+            }
+            if (next.isTranscendent()) {
+                boolean ready = com.godmod.system.Transcendence.ready(p, next);
+                name.append(Component.literal(ready ? "   ✦ /transcender !" : "   (+ métiers, générateur, offrande)").withStyle(ready ? ChatFormatting.GOLD : ChatFormatting.DARK_GRAY));
             }
         }
         bar.setName(name);
@@ -97,6 +101,11 @@ public final class Hud {
             case DEMI_DIEU -> BossEvent.BossBarColor.BLUE;
             case DIEU -> BossEvent.BossBarColor.YELLOW;
             case DIEU_SUPREME -> BossEvent.BossBarColor.PINK;
+            case TITAN -> BossEvent.BossBarColor.RED;
+            case PRIMORDIAL -> BossEvent.BossBarColor.BLUE;
+            case ASTRAL -> BossEvent.BossBarColor.PURPLE;
+            case ETERNEL -> BossEvent.BossBarColor.YELLOW;
+            case CREATEUR -> BossEvent.BossBarColor.WHITE;
         });
     }
 
