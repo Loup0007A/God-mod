@@ -44,6 +44,21 @@ public class PlayerProfile {
 
     public boolean codexGiven = false;
 
+    // --- Compte & modération ---
+    public Role role = Role.JOUEUR;
+    /** Mot de passe haché (PBKDF2) et son sel, en Base64. Null = pas encore inscrit. */
+    public String passwordHash = null;
+    public String passwordSalt = null;
+    public String lastIp = null;
+    public long lastAuth = 0;
+    public long mutedUntil = 0;
+    public String muteReason = null;
+    /** 0 = pas banni, Long.MAX_VALUE = définitif. */
+    public long bannedUntil = 0;
+    public String banReason = null;
+    public String bannedBy = null;
+    public java.util.List<String> warnings = new java.util.ArrayList<>();
+
     // --- Monde divin ---
     public int plotIndex = -1;
     /** Faux tant que le propriétaire n'a posé aucun bloc : le bloc de terre initial est alors indestructible. */

@@ -87,6 +87,37 @@ public final class ArtifactEffects {
         return GodData.isAbove(a.uuid, b) || GodData.isAbove(b.uuid, a);
     }
 
+    /** Utilisation d'un artefact (clic droit). Renvoie vrai si l'effet a été lancé. */
+    public static boolean use(ServerPlayer player, net.minecraft.world.item.ItemStack stack, Specialization spec) {
+        if (player.getCooldowns().isOnCooldown(stack)) return false;
+        ServerLevel level = (ServerLevel) player.level();
+        boolean used;
+        int baseCooldown;
+        switch (spec) {
+            case OCEAN -> {
+                used = wave(player, level);
+                baseCooldown = 60;
+            }
+            case CIEL -> {
+                used = lightning(player, level);
+                baseCooldown = 80;
+            }
+            case COSMOS -> {
+                used = blackHole(player, level);
+                baseCooldown = 240;
+            }
+            default -> {
+                used = false;
+                baseCooldown = 0;
+            }
+        }
+        if (used) {
+            player.getCooldowns().addCooldown(stack, cooldown(GodData.get(player), baseCooldown));
+            player.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
+        }
+        return used;
+    }
+
     // ------------------------------------------------------------------ Trident des Marées
 
     public static boolean wave(ServerPlayer player, ServerLevel level) {

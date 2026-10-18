@@ -181,7 +181,7 @@ public final class Menus {
 
         // Artefact du domaine
         if (p.specialization != Specialization.AUCUNE) {
-            Item art = com.godmod.registry.ModItems.artifactFor(p.specialization);
+            Item art = com.godmod.util.DivineItems.artifact(p.specialization).getItem();
             page.set(40, Page.icon(art, "Artefact : " + p.specialization.label, p.specialization.color,
                     "§7" + p.specialization.description, "§7Clic droit avec l'artefact en main pour l'utiliser"));
         } else if (p.tier.isGod()) {
@@ -227,7 +227,7 @@ public final class Menus {
         if (s == Specialization.AUCUNE) return "Domaine invalide.";
         p.specialization = s;
         GodData.dirty();
-        Shop.give(player, new ItemStack(com.godmod.registry.ModItems.artifactFor(s)));
+        Shop.give(player, com.godmod.util.DivineItems.artifact(s));
         Msg.ok(player, "Vous êtes désormais dieu du domaine " + s.label + ". Votre artefact vous a été remis.");
         GodData.log("DOMAINE : " + p.name + " choisit " + s.label);
         return null;
@@ -368,12 +368,11 @@ public final class Menus {
         int start = pageIndex * INNER.length;
         for (int i = 0; i < INNER.length && start + i < entries.size(); i++) {
             Shop.Entry e = entries.get(start + i);
-            Item item = e.item().get();
-            int max = new ItemStack(item).getMaxStackSize();
-            ItemStack icon = new ItemStack(item);
+            ItemStack icon = e.stack().get();
+            int max = icon.getMaxStackSize();
             List<Component> lore = new ArrayList<>();
             lore.add(Page.line("§6Achat : " + e.price() + " pièces"));
-            lore.add(Page.line("§7Revente : " + Shop.sellPrice(item) + " pièces"));
+            lore.add(Page.line(e.special() ? "§7Non revendable" : "§7Revente : " + Shop.sellPrice(icon.getItem()) + " pièces"));
             lore.add(Page.line(""));
             lore.add(Page.line("§eClic gauche : acheter ×1"));
             if (max > 1) {
@@ -387,7 +386,7 @@ public final class Menus {
                     case RIGHT -> Math.min(16, max);
                     case SHIFT -> max;
                 };
-                report(sp, Shop.buy(sp, item, n));
+                report(sp, Shop.buy(sp, e, n));
                 later(sp, () -> openShopCategory(sp, cat, pageIndex));
             });
         }

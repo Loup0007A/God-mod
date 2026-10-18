@@ -5,15 +5,61 @@ il convertit des fidèles par le PvP, soumet d'autres dieux, bâtit son monde di
 et doit survivre aux rébellions de ses propres fidèles.
 
 - Minecraft **1.21.11**, Forge **61.2.x**, Java 21
-- À installer sur le serveur **et** chez les joueurs (objets et textures du mod)
-- Interface : `/dieu` (ou clic droit avec le **Codex divin**, donné à la première connexion)
+- **Mod côté serveur uniquement** : les joueurs se connectent avec un Minecraft 1.21.11 normal, sans rien installer
+- Tout démarre automatiquement avec le serveur (données, structuration du monde, authentification)
+- Interface : `/dieu` (ou clic droit avec le **Codex divin**, donné à la première connexion ; `/dieu codex` s'il est perdu)
 
-## Compiler le .jar avec GitHub
+## Installation
+
+1. Serveur **Forge 1.21.11**.
+2. Déposer `godmod-x.y.z.jar` dans le dossier `mods/` du serveur, puis démarrer.
+3. Se donner les droits : `op TonPseudo` dans la console (les opérateurs sont admins du mod).
+
+Au **premier démarrage**, le mod construit automatiquement :
+- le **Sanctuaire** (place centrale à piliers) au point d'apparition, qui devient le spawn ;
+- l'**Arène des tournois** à 48 blocs à l'est, reliée par une allée éclairée ;
+- la **dimension divine** (`godmod:divine`) où chaque joueur reçoit sa parcelle.
+
+`/structurer` (admin) reconstruit le Sanctuaire et l'arène à votre position.
+
+## Comptes protégés par mot de passe
+
+À chaque connexion, le joueur est figé, aveuglé et invulnérable jusqu'à :
+- `/register <motdepasse> <motdepasse>` la première fois ;
+- `/login <motdepasse>` ensuite (raccourci `/l`).
+
+Chat, commandes et interactions sont bloqués avant connexion. 3 erreurs ou 90 s sans connexion = expulsion.
+Reconnexion automatique depuis la même adresse IP pendant 12 h (`/auth session <heures>`, 0 = jamais).
+Mots de passe hachés (PBKDF2-SHA256 salé), jamais stockés en clair. `/motdepasse <ancien> <nouveau>` pour changer.
+Admins : `/auth on|off`, `/auth reset <joueur>`.
+
+> Utile surtout si le serveur est en `online-mode=false`. En `online-mode=true`, Mojang vérifie déjà les comptes :
+> le mot de passe ajoute une seconde protection.
+
+## Équipe : modérateurs et admins
+
+- **Admin** : opérateurs du serveur + joueurs nommés par `/staff ajouter <joueur> admin`.
+- **Modérateur** : `/staff ajouter <joueur> moderateur` · `/staff retirer <joueur>` · `/staff liste`.
+
+| Commande | Modérateur | Admin |
+|---|---|---|
+| `/mod kick <joueur> [raison]` | ✔ | ✔ |
+| `/mod mute <joueur> <minutes> [raison]` · `/mod unmute <joueur>` | ✔ | ✔ |
+| `/mod ban <joueur> <heures> [raison]` (0 = définitif) | 72 h max | ✔ |
+| `/mod unban` · `/mod warn` · `/mod freeze` · `/mod tp` · `/mod info` | ✔ | ✔ |
+| `/mod journal [lignes]` · `/sc <message>` (chat d'équipe) | ✔ | ✔ |
+| `/tournoi creer [prix]` · `/tournoi annuler` | ✔ | ✔ |
+| `/staff`, `/auth`, `/structurer`, `/godadmin`, `/pay` | | ✔ |
+
+Tout joueur peut faire `/signaler <joueur> <raison>` : l'équipe connectée est prévenue.
+Un membre de l'équipe ne peut pas sanctionner quelqu'un de rang supérieur.
+
+## Compiler le .jar avec GitHub (développeurs)
 
 1. Envoyez tout le contenu de ce dossier dans le dépôt `God-mod` (racine du dépôt).
 2. Le workflow `.github/workflows/build.yml` se lance à chaque push.
 3. Onglet **Actions** → dernière exécution → **Artifacts** → `godmod-jar`.
-4. Placez `godmod-0.1.0.jar` dans le dossier `mods/` du serveur et des joueurs.
+4. Placez le .jar dans le dossier `mods/` du serveur (inutile chez les joueurs).
 
 En local : `./gradlew build` (le .jar est dans `build/libs/`).
 
@@ -63,11 +109,13 @@ Agilité (vitesse), Esprit (Foi max, régénération, puissance et recharge des 
 
 ## Artefacts (réservés aux dieux du bon domaine)
 
+Les artefacts sont des objets vanilla enchantés et renommés, reconnus par le serveur (non revendables).
+
 | Artefact | Domaine | Effet | Foi |
 |---|---|---|---|
-| Trident des Marées | Océan | Vague qui repousse, blesse et ralentit | 30 |
-| Sceptre de Foudre | Ciel | Foudre là où vous visez (plus d'éclairs avec le palier) | 40 |
-| Orbe du Néant | Cosmos | Trou noir qui aspire puis implose | 60 |
+| Trident des Marées (trident) | Océan | Vague qui repousse, blesse et ralentit | 30 |
+| Sceptre de Foudre (bâton de breeze) | Ciel | Foudre là où vous visez (plus d'éclairs avec le palier) | 40 |
+| Orbe du Néant (éclat d'écho) | Cosmos | Trou noir qui aspire puis implose | 60 |
 
 ## Commandes
 
@@ -77,11 +125,11 @@ Joueurs : `/dieu` · `/dieu profil [joueur]` · `/dieu stats <carac>` · `/dieu 
 · `/rebellion [declarer|rejoindre]` · `/tournoi [rejoindre|quitter]` · `/trone reclamer <dieu>`
 · `/guerre [declarer <dieu>]` · `/classement`
 
-Admins / modérateurs (niveau op 2) :
+Admins :
 `/godadmin voir <joueur>` · `essence|argent|gemmes <joueur> <valeur>` · `palier <joueur> <palier>`
 · `maitre <joueur> <maître|aucun>` · `reset <joueur>` · `arene` · `mode <serveur|petit>`
 · `cooldown <heures>` · `inactivite <jours>` · `netherend <bloquer|autoriser>` · `journal [lignes]`
-· `/tournoi creer [prix]` · `/tournoi annuler` · `/pay <enable|disable|status>`
+· `/pay <enable|disable|status>`
 
 `/godadmin mode petit` adapte le mod à une petite survie (seuils ×0,25, Essence ×2,
 rébellion toutes les 12 h, inactivité 2 jours).

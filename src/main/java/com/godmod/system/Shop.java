@@ -3,7 +3,7 @@ package com.godmod.system;
 import com.godmod.data.GodData;
 import com.godmod.data.PlayerProfile;
 import com.godmod.data.Specialization;
-import com.godmod.registry.ModItems;
+import com.godmod.util.DivineItems;
 import com.godmod.util.Msg;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
@@ -39,7 +39,14 @@ public final class Shop {
         }
     }
 
-    public record Entry(Supplier<Item> item, long price, Category category) {
+    public record Entry(Supplier<ItemStack> stack, long price, Category category) {
+        public Item item() {
+            return stack.get().getItem();
+        }
+
+        public boolean special() {
+            return DivineItems.isDivine(stack.get());
+        }
     }
 
     public record PremiumOffer(String id, String label, String description, long gems, Item icon) {
@@ -97,10 +104,10 @@ public final class Shop {
         add(Category.RESSOURCES, () -> Items.EXPERIENCE_BOTTLE, 50);
         add(Category.RESSOURCES, () -> Items.GOLDEN_APPLE, 250);
         // Divin
-        add(Category.DIVIN, () -> ModItems.CODEX.get(), 50);
-        add(Category.DIVIN, () -> ModItems.TIDE_TRIDENT.get(), 20000);
-        add(Category.DIVIN, () -> ModItems.THUNDER_SCEPTER.get(), 20000);
-        add(Category.DIVIN, () -> ModItems.VOID_ORB.get(), 20000);
+        ENTRIES.add(new Entry(DivineItems::codex, 50, Category.DIVIN));
+        ENTRIES.add(new Entry(() -> DivineItems.artifact(Specialization.OCEAN), 20000, Category.DIVIN));
+        ENTRIES.add(new Entry(() -> DivineItems.artifact(Specialization.CIEL), 20000, Category.DIVIN));
+        ENTRIES.add(new Entry(() -> DivineItems.artifact(Specialization.COSMOS), 20000, Category.DIVIN));
 
         // Items revendables uniquement (récoltés dans le monde principal).
         SELL_ONLY.put(Items.WHEAT, 3L);
@@ -129,7 +136,7 @@ public final class Shop {
     }
 
     private static void add(Category c, Supplier<Item> item, long price) {
-        ENTRIES.add(new Entry(item, price, c));
+        ENTRIES.add(new Entry(() -> new ItemStack(item.get()), price, c));
     }
 
     private static void premium(String id, String label, String desc, long gems, Item icon) {
@@ -149,7 +156,7 @@ public final class Shop {
     }
 
     public static long buyPrice(Item item) {
-        for (Entry e : ENTRIES) if (e.item().get() == item) return e.price();
+        for (Entry e : ENTRIES) if (!e.special() && e.item() == item) return e.price();
         return -1;
     }
 
@@ -161,17 +168,17 @@ public final class Shop {
         return base == null ? 0 : Math.max(1, base * 2 / ratio(item));
     }
 
-    public static String buy(ServerPlayer player, Item item, int count) {
-        long price = buyPrice(item);
-        if (price < 0) return "Cet objet n'est pas vendu.";
-        ItemStack proto = new ItemStack(item);
+    public static String buy(ServerPlayer player, Entry entry, int count) {
+        ItemStack proto = entry.stack().get();
         count = Math.max(1, Math.min(count, proto.getMaxStackSize()));
-        long total = price * count;
+        long total = entry.price() * count;
         PlayerProfile p = GodData.get(player);
         if (p.money < total) return "Pas assez d'argent (" + p.money + "/" + total + ").";
         p.money -= total;
         GodData.dirty();
-        give(player, new ItemStack(item, count));
+        ItemStack bought = proto.copy();
+        bought.setCount(count);
+        give(player, bought);
         Msg.ok(player, "Acheté : " + count + " × " + proto.getHoverName().getString() + " pour " + total + " pièces.");
         return null;
     }
@@ -179,6 +186,7 @@ public final class Shop {
     /** Vend la pile donnée (en totalité ou une seule unité). */
     public static String sell(ServerPlayer player, ItemStack stack, boolean all) {
         if (stack.isEmpty()) return "Rien à vendre.";
+        if (DivineItems.isDivine(stack)) return "Les objets divins ne peuvent pas être revendus.";
         long unit = sellPrice(stack.getItem());
         if (unit <= 0) return "Le marchand divin ne rachète pas cet objet.";
         int n = all ? stack.getCount() : 1;
@@ -201,7 +209,7 @@ public final class Shop {
             case "money" -> p.money += 5000;
             case "artifact" -> {
                 if (p.specialization == Specialization.AUCUNE) return "Choisissez d'abord une spécialisation (palier Dieu).";
-                give(player, new ItemStack(ModItems.artifactFor(p.specialization)));
+                give(player, DivineItems.artifact(p.specialization));
             }
             case "respec" -> {
                 p.stats.clear();

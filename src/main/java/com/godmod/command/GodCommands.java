@@ -2,6 +2,8 @@ package com.godmod.command;
 
 import com.godmod.data.GodData;
 import com.godmod.data.PlayerProfile;
+import com.godmod.data.Role;
+import com.godmod.system.Moderation;
 import com.godmod.data.Settings;
 import com.godmod.data.Specialization;
 import com.godmod.data.Stat;
@@ -81,6 +83,7 @@ public final class GodCommands {
         registerShop(d);
         registerConflicts(d);
         registerAdmin(d);
+        StaffCommands.register(d);
     }
 
     // ------------------------------------------------------------------ /dieu
@@ -128,6 +131,15 @@ public final class GodCommands {
                 .then(Commands.literal("choix")
                         .then(Commands.literal("trone").executes(ctx -> run(ctx, p -> FaithSystem.resolveThrone(p, true))))
                         .then(Commands.literal("refuser").executes(ctx -> run(ctx, p -> FaithSystem.resolveThrone(p, false)))))
+                .then(Commands.literal("codex").executes(ctx -> run(ctx, p -> {
+                    for (int i = 0; i < p.getInventory().getContainerSize(); i++) {
+                        if (com.godmod.util.DivineItems.CODEX.equals(com.godmod.util.DivineItems.kind(p.getInventory().getItem(i))))
+                            return "Vous avez déjà un Codex divin dans votre inventaire.";
+                    }
+                    Shop.give(p, com.godmod.util.DivineItems.codex());
+                    Msg.ok(p, "Un nouveau Codex divin vous a été remis.");
+                    return null;
+                })))
                 .then(Commands.literal("fideles").executes(ctx -> run(ctx, p -> {
                     Menus.openFollowers(p, 0);
                     return null;
@@ -263,11 +275,11 @@ public final class GodCommands {
                 }))
                 .then(Commands.literal("rejoindre").executes(ctx -> run(ctx, TournamentSystem::join)))
                 .then(Commands.literal("quitter").executes(ctx -> run(ctx, TournamentSystem::leave)))
-                .then(Commands.literal("creer").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.literal("creer").requires(Moderation.require(Role.MODERATEUR))
                         .executes(ctx -> createTournament(ctx, 1000))
                         .then(Commands.argument("prix", LongArgumentType.longArg(0))
                                 .executes(ctx -> createTournament(ctx, LongArgumentType.getLong(ctx, "prix")))))
-                .then(Commands.literal("annuler").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.literal("annuler").requires(Moderation.require(Role.MODERATEUR))
                         .executes(ctx -> {
                             String err = TournamentSystem.cancel(ctx.getSource().getServer());
                             if (err != null) ctx.getSource().sendFailure(Component.literal(err));
@@ -309,7 +321,7 @@ public final class GodCommands {
     // ------------------------------------------------------------------ Administration
 
     private static void registerAdmin(CommandDispatcher<CommandSourceStack> d) {
-        d.register(Commands.literal("pay").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+        d.register(Commands.literal("pay").requires(Moderation.require(Role.ADMIN))
                 .then(Commands.literal("enable").executes(ctx -> setPay(ctx, true)))
                 .then(Commands.literal("disable").executes(ctx -> setPay(ctx, false)))
                 .then(Commands.literal("status").executes(ctx -> {
@@ -317,7 +329,7 @@ public final class GodCommands {
                     return 1;
                 })));
 
-        d.register(Commands.literal("godadmin").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+        d.register(Commands.literal("godadmin").requires(Moderation.require(Role.ADMIN))
                 .then(Commands.literal("voir")
                         .then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
                                 .executes(ctx -> {

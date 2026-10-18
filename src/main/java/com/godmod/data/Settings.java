@@ -24,4 +24,18 @@ public class Settings {
     public int worldBaseRadius = 16;
     public int worldRadiusPerFollower = 8;
     public int worldMaxRadius = 400;
+
+    // --- Authentification ---
+    /** Oblige chaque joueur à se connecter avec un mot de passe (/register, /login). */
+    public boolean authEnabled = true;
+    /** Temps laissé pour se connecter avant expulsion, en secondes. */
+    public int authTimeoutSeconds = 90;
+    /** Reconnexion automatique depuis la même adresse IP pendant ce nombre d'heures (0 = jamais). */
+    public int authSessionHours = 12;
+
+    // --- Structuration du monde ---
+    /** Vrai une fois le Sanctuaire et l'arène construits. */
+    public boolean worldStructured = false;
+    public boolean hubSet = false;
+    public double hubX, hubY, hubZ;
 }
