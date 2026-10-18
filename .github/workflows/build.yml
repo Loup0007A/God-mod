@@ -36,6 +36,15 @@ jobs:
           msg=$(sed -e 's/%/%25/g' -e 's/\r//g' errors.txt | awk 'BEGIN{ORS="%0A"} {print}')
           echo "::error title=Erreurs de compilation::$msg"
 
+      - name: Vérifier le contenu du .jar
+        run: |
+          for j in build/libs/*.jar; do
+            list=$(unzip -l "$j" | awk 'NR>3 {print $4}' | grep -E "toml|MANIFEST|GodMod|dimension" | tr '\n' ' ')
+            toml=$(unzip -p "$j" META-INF/mods.toml | tr '\n' '|' | head -c 1500)
+            echo "::notice title=Contenu du jar::$(basename $j) : $list"
+            echo "::notice title=mods.toml::$toml"
+          done
+
       - name: Publier le .jar
         uses: actions/upload-artifact@v4
         with:
