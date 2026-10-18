@@ -82,6 +82,7 @@ public final class GodCommands {
         registerWorld(d);
         registerTravel(d);
         registerIsland(d);
+        registerProgress(d);
         registerShop(d);
         registerConflicts(d);
         registerAdmin(d);
@@ -252,8 +253,6 @@ public final class GodCommands {
             Msg.ok(p, "Bienvenue au Sanctuaire.");
             return null;
         })));
-        d.register(Commands.literal("mine").executes(ctx -> run(ctx, com.godmod.system.Hub::toMine)));
-        d.register(Commands.literal("ressources").executes(ctx -> run(ctx, com.godmod.system.Hub::toMine)));
 
         d.register(Commands.literal("setwarp").then(Commands.argument("nom", StringArgumentType.word())
                 .executes(ctx -> run(ctx, p -> com.godmod.system.WarpSystem.set(p, StringArgumentType.getString(ctx, "nom"))))));
@@ -270,6 +269,126 @@ public final class GodCommands {
         })));
         d.register(Commands.literal("delwarp").then(Commands.argument("nom", StringArgumentType.word()).suggests(WARPS)
                 .executes(ctx -> run(ctx, p -> com.godmod.system.WarpSystem.delete(p, StringArgumentType.getString(ctx, "nom"))))));
+    }
+
+    // ------------------------------------------------------------------ Progression : métiers, quêtes, caisses, HUD, pouvoirs
+
+    private static void registerProgress(CommandDispatcher<CommandSourceStack> d) {
+        d.register(Commands.literal("metiers").executes(ctx -> run(ctx, p -> {
+            Menus.openJobs(p);
+            return null;
+        })));
+        d.register(Commands.literal("metier").executes(ctx -> run(ctx, p -> {
+            Menus.openJobs(p);
+            return null;
+        })));
+        d.register(Commands.literal("quetes").executes(ctx -> run(ctx, p -> {
+            Menus.openQuests(p);
+            return null;
+        })));
+        d.register(Commands.literal("quests").executes(ctx -> run(ctx, p -> {
+            Menus.openQuests(p);
+            return null;
+        })));
+        d.register(Commands.literal("caisses").executes(ctx -> run(ctx, p -> {
+            Menus.openKeys(p);
+            return null;
+        })));
+        d.register(Commands.literal("cles").executes(ctx -> run(ctx, p -> {
+            Menus.openKeys(p);
+            return null;
+        })));
+        d.register(Commands.literal("progression").executes(ctx -> run(ctx, p -> {
+            Menus.openGuide(p);
+            return null;
+        })));
+        d.register(Commands.literal("hud").executes(ctx -> run(ctx, p -> {
+            PlayerProfile pr = GodData.get(p);
+            pr.hud = !pr.hud;
+            GodData.dirty();
+            if (!pr.hud) com.godmod.progress.Hud.hide(p);
+            Msg.ok(p, "Affichage de la progression " + (pr.hud ? "activé." : "masqué."));
+            return null;
+        })));
+        SuggestionProvider<CommandSourceStack> powers = (ctx, b) -> {
+            List<String> names = new ArrayList<>();
+            for (PowerActions.Power pw : PowerActions.Power.values()) names.add(pw.name().toLowerCase());
+            return SharedSuggestionProvider.suggest(names, b);
+        };
+        d.register(Commands.literal("pouvoir")
+                .executes(ctx -> run(ctx, p -> {
+                    Menus.openPowers(p);
+                    return null;
+                }))
+                .then(Commands.argument("nom", StringArgumentType.word()).suggests(powers)
+                        .executes(ctx -> run(ctx, p -> {
+                            PowerActions.Power pw = PowerActions.Power.parse(StringArgumentType.getString(ctx, "nom"));
+                            if (pw == null) return "Pouvoir inconnu. /pouvoir pour la liste.";
+                            PowerActions.cast(p, pw);
+                            return null;
+                        }))));
+
+        // Clés de caisse (admins) : /cle donner <joueur> <type> [nombre]
+        d.register(Commands.literal("cle").requires(Moderation.require(Role.ADMIN))
+                .then(Commands.literal("donner").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                        .then(Commands.argument("type", StringArgumentType.word()).suggests(words("commune", "rare", "epique", "divine"))
+                                .executes(ctx -> giveKey(ctx, 1))
+                                .then(Commands.argument("nombre", IntegerArgumentType.integer(1, 1000))
+                                        .executes(ctx -> giveKey(ctx, IntegerArgumentType.getInteger(ctx, "nombre"))))))));
+
+        // Monde ressource : réinitialisation (admins)
+        d.register(Commands.literal("mine")
+                .executes(ctx -> run(ctx, com.godmod.system.Hub::toMine))
+                .then(Commands.literal("reset").requires(Moderation.require(Role.ADMIN))
+                        .executes(ctx -> mineReset(ctx, false))
+                        .then(Commands.literal("maintenant").executes(ctx -> mineReset(ctx, true)))));
+        d.register(Commands.literal("ressources").executes(ctx -> run(ctx, com.godmod.system.Hub::toMine)));
+
+        // Modérateurs : /modo ajouter|retirer|liste (admins)
+        d.register(Commands.literal("modo").requires(Moderation.require(Role.ADMIN))
+                .executes(ctx -> run(ctx, p -> {
+                    Menus.openTeam(p);
+                    return null;
+                }))
+                .then(Commands.literal("ajouter").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                        .executes(ctx -> setRole(ctx, Role.MODERATEUR))))
+                .then(Commands.literal("admin").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                        .executes(ctx -> setRole(ctx, Role.ADMIN))))
+                .then(Commands.literal("retirer").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                        .executes(ctx -> setRole(ctx, Role.JOUEUR))))
+                .then(Commands.literal("liste").executes(ctx -> {
+                    for (PlayerProfile pp : GodData.state().players.values())
+                        if (pp.role != null && pp.role != Role.JOUEUR) reply(ctx, pp.role.label + " : " + pp.name);
+                    reply(ctx, "(Les opérateurs du serveur sont aussi admins.)");
+                    return 1;
+                })));
+    }
+
+    private static int setRole(CommandContext<CommandSourceStack> ctx, Role role) {
+        PlayerProfile t = profileArg(ctx, "joueur");
+        if (t == null) return fail(ctx, "Joueur inconnu (il doit s'être connecté au moins une fois).");
+        reply(ctx, Moderation.setRole(ctx.getSource().getServer(), t, role, ctx.getSource().getTextName()));
+        return 1;
+    }
+
+    private static int giveKey(CommandContext<CommandSourceStack> ctx, int n) {
+        PlayerProfile t = profileArg(ctx, "joueur");
+        if (t == null) return fail(ctx, "Joueur inconnu.");
+        com.godmod.progress.CrateSystem.Crate c = com.godmod.progress.CrateSystem.Crate.parse(StringArgumentType.getString(ctx, "type"));
+        if (c == null) return fail(ctx, "Type inconnu : commune, rare, epique, divine.");
+        com.godmod.progress.CrateSystem.addKey(t, c, n);
+        GodData.log("ADMIN " + ctx.getSource().getTextName() + " : " + n + " clé(s) " + c.label + " -> " + t.name);
+        ServerPlayer sp = PowerSystem.online(ctx.getSource().getServer(), t.uuid);
+        if (sp != null) Msg.ok(sp, "Vous recevez " + n + " clé(s) " + c.label + " ! Les caisses sont au Sanctuaire.");
+        reply(ctx, n + " clé(s) " + c.label + " données à " + t.name + ".");
+        return 1;
+    }
+
+    private static int mineReset(CommandContext<CommandSourceStack> ctx, boolean now) {
+        String res = com.godmod.system.MineReset.schedule(ctx.getSource().getServer(), ctx.getSource().getTextName(), now);
+        if (res.startsWith("!")) return fail(ctx, res.substring(1));
+        reply(ctx, res);
+        return 1;
     }
 
     // ------------------------------------------------------------------ /ile : permissions du monde divin
@@ -546,6 +665,26 @@ public final class GodCommands {
                                     : "Mode édition du Sanctuaire désactivé : il est de nouveau protégé.");
                             return 1;
                         })))
+                .then(Commands.literal("point")
+                        .then(Commands.literal("placer").then(Commands.argument("type", StringArgumentType.word())
+                                .suggests(words("commune", "rare", "epique", "divine", "quetes", "metiers"))
+                                .executes(ctx -> {
+                                    ServerPlayer p = ctx.getSource().getPlayerOrException();
+                                    String type = com.godmod.progress.PointSystem.parse(StringArgumentType.getString(ctx, "type"));
+                                    if (type == null) return fail(ctx, "Type inconnu : commune, rare, epique, divine, quetes, metiers.");
+                                    var hit = lookedBlock(p);
+                                    if (hit == null) return fail(ctx, "Regardez le bloc (coffre, pupitre…) à transformer, à moins de 6 blocs.");
+                                    com.godmod.progress.PointSystem.set(p.level(), hit, type);
+                                    reply(ctx, "Point « " + type + " » posé sur le bloc visé. Clic droit dessus pour l'utiliser.");
+                                    return 1;
+                                })))
+                        .then(Commands.literal("retirer").executes(ctx -> {
+                            ServerPlayer p = ctx.getSource().getPlayerOrException();
+                            var hit = lookedBlock(p);
+                            if (hit == null || !com.godmod.progress.PointSystem.remove(p.level(), hit)) return fail(ctx, "Aucun point sur le bloc visé.");
+                            reply(ctx, "Point retiré.");
+                            return 1;
+                        })))
                 .then(Commands.literal("clearile")
                         .then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
                                 .executes(ctx -> adminEdit(ctx, t -> {
@@ -626,6 +765,15 @@ public final class GodCommands {
                 + " (" + level.dimension().identifier() + ")");
         reply(ctx, "Nettoyage lancé : rayon " + radius + ", de y=" + y1 + " à y=" + y2 + ". Le travail est étalé pour ne pas faire laguer.");
         return 1;
+    }
+
+    private static net.minecraft.core.BlockPos lookedBlock(ServerPlayer p) {
+        var eye = p.getEyePosition();
+        var end = eye.add(p.getLookAngle().scale(6));
+        var hit = p.level().clip(new net.minecraft.world.level.ClipContext(eye, end, net.minecraft.world.level.ClipContext.Block.OUTLINE,
+                net.minecraft.world.level.ClipContext.Fluid.NONE, p));
+        if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) return null;
+        return ((net.minecraft.world.phys.BlockHitResult) hit).getBlockPos();
     }
 
     private static int fail(CommandContext<CommandSourceStack> ctx, String msg) {

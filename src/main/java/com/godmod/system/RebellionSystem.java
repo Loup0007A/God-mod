@@ -128,6 +128,7 @@ public final class RebellionSystem {
             punish(server, r2, victim);
             if (r2.rebels.isEmpty()) {
                 ACTIVE.remove(r2.god);
+                fromArena(server, r2);
                 PlayerProfile god = GodData.find(r2.god);
                 Msg.broadcast(server, "La rébellion contre " + (god == null ? "?" : god.name) + " a été écrasée.", ChatFormatting.DARK_RED);
             }
@@ -145,7 +146,41 @@ public final class RebellionSystem {
         }
     }
 
+    /** Tous les participants (le dieu d'un côté, les rebelles de l'autre) sont envoyés dans l'Arène. */
+    private static void toArena(MinecraftServer server, Rebellion r) {
+        com.godmod.data.Settings s = GodData.settings();
+        if (!s.arenaSet) return;
+        net.minecraft.server.level.ServerLevel arena = Hub.level(server);
+        ServerPlayer god = PowerSystem.online(server, r.god);
+        if (god != null) {
+            com.godmod.util.Teleport.to(god, arena, s.arenaX - 9, s.arenaY, s.arenaZ);
+            god.setYRot(-90F);
+            Msg.err(god, "Défendez votre trône dans l'Arène !");
+        }
+        int i = 0;
+        for (String uuid : r.rebels) {
+            ServerPlayer sp = PowerSystem.online(server, uuid);
+            if (sp == null) continue;
+            double dz = (i++ % 5 - 2) * 2.0;
+            com.godmod.util.Teleport.to(sp, arena, s.arenaX + 9, s.arenaY, s.arenaZ + dz);
+            sp.setYRot(90F);
+            Msg.ok(sp, "À l'assaut ! Abattez votre dieu dans l'Arène.");
+        }
+    }
+
+    /** Fin de rébellion : les survivants rentrent au Sanctuaire. */
+    private static void fromArena(MinecraftServer server, Rebellion r) {
+        java.util.List<String> all = new java.util.ArrayList<>(r.rebels);
+        all.add(r.god);
+        all.add(r.leader);
+        for (String uuid : all) {
+            ServerPlayer sp = PowerSystem.online(server, uuid);
+            if (sp != null && Hub.isSpawn(sp.level())) Hub.teleport(sp);
+        }
+    }
+
     private static void success(MinecraftServer server, Rebellion r, PlayerProfile slayer) {
+        fromArena(server, r);
         PlayerProfile god = GodData.find(r.god);
         PlayerProfile leader = GodData.find(r.leader);
         if (god == null) return;
@@ -195,7 +230,8 @@ public final class RebellionSystem {
             if (!r.fighting && now >= r.phaseEnd) {
                 r.fighting = true;
                 r.phaseEnd = now + FIGHT_MS;
-                Msg.broadcast(server, "⚔ La rébellion contre " + (god == null ? "?" : god.name) + " commence ! "
+                toArena(server, r);
+                Msg.broadcast(server, "⚔ La rébellion contre " + (god == null ? "?" : god.name) + " commence dans l'Arène ! "
                         + r.rebels.size() + " rebelle(s), 10 minutes.", ChatFormatting.RED);
             } else if (r.fighting && now >= r.phaseEnd) {
                 ACTIVE.remove(r.god);
@@ -204,6 +240,7 @@ public final class RebellionSystem {
                     if (reb != null) punish(server, r, reb);
                 }
                 Msg.broadcast(server, "Le temps est écoulé : " + (god == null ? "?" : god.name) + " a tenu bon face à la rébellion.", ChatFormatting.GOLD);
+                fromArena(server, r);
                 continue;
             }
             // Pendant le combat, tous les participants brillent pour se retrouver.

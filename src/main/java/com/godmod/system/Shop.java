@@ -108,6 +108,13 @@ public final class Shop {
         ENTRIES.add(new Entry(() -> DivineItems.artifact(Specialization.OCEAN), 20000, Category.DIVIN));
         ENTRIES.add(new Entry(() -> DivineItems.artifact(Specialization.CIEL), 20000, Category.DIVIN));
         ENTRIES.add(new Entry(() -> DivineItems.artifact(Specialization.COSMOS), 20000, Category.DIVIN));
+        // Générateurs de créatures.
+        ENTRIES.add(new Entry(() -> com.godmod.progress.SpawnerSystem.item("minecraft:chicken"), 15000, Category.DIVIN));
+        ENTRIES.add(new Entry(() -> com.godmod.progress.SpawnerSystem.item("minecraft:cow"), 25000, Category.DIVIN));
+        ENTRIES.add(new Entry(() -> com.godmod.progress.SpawnerSystem.item("minecraft:zombie"), 30000, Category.DIVIN));
+        ENTRIES.add(new Entry(() -> com.godmod.progress.SpawnerSystem.item("minecraft:skeleton"), 35000, Category.DIVIN));
+        ENTRIES.add(new Entry(() -> com.godmod.progress.SpawnerSystem.item("minecraft:blaze"), 80000, Category.DIVIN));
+        ENTRIES.add(new Entry(() -> com.godmod.progress.SpawnerSystem.item("minecraft:iron_golem"), 150000, Category.DIVIN));
 
         // Items revendables uniquement (récoltés dans le monde principal).
         SELL_ONLY.put(Items.WHEAT, 3L);
@@ -186,7 +193,7 @@ public final class Shop {
     /** Vend la pile donnée (en totalité ou une seule unité). */
     public static String sell(ServerPlayer player, ItemStack stack, boolean all) {
         if (stack.isEmpty()) return "Rien à vendre.";
-        if (DivineItems.isDivine(stack)) return "Les objets divins ne peuvent pas être revendus.";
+        if (DivineItems.isDivine(stack)) return "Les objets divins et les générateurs ne peuvent pas être revendus.";
         long unit = sellPrice(stack.getItem());
         if (unit <= 0) return "Le marchand divin ne rachète pas cet objet.";
         int n = all ? stack.getCount() : 1;

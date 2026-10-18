@@ -128,6 +128,7 @@ public final class WorldBuilder {
         }
         if (s.structureVersion >= VERSION) {
             registerPortals();
+            com.godmod.progress.PointSystem.autoPlace(server);
             GodMod.LOGGER.info("[God Mod] Sanctuaire prêt (dimension godmod:spawn).");
             return;
         }
@@ -180,6 +181,9 @@ public final class WorldBuilder {
             GodData.dirty();
             registerPortals();
             labels(server, l, cx, cy, cz, ax);
+            GodData.settings().customSpawn = false;
+            GodData.settings().pointsPlaced = false;
+            com.godmod.progress.PointSystem.autoPlace(server);
             GodData.log("MONDE : Sanctuaire construit (godmod:spawn)");
             Msg.broadcast(server, "✦ Le Sanctuaire des Dieux est prêt ! /spawn pour le découvrir.", ChatFormatting.GOLD);
             if (notify != null) notify.sendSuccess(() -> Msg.prefix().append(Msg.text("Sanctuaire reconstruit.", ChatFormatting.GREEN)), true);
@@ -201,6 +205,8 @@ public final class WorldBuilder {
             s.hubY = CY + 1;
             s.hubZ = 0.5;
             s.structureVersion = VERSION; // ne pas reconstruire tout seul au prochain démarrage
+            s.customSpawn = true;
+            com.godmod.progress.PointSystem.clearIn(Hub.SPAWN);
             GodData.dirty();
             if (notify != null) notify.sendSuccess(() -> Msg.prefix().append(Msg.text(
                     "Sanctuaire vidé. Construisez avec /godadmin spawn edition, puis /godadmin spawn definir.", ChatFormatting.GREEN)), true);
@@ -781,7 +787,7 @@ public final class WorldBuilder {
         label(server, l, cx + 0.5, cy + 6, cz + 20.5, "/dieu : ouvrir le Panthéon", "yellow", 1.0);
     }
 
-    private static void label(MinecraftServer server, ServerLevel l, double x, double y, double z, String text, String color, double scale) {
+    public static void label(MinecraftServer server, ServerLevel l, double x, double y, double z, String text, String color, double scale) {
         String safe = text.replace("\\", "").replace("\"", "'");
         String cmd = String.format(java.util.Locale.ROOT,
                 "summon minecraft:text_display %.2f %.2f %.2f {Tags:[\"%s\"],billboard:\"center\",shadow:1b,see_through:0b,"
@@ -791,7 +797,7 @@ public final class WorldBuilder {
         run(server, l, cmd);
     }
 
-    private static void run(MinecraftServer server, ServerLevel l, String cmd) {
+    public static void run(MinecraftServer server, ServerLevel l, String cmd) {
         try {
             CommandSourceStack src = server.createCommandSourceStack().withLevel(l).withSuppressedOutput();
             server.getCommands().performPrefixedCommand(src, cmd);

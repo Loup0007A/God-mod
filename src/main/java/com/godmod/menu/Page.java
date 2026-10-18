@@ -29,6 +29,10 @@ public class Page {
     }
 
     /** Cadre décoratif autour de la page. */
+    public SimpleContainer container() {
+        return box;
+    }
+
     public Page frame(Item pane) {
         for (int i = 0; i < GodMenu.SIZE; i++) {
             int row = i / 9, col = i % 9;

@@ -15,4 +15,8 @@ public class GodState {
     public List<String> log = new ArrayList<>();
     /** Warps publics des joueurs (clé = nom en minuscules). */
     public Map<String, Warp> warps = new HashMap<>();
+    /** Générateurs posés par les joueurs : "dimension|x|y|z" -> identifiant du mob. */
+    public Map<String, String> spawners = new HashMap<>();
+    /** Points interactifs (caisses, tableau des quêtes…) : "dimension|x|y|z" -> type. */
+    public Map<String, String> points = new HashMap<>();
 }

@@ -41,6 +41,10 @@ public class Settings {
     public double oldHubX, oldHubY, oldHubZ;
     /** Version des réglages (migrations automatiques). */
     public int settingsVersion = 0;
+    /** Caisses et tableaux posés automatiquement dans le Sanctuaire construit par le mod. */
+    public boolean pointsPlaced = false;
+    /** Le Sanctuaire a été vidé par un admin pour être rebâti à la main. */
+    public boolean customSpawn = false;
     public boolean hubSet = false;
     public double hubX, hubY, hubZ;
 }

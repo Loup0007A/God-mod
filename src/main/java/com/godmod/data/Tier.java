@@ -9,10 +9,10 @@ import net.minecraft.ChatFormatting;
  */
 public enum Tier {
     MORTEL("Mortel", ChatFormatting.GRAY, 0, 0, 3),
-    EVEILLE("Éveillé", ChatFormatting.GREEN, 250, 0, 6),
-    DEMI_DIEU("Demi-dieu", ChatFormatting.AQUA, 1000, 0, 10),
-    DIEU("Dieu", ChatFormatting.GOLD, 3000, 1, 15),
-    DIEU_SUPREME("Dieu suprême", ChatFormatting.LIGHT_PURPLE, 12000, 8, 25);
+    EVEILLE("Éveillé", ChatFormatting.GREEN, 500, 0, 6),
+    DEMI_DIEU("Demi-dieu", ChatFormatting.AQUA, 2500, 0, 10),
+    DIEU("Dieu", ChatFormatting.GOLD, 8000, 1, 15),
+    DIEU_SUPREME("Dieu suprême", ChatFormatting.LIGHT_PURPLE, 30000, 8, 25);
 
     public final String label;
     public final ChatFormatting color;

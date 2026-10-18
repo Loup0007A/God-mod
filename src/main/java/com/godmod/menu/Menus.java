@@ -89,6 +89,23 @@ public final class Menus {
                     "§7Les mortels n'ont pas de monde divin.", "§eDevenez Dieu pour recevoir le vôtre.",
                     "§7Vous pouvez visiter celui de votre dieu : /monde visiter <dieu>"));
         }
+        page.set(10, Page.icon(com.godmod.progress.JobSystem.best(p).item, "Métiers", ChatFormatting.GREEN,
+                "§7Mineur, Bûcheron, Fermier, Chasseur, Pêcheur",
+                "§7Total : " + com.godmod.progress.JobSystem.totalLevels(p) + " niveaux", "", "§eCliquez pour ouvrir  §8(/metiers)"),
+                (sp, c) -> later(sp, () -> openJobs(sp)));
+        page.set(12, Page.icon(Items.WRITABLE_BOOK, "Quêtes", ChatFormatting.YELLOW,
+                "§7" + p.quests.size() + " / " + com.godmod.progress.QuestSystem.MAX_ACTIVE + " en cours · " + p.questsDone + " accomplies",
+                "", "§eCliquez pour ouvrir  §8(/quetes)"), (sp, c) -> later(sp, () -> openQuests(sp)));
+        page.set(14, Page.icon(Items.TRIPWIRE_HOOK, "Clés de caisse", ChatFormatting.LIGHT_PURPLE,
+                "§7" + com.godmod.progress.CrateSystem.totalKeys(p) + " clé(s)", "§7Les caisses sont au Sanctuaire", "", "§eCliquez pour voir"),
+                (sp, c) -> later(sp, () -> openKeys(sp)));
+        page.set(16, Page.icon(Items.EXPERIENCE_BOTTLE, "Comment progresser ?", ChatFormatting.AQUA,
+                "§7Tout ce qui rapporte de l'Essence", "§7et fait monter de palier", "", "§eCliquez pour lire"),
+                (sp, c) -> later(sp, () -> openGuide(sp)));
+        if (com.godmod.system.Moderation.roleOf(player).atLeast(com.godmod.data.Role.ADMIN)) {
+            page.set(42, Page.icon(Items.GOLDEN_HELMET, "Équipe du serveur", ChatFormatting.RED,
+                    "§7Nommer modérateurs et admins", "", "§eCliquez pour ouvrir"), (sp, c) -> later(sp, () -> openTeam(sp)));
+        }
         page.set(11, Page.icon(Items.BEACON, "Sanctuaire (spawn)", ChatFormatting.LIGHT_PURPLE,
                 "§7Retour au temple céleste", "", "§eCliquez pour y aller  §8(/spawn)"), (sp, c) -> {
             sp.closeContainer();
@@ -187,23 +204,42 @@ public final class Menus {
 
     public static void openPowers(ServerPlayer player) {
         PlayerProfile p = GodData.get(player);
-        Page page = new Page("Pouvoirs divins — Foi " + (int) p.faith).frame(paneFor(p));
+        Page page = new Page("Pouvoirs divins — Foi " + (int) p.faith + "/" + (int) p.maxFaith()).frame(paneFor(p));
         page.set(4, Page.icon(Items.LAPIS_LAZULI, "Foi : " + (int) p.faith + " / " + (int) p.maxFaith(), ChatFormatting.AQUA,
-                "§7Se régénère avec le temps, l'Esprit et vos fidèles"));
-
-        addPower(page, p, 19, Items.GLISTERING_MELON_SLICE, PowerActions.Power.BENIR, (sp, c) -> {
-            sp.closeContainer();
-            PowerActions.bless(sp);
-        });
-        addPower(page, p, 21, Items.LIGHTNING_ROD, PowerActions.Power.CHATIER, (sp, c) -> later(sp, () -> openFollowers(sp, 0)));
-        addPower(page, p, 23, Items.ENDER_PEARL, PowerActions.Power.CONVOQUER, (sp, c) -> {
-            sp.closeContainer();
-            PowerActions.summonAll(sp);
-        });
-        addPower(page, p, 25, Items.CLOCK, PowerActions.Power.TEMPS, (sp, c) -> later(sp, () -> openTime(sp)));
-        addPower(page, p, 31, Items.ENDER_EYE, PowerActions.Power.ESPACE, (sp, c) -> later(sp, () -> openSpace(sp)));
-
-        // Artefact du domaine
+                "§7Se régénère toute seule (plus vite avec l'Esprit,", "§7le palier et vos fidèles)",
+                "§7Raccourci : accroupi + clic droit avec le Codex"));
+        int[] slots = {19, 20, 21, 22, 23, 24, 25, 29, 30, 31, 32, 33};
+        PowerActions.Power[] powers = PowerActions.Power.values();
+        for (int i = 0; i < powers.length && i < slots.length; i++) {
+            PowerActions.Power power = powers[i];
+            boolean unlocked = p.tier.atLeast(power.required);
+            long cd = PowerActions.cooldownLeft(player, power);
+            List<Component> lore = new ArrayList<>();
+            lore.add(Page.line("§7" + power.description));
+            lore.add(Page.line("§bCoût : " + (int) power.cost + " Foi  §7·  Recharge : " + power.cooldownSeconds + " s"));
+            if (!unlocked) lore.add(Page.line("§cDébloqué au palier " + power.required.label));
+            else if (cd > 0) lore.add(Page.line("§eDisponible dans " + Msg.time(cd)));
+            else lore.add(Page.line("§aPrêt !"));
+            lore.add(Page.line(""));
+            lore.add(Page.line(unlocked ? "§eCliquez pour lancer" : "§8Verrouillé"));
+            page.set(slots[i], Page.icon(unlocked ? power.icon : Items.GRAY_DYE, 1, power.label,
+                    unlocked ? (cd > 0 ? ChatFormatting.YELLOW : ChatFormatting.GOLD) : ChatFormatting.DARK_GRAY, lore, unlocked && cd == 0),
+                    (sp, c) -> {
+                        if (!GodData.get(sp).tier.atLeast(power.required)) {
+                            Msg.err(sp, "Requiert le palier " + power.required.label + ".");
+                            return;
+                        }
+                        switch (power) {
+                            case CHATIER -> later(sp, () -> openFollowers(sp, 0));
+                            case TEMPS -> later(sp, () -> openTime(sp));
+                            case ESPACE -> later(sp, () -> openSpace(sp));
+                            default -> {
+                                sp.closeContainer();
+                                PowerActions.cast(sp, power);
+                            }
+                        }
+                    });
+        }
         if (p.specialization != Specialization.AUCUNE) {
             Item art = com.godmod.util.DivineItems.artifact(p.specialization).getItem();
             page.set(40, Page.icon(art, "Artefact : " + p.specialization.label, p.specialization.color,
@@ -215,15 +251,6 @@ public final class Menus {
         }
         page.back((sp, c) -> later(sp, () -> openMain(sp))).close();
         page.open(player);
-    }
-
-    private static void addPower(Page page, PlayerProfile p, int slot, Item icon, PowerActions.Power power, GodMenu.Action action) {
-        boolean unlocked = p.tier.atLeast(power.required);
-        page.set(slot, Page.icon(unlocked ? icon : Items.GRAY_DYE, power.label, unlocked ? ChatFormatting.GOLD : ChatFormatting.DARK_GRAY,
-                "§7" + power.description,
-                "§bCoût : " + (int) power.cost + " Foi",
-                unlocked ? "§aDébloqué" : "§cRequiert : " + power.required.label,
-                "", "§eCliquez pour utiliser"), unlocked ? action : (sp, c) -> Msg.err(sp, "Requiert le palier " + power.required.label + "."));
     }
 
     public static void openSpecialization(ServerPlayer player) {
@@ -583,6 +610,186 @@ public final class Menus {
                 lore.add(Page.line("§7Domaine : " + o.specialization.label));
             }
             page.set(INNER[i], Page.icon(icon, i + 1, "#" + (i + 1) + " " + o.name, o.tier.color, lore, i == 0));
+        }
+        page.back((sp, c) -> later(sp, () -> openMain(sp))).close();
+        page.open(player);
+    }
+
+    // ================================================================== Métiers
+
+    public static void openJobs(ServerPlayer player) {
+        PlayerProfile p = GodData.get(player);
+        Page page = new Page("Métiers — " + com.godmod.progress.JobSystem.totalLevels(p) + " niveaux").frame(Items.GREEN_STAINED_GLASS_PANE);
+        page.set(4, Page.icon(Items.EXPERIENCE_BOTTLE, "Vos métiers", ChatFormatting.GREEN,
+                "§7Chaque action donne de l'XP de métier", "§7et de l'Essence divine (½ de l'XP).",
+                "§7Chaque niveau : pièces + Essence.", "§7Tous les 5 niveaux : une clé de caisse."));
+        int[] slots = {20, 21, 22, 23, 24};
+        com.godmod.data.Job[] jobs = com.godmod.data.Job.values();
+        for (int i = 0; i < jobs.length; i++) {
+            com.godmod.data.Job job = jobs[i];
+            int lvl = com.godmod.progress.JobSystem.level(p, job);
+            double xp = com.godmod.progress.JobSystem.xp(p, job);
+            double need = com.godmod.data.Job.needed(lvl);
+            int filled = lvl >= com.godmod.data.Job.MAX_LEVEL ? 20 : (int) Math.round(20 * xp / need);
+            String bar = "§a" + "|".repeat(Math.max(0, filled)) + "§8" + "|".repeat(Math.max(0, 20 - filled));
+            page.set(slots[i], Page.icon(job.item, Math.max(1, Math.min(64, lvl)), job.icon + " " + job.label + " — niveau " + lvl, job.color, List.of(
+                    Page.line(bar),
+                    Page.line(lvl >= com.godmod.data.Job.MAX_LEVEL ? "§6Niveau maximum !" : "§7XP : " + (int) xp + " / " + (int) need),
+                    Page.line(""),
+                    Page.line("§eComment gagner : §f" + job.how),
+                    Page.line("§dAvantages : §f" + job.perks),
+                    Page.line("§7Prochain niveau : +" + 25 * (lvl + 1) + " pièces, +" + 15 * (lvl + 1) + " Essence")), lvl >= 25));
+        }
+        page.set(31, Page.icon(Items.BOOK, "Barème d'XP", ChatFormatting.YELLOW,
+                "§7Mineur : pierre 0,25 · charbon 4 · fer 8 · or 12", "§7   lapis 10 · diamant 35 · émeraude 45",
+                "§7Bûcheron : bûche 2,5 · Fermier : culture mûre 3",
+                "§7Chasseur : monstre 7 · animal 2,5 · boss 300", "§7Pêcheur : prise 10",
+                "§8Les blocs posés par un joueur ne rapportent rien."));
+        page.back((sp, c) -> later(sp, () -> openMain(sp))).close();
+        page.open(player);
+    }
+
+    // ================================================================== Quêtes
+
+    public static void openQuests(ServerPlayer player) {
+        PlayerProfile p = GodData.get(player);
+        com.godmod.progress.QuestSystem.refreshOffers(p);
+        Page page = new Page("Quêtes — " + p.quests.size() + "/" + com.godmod.progress.QuestSystem.MAX_ACTIVE + " en cours").frame(Items.YELLOW_STAINED_GLASS_PANE);
+        page.set(4, Page.icon(Items.WRITABLE_BOOK, "Quêtes du jour", ChatFormatting.YELLOW,
+                "§7Acceptez jusqu'à " + com.godmod.progress.QuestSystem.MAX_ACTIVE + " quêtes. Elles avancent toutes seules",
+                "§7pendant que vous jouez. Nouvelles quêtes chaque jour.",
+                "§7Toutes les 10 quêtes : une clé Rare en bonus.", "§7Accomplies : " + p.questsDone));
+        int[] active = {10, 11, 12, 13, 14};
+        for (int i = 0; i < active.length; i++) {
+            if (i < p.quests.size()) {
+                com.godmod.data.QuestProgress qp = p.quests.get(i);
+                com.godmod.progress.QuestSystem.Quest q = com.godmod.progress.QuestSystem.QUESTS.get(qp.id);
+                if (q == null) continue;
+                int filled = (int) Math.round(20.0 * qp.progress / q.amount());
+                page.set(active[i], Page.icon(q.icon(), 1, q.title(), ChatFormatting.GOLD, List.of(
+                        Page.line("§7" + q.description()),
+                        Page.line("§a" + "|".repeat(filled) + "§8" + "|".repeat(20 - filled) + " §f" + qp.progress + "/" + q.amount()),
+                        Page.line(rewardLine(q)),
+                        Page.line(""), Page.line("§cMaj + clic : abandonner")), true), (sp, c) -> {
+                    if (c == GodMenu.Click.SHIFT) {
+                        report(sp, com.godmod.progress.QuestSystem.abandon(sp, qp.id));
+                        later(sp, () -> openQuests(sp));
+                    }
+                });
+            } else {
+                page.set(active[i], Page.icon(Items.GRAY_DYE, "Emplacement libre", ChatFormatting.DARK_GRAY, "§7Acceptez une quête ci-dessous"));
+            }
+        }
+        page.set(22, Page.icon(Items.PAPER, "Quêtes proposées aujourd'hui", ChatFormatting.WHITE, "§7Cliquez sur une quête pour l'accepter"));
+        int[] offers = {28, 29, 30, 31, 32, 33, 34};
+        for (int i = 0; i < offers.length && i < p.questOffers.size(); i++) {
+            String id = p.questOffers.get(i);
+            com.godmod.progress.QuestSystem.Quest q = com.godmod.progress.QuestSystem.QUESTS.get(id);
+            if (q == null) continue;
+            page.set(offers[i], Page.icon(q.icon(), 1, q.title(), ChatFormatting.YELLOW, List.of(
+                    Page.line("§7" + q.description()), Page.line(rewardLine(q)),
+                    Page.line("§7Métier : " + (q.job() == null ? "—" : q.job().label)),
+                    Page.line(""), Page.line("§eCliquez pour accepter")), false), (sp, c) -> {
+                report(sp, com.godmod.progress.QuestSystem.accept(sp, id));
+                later(sp, () -> openQuests(sp));
+            });
+        }
+        page.back((sp, c) -> later(sp, () -> openMain(sp))).close();
+        page.open(player);
+    }
+
+    private static String rewardLine(com.godmod.progress.QuestSystem.Quest q) {
+        return "§6+" + q.money() + " pièces §d+" + q.essence() + " Essence" + (q.key() != null ? " §a+1 clé " + q.key().label : "");
+    }
+
+    // ================================================================== Clés & caisses
+
+    public static void openKeys(ServerPlayer player) {
+        PlayerProfile p = GodData.get(player);
+        Page page = new Page("Clés de caisse").frame(Items.PURPLE_STAINED_GLASS_PANE);
+        page.set(4, Page.icon(Items.TRIPWIRE_HOOK, "Vos clés", ChatFormatting.LIGHT_PURPLE,
+                "§7Ouvrez les caisses au Sanctuaire (clic droit dessus)",
+                "§7Clés gagnées : niveaux de métier, quêtes, pêche,", "§7ou achetées ici."));
+        int[] slots = {20, 22, 24, 31};
+        com.godmod.progress.CrateSystem.Crate[] crates = com.godmod.progress.CrateSystem.Crate.values();
+        for (int i = 0; i < crates.length; i++) {
+            com.godmod.progress.CrateSystem.Crate c = crates[i];
+            int n = com.godmod.progress.CrateSystem.keys(p, c);
+            page.set(slots[i], Page.icon(c.icon, Math.max(1, Math.min(64, n)), "Clé " + c.label + " × " + n, c.color, List.of(
+                    Page.line("§7Clic gauche : voir le contenu de la caisse"),
+                    Page.line("§eClic droit : acheter une clé (" + c.keyPrice + " pièces)")), n > 0), (sp, click) -> {
+                if (click == GodMenu.Click.RIGHT) {
+                    PlayerProfile me = GodData.get(sp);
+                    if (me.money < c.keyPrice) Msg.err(sp, "Pas assez d'argent (" + me.money + "/" + c.keyPrice + ").");
+                    else {
+                        me.money -= c.keyPrice;
+                        com.godmod.progress.CrateSystem.addKey(me, c, 1);
+                        Msg.ok(sp, "Clé " + c.label + " achetée.");
+                    }
+                    later(sp, () -> openKeys(sp));
+                } else later(sp, () -> com.godmod.progress.CrateSystem.openPreview(sp, c));
+            });
+        }
+        page.back((sp, c) -> later(sp, () -> openMain(sp))).close();
+        page.open(player);
+    }
+
+    // ================================================================== Guide de progression
+
+    public static void openGuide(ServerPlayer player) {
+        PlayerProfile p = GodData.get(player);
+        Page page = new Page("Comment progresser ?").frame(Items.LIGHT_BLUE_STAINED_GLASS_PANE);
+        com.godmod.data.Tier next = p.tier.next();
+        page.set(4, profileIcon(p));
+        page.set(19, Page.icon(Items.IRON_PICKAXE, "1. Les métiers", ChatFormatting.GREEN,
+                "§7Minez, coupez, récoltez, chassez, pêchez :", "§7chaque action donne de l'XP de métier", "§7ET de l'Essence (½ de l'XP).", "§e/metiers"));
+        page.set(20, Page.icon(Items.WRITABLE_BOOK, "2. Les quêtes", ChatFormatting.YELLOW,
+                "§75 quêtes en parallèle, renouvelées chaque jour.", "§7Jusqu'à 600 Essence, des pièces et des clés.", "§e/quetes"));
+        page.set(21, Page.icon(Items.TRIPWIRE_HOOK, "3. Les caisses", ChatFormatting.LIGHT_PURPLE,
+                "§7Clés des métiers et quêtes → caisses au Sanctuaire :", "§7diamants, Essence, générateurs de mobs…"));
+        page.set(22, Page.icon(Items.IRON_SWORD, "4. Le PvP", ChatFormatting.RED,
+                "§7Victoire : +25 Essence. Demi-dieu : convertissez", "§7les plus faibles en fidèles (+60). Un dieu vaincu", "§7par un mortel chute (+500 pour le vainqueur)."));
+        page.set(23, Page.icon(Items.GOLDEN_SWORD, "5. Tournois & guerres", ChatFormatting.GOLD,
+                "§7Tournoi gagné : +300 Essence et des pièces.", "§7Guerre gagnée : tout le panthéon adverse."));
+        page.set(24, Page.icon(Items.CLOCK, "6. Le temps de jeu", ChatFormatting.WHITE, "§7+2 Essence par minute connectée."));
+        page.set(25, Page.icon(Items.BLAZE_POWDER, "7. Les caractéristiques", ChatFormatting.RED,
+                "§7Chaque palier et chaque tranche d'Essence", "§7donnent des points : Force, Vitalité, Agilité, Esprit."));
+        int i = 0;
+        int[] tierSlots = {37, 38, 39, 40, 41};
+        for (com.godmod.data.Tier t : com.godmod.data.Tier.values()) {
+            boolean reached = p.tier.atLeast(t);
+            page.set(tierSlots[i++], Page.icon(reached ? Items.LIME_DYE : Items.GRAY_DYE, 1, t.label, t.color, List.of(
+                    Page.line("§7Essence : " + com.godmod.system.PowerSystem.threshold(t)),
+                    Page.line(t.followers > 0 ? "§7Fidèles : " + t.followers : "§7Aucun fidèle requis"),
+                    Page.line("§7Plafond de caractéristique : " + t.statCap),
+                    Page.line(reached ? "§aAtteint" : (t == next ? "§eProchain palier" : "§8À venir"))), t == next));
+        }
+        page.back((sp, c) -> later(sp, () -> openMain(sp))).close();
+        page.open(player);
+    }
+
+    // ================================================================== Équipe (admins)
+
+    public static void openTeam(ServerPlayer player) {
+        Page page = new Page("Équipe du serveur").frame(Items.RED_STAINED_GLASS_PANE);
+        page.set(4, Page.icon(Items.GOLDEN_HELMET, "Nommer l'équipe", ChatFormatting.RED,
+                "§7Clic gauche : passer Modérateur", "§7Clic droit : passer Admin", "§7Maj + clic : redevenir Joueur",
+                "§7(aussi : /modo ajouter <joueur>)"));
+        int i = 0;
+        List<PlayerProfile> people = new ArrayList<>(GodData.state().players.values());
+        people.sort(Comparator.comparing((PlayerProfile x) -> x.role == null ? 0 : -x.role.ordinal()).thenComparing(x -> x.name));
+        for (PlayerProfile o : people) {
+            if (i >= INNER.length) break;
+            com.godmod.data.Role role = o.role == null ? com.godmod.data.Role.JOUEUR : o.role;
+            boolean online = PowerSystem.online(player.level().getServer(), o.uuid) != null;
+            page.set(INNER[i++], Page.icon(online ? Items.PLAYER_HEAD : Items.SKELETON_SKULL, 1, o.name, role.color, List.of(
+                    Page.line("§7Rang : " + role.label + (online ? "  §a● en ligne" : "")),
+                    Page.line(""), Page.line("§bClic gauche : Modérateur"), Page.line("§cClic droit : Admin"), Page.line("§7Maj + clic : Joueur")), false), (sp, c) -> {
+                com.godmod.data.Role r = c == GodMenu.Click.SHIFT ? com.godmod.data.Role.JOUEUR
+                        : c == GodMenu.Click.RIGHT ? com.godmod.data.Role.ADMIN : com.godmod.data.Role.MODERATEUR;
+                Msg.ok(sp, com.godmod.system.Moderation.setRole(sp.level().getServer(), o, r, sp.getName().getString()));
+                later(sp, () -> openTeam(sp));
+            });
         }
         page.back((sp, c) -> later(sp, () -> openMain(sp))).close();
         page.open(player);

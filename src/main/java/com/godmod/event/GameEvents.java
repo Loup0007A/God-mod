@@ -23,6 +23,7 @@ import com.godmod.util.Msg;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -39,6 +40,18 @@ import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerAboutToStartEvent;
+import net.minecraftforge.event.entity.player.ItemFishedEvent;
+import net.minecraftforge.common.util.Result;
+import com.godmod.progress.CrateSystem;
+import com.godmod.progress.Hud;
+import com.godmod.progress.JobSystem;
+import com.godmod.progress.PointSystem;
+import com.godmod.progress.QuestSystem;
+import com.godmod.progress.SpawnerSystem;
+import com.godmod.system.MineReset;
+import com.godmod.system.PowerActions;
+import com.godmod.util.Scheduler;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityTravelToDimensionEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -69,6 +82,7 @@ public final class GameEvents {
 
     public static void register() {
         RegisterCommandsEvent.BUS.addListener((Consumer<RegisterCommandsEvent>) e -> GodCommands.register(e.getDispatcher()));
+        ServerAboutToStartEvent.BUS.addListener((Consumer<ServerAboutToStartEvent>) e -> MineReset.onServerAboutToStart(e.getServer()));
         ServerStartingEvent.BUS.addListener((Consumer<ServerStartingEvent>) e -> GodData.load(e.getServer()));
         ServerStartedEvent.BUS.addListener((Consumer<ServerStartedEvent>) e -> onServerStarted(e.getServer()));
         ServerStoppedEvent.BUS.addListener((Consumer<ServerStoppedEvent>) e -> GodData.unload());
@@ -123,8 +137,28 @@ public final class GameEvents {
         });
 
         LivingDeathEvent.BUS.addListener((Predicate<LivingDeathEvent>) GameEvents::onDeath);
-        BlockEvent.BreakEvent.BUS.addListener((Predicate<BlockEvent.BreakEvent>) GameEvents::onBreak);
-        BlockEvent.EntityPlaceEvent.BUS.addListener((Predicate<BlockEvent.EntityPlaceEvent>) e -> onPlace(e.getLevel(), e.getPos(), e.getEntity()));
+        BlockEvent.BreakEvent.BUS.addListener((Predicate<BlockEvent.BreakEvent>) e -> {
+            // Forge lit le RÉSULTAT de cet événement (pas l'annulation) : il faut DENY pour bloquer la casse.
+            boolean deny = onBreak(e);
+            if (deny) e.setResult(Result.DENY);
+            else if (GodData.ready() && e.getPlayer() instanceof ServerPlayer sp && e.getLevel() instanceof ServerLevel sl) {
+                try {
+                    SpawnerSystem.onBroken(sl, e.getPos(), e.getState());
+                    JobSystem.onBroken(sp, sl, e.getPos(), e.getState());
+                } catch (Exception ex) {
+                    GodMod.LOGGER.error("[God Mod] Erreur métiers (casse)", ex);
+                }
+            }
+            return deny;
+        });
+        BlockEvent.EntityPlaceEvent.BUS.addListener((Predicate<BlockEvent.EntityPlaceEvent>) e -> {
+            boolean deny = onPlace(e.getLevel(), e.getPos(), e.getEntity());
+            if (!deny && GodData.ready() && e.getLevel() instanceof ServerLevel sl) {
+                JobSystem.onPlaced(sl, e.getPos());
+                if (e.getEntity() instanceof ServerPlayer sp) SpawnerSystem.onPlaced(sp, sl, e.getPos(), e.getPlacedBlock());
+            }
+            return deny;
+        });
         BlockEvent.EntityMultiPlaceEvent.BUS.addListener((Predicate<BlockEvent.EntityMultiPlaceEvent>) e -> onPlace(e.getLevel(), e.getPos(), e.getEntity()));
         EntityTravelToDimensionEvent.BUS.addListener((Predicate<EntityTravelToDimensionEvent>) GameEvents::onTravel);
 
@@ -134,8 +168,15 @@ public final class GameEvents {
         PlayerInteractEvent.RightClickItem.BUS.addListener((Predicate<PlayerInteractEvent.RightClickItem>) GameEvents::onRightClickItem);
         PlayerInteractEvent.RightClickBlock.BUS.addListener((Predicate<PlayerInteractEvent.RightClickBlock>) e ->
                 // Objet divin sur un bloc : on bloque l'interaction ; le clic sur l'objet suit (RightClickItem).
-                locked(e.getEntity()) || DivineItems.isDivine(e.getItemStack()) || hubGrief(e.getEntity(), e.getItemStack())
-                        || blockInteractDenied(e.getEntity(), e.getPos(), e.getItemStack()));
+                locked(e.getEntity()) || pointUsed(e.getEntity(), e.getPos())
+                        || (DivineItems.isDivine(e.getItemStack()) && !SpawnerSystem.KIND.equals(DivineItems.kind(e.getItemStack())))
+                        || hubGrief(e.getEntity(), e.getItemStack()) || blockInteractDenied(e.getEntity(), e.getPos(), e.getItemStack()));
+
+        // Pêche : métier Pêcheur.
+        ItemFishedEvent.BUS.addListener((Predicate<ItemFishedEvent>) e -> {
+            if (e.getEntity() instanceof ServerPlayer sp && GodData.ready()) JobSystem.onFish(sp, e.getDrops());
+            return false;
+        });
 
         // Sanctuaire : pas de monstres, et les explosions n'y cassent rien.
         EntityJoinLevelEvent.BUS.addListener((Predicate<EntityJoinLevelEvent>) e -> GodData.ready() && !e.loadedFromDisk()
@@ -150,6 +191,13 @@ public final class GameEvents {
         EntityItemPickupEvent.BUS.addListener((Predicate<EntityItemPickupEvent>) e -> locked(e.getEntity()));
         LivingAttackEvent.BUS.addListener((Predicate<LivingAttackEvent>) e -> locked(e.getEntity()) || locked(e.getSource().getEntity())
                 || pvpDenied(e.getEntity(), e.getSource().getEntity()));
+    }
+
+    /** Clic droit sur une caisse ou un tableau du Sanctuaire. */
+    private static boolean pointUsed(Entity e, BlockPos pos) {
+        if (!(e instanceof ServerPlayer sp) || !GodData.ready() || AuthSystem.isLocked(sp)) return false;
+        if (Hub.canEditHub(sp) && sp.isShiftKeyDown()) return false; // un admin en édition peut modifier le bloc
+        return PointSystem.use(sp, pos);
     }
 
     /**
@@ -286,9 +334,11 @@ public final class GameEvents {
         if (!(entity instanceof ServerPlayer sp) || !GodData.ready()) return true;
         String kind = DivineItems.kind(stack);
         if (DivineItems.CODEX.equals(kind)) {
-            Menus.openMain(sp);
+            if (sp.isShiftKeyDown()) Menus.openPowers(sp);
+            else Menus.openMain(sp);
             return true;
         }
+        if (SpawnerSystem.KIND.equals(kind)) return false; // un générateur se pose normalement
         Specialization spec = DivineItems.specialization(stack);
         if (spec != null) ArtifactEffects.use(sp, stack, spec);
         return true;
@@ -319,6 +369,9 @@ public final class GameEvents {
         Moderation.onLogout(sp);
         DivineWorld.onLogout(sp);
         Hub.onLogout(sp);
+        Hud.onLogout(sp);
+        CrateSystem.onLogout(sp);
+        PowerActions.onLogout(sp);
         PlayerProfile p = GodData.get(sp);
         p.lastSeen = System.currentTimeMillis();
         GodData.dirty();
@@ -334,6 +387,9 @@ public final class GameEvents {
         Moderation.tick(server);
         ArtifactEffects.tick(server);
         BlockJobs.tick(server);
+        Scheduler.tick();
+        CrateSystem.tick(server);
+        PowerActions.tick(server);
         for (ServerPlayer sp : server.getPlayerList().getPlayers()) {
             if (AuthSystem.isLocked(sp)) continue;
             DivineWorld.enforce(sp);
@@ -353,6 +409,8 @@ public final class GameEvents {
             PlayerProfile p = GodData.get(sp);
             p.playTicks += 20;
             DivineWorld.syncBorder(sp);
+            Hud.update(sp);
+            if (five) JobSystem.perks(sp);
             if (minute) Ranks.refresh(sp);
             if (five) PowerSystem.periodic(sp);
             if (minute) PowerSystem.perMinute(sp);
@@ -385,9 +443,7 @@ public final class GameEvents {
         }
 
         if (attacker instanceof ServerPlayer killer && dead instanceof Mob) {
-            boolean hostile = dead instanceof Enemy;
-            PowerSystem.addEssence(killer, hostile ? 3 : 1, "chasse");
-            PowerSystem.earnMoney(killer.level().getServer(), GodData.get(killer), hostile ? 2 : 1);
+            JobSystem.onKill(killer, dead);
         }
         return false;
     }

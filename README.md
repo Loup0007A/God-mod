@@ -70,7 +70,9 @@ Admins : `/auth on|off`, `/auth reset <joueur>`.
 ## Équipe : modérateurs et admins
 
 - **Admin** : opérateurs du serveur + joueurs nommés par `/staff ajouter <joueur> admin`.
-- **Modérateur** : `/staff ajouter <joueur> moderateur` · `/staff retirer <joueur>` · `/staff liste`.
+- **Modérateur** : `/modo ajouter <joueur>` (ou `/staff ajouter <joueur> moderateur`) ·
+  `/modo admin <joueur>` · `/modo retirer <joueur>` · `/modo liste`. Le menu **Équipe** de `/dieu`
+  permet aussi de nommer les joueurs connectés (clic gauche = modérateur, droit = admin, maj = joueur).
 
 | Commande | Modérateur | Admin |
 |---|---|---|
@@ -82,6 +84,8 @@ Admins : `/auth on|off`, `/auth reset <joueur>`.
 | `/tournoi creer [prix]` · `/tournoi annuler` | ✔ | ✔ |
 | `/delwarp` sur n'importe quel warp | ✔ | ✔ |
 | `/staff`, `/auth`, `/structurer`, `/godadmin`, `/pay` | | ✔ |
+| `/mine reset` (le monde ressource est régénéré au prochain redémarrage) · `/mine reset maintenant` (arrêt du serveur dans 15 s) | | ✔ |
+| `/cle donner <joueur> <commune\|rare\|epique\|divine> [n]` · `/godadmin point placer <type>` / `retirer` (déplacer caisses et pupitres) | | ✔ |
 | `/godadmin clearile <joueur>` (remet un monde divin à zéro) · `/godadmin clearzone <rayon> [hauteur]` | | ✔ |
 
 Tout joueur peut faire `/signaler <joueur> <raison>` : l'équipe connectée est prévenue.
@@ -98,16 +102,67 @@ En local : `./gradlew build` (le .jar est dans `build/libs/`).
 
 ## Progression
 
+Tout est visible en permanence : une **barre en haut de l'écran** (palier actuel → palier suivant,
+Essence et fidèles requis) et un **tableau à droite** (argent, Foi, métier, quêtes, clés).
+`/hud` l'affiche ou le masque. `/progression` ouvre le guide « Comment progresser ? ».
+
 | Palier | Essence | Condition | Plafond de caractéristique |
 |---|---|---|---|
 | Mortel | 0 | — | 3 |
-| Éveillé | 250 | — | 6 |
-| Demi-dieu | 1 000 | peut convertir (3 fidèles max) | 10 |
-| Dieu | 3 000 | 1 fidèle direct | 15 |
-| Dieu suprême | 12 000 | 8 fidèles au total | 25 |
+| Éveillé | 500 | — | 6 |
+| Demi-dieu | 2 500 | peut convertir (3 fidèles max) | 10 |
+| Dieu | 8 000 | 1 fidèle direct · obtient son monde divin | 15 |
+| Dieu suprême | 30 000 | 8 fidèles au total | 25 |
 
-**Essence** : temps de jeu (2/min), monstres (1–3), victoires PvP (25), conversions (60),
-déicide (500), tournoi gagné (300).
+**Essence** : métiers (0,5 par point d'XP), quêtes, montées de niveau, temps de jeu, PvP,
+conversions, déicide, tournois.
+
+### Métiers (`/metiers`)
+
+| Métier | Gagne de l'XP en… | Bonus |
+|---|---|---|
+| ⛏ Mineur | cassant pierre et minerais | Célérité, double butin |
+| ♣ Bûcheron | coupant des bûches | double butin, abattage d'arbre entier au niv. 20 (s'accroupir pour l'éviter) |
+| ✿ Fermier | récoltant des cultures mûres | replantation automatique au niv. 5, double récolte |
+| ⚔ Chasseur | tuant des créatures | double butin |
+| ≈ Pêcheur | pêchant | prises doublées |
+
+50 niveaux par métier. Chaque niveau rapporte argent + Essence ; des **clés de caisse** tous les
+5 niveaux (Rare tous les 10, Épique au 25, Divine au 40 et 50). Les blocs posés par un joueur ne
+rapportent pas d'XP (anti-farm).
+
+### Quêtes (`/quetes`)
+
+7 quêtes proposées chaque jour, **5 actives maximum**. Récompenses : argent, Essence, XP de métier,
+parfois une clé. Une clé Rare bonus toutes les 10 quêtes terminées. Le pupitre du spawn ouvre aussi
+le menu des quêtes.
+
+### Caisses et clés (`/caisses`, `/cles`)
+
+Quatre caisses sont posées au Sanctuaire : **Commune** (coffre), **Rare** (tonneau),
+**Épique** (coffre de l'Ender), **Divine** (coffre-fort). Clic droit avec une clé = ouverture
+avec animation de roulette ; sans clé = aperçu des gains. Clés : métiers, quêtes, ou achat
+(clic droit dans `/cles`, 2 500 / 10 000 / 40 000 / 150 000 ⛃). Gains : argent, Essence, objets
+rares, **générateurs de créatures**, clés, artefacts.
+
+### Générateurs (spawners)
+
+Obtenus dans les caisses ou dans la boutique (catégorie Divin). Posés, ils produisent leur mob ;
+cassés par quelqu'un qui en a le droit, ils sont rendus intacts. Les spawners naturels des donjons
+ne se récupèrent pas.
+
+### Pouvoirs divins (`/pouvoir`, ou Codex + accroupi + clic droit)
+
+| Palier | Pouvoirs |
+|---|---|
+| Éveillé | Bénédiction (soins et buffs de groupe) · Ailes célestes (bond + chute lente) |
+| Demi-dieu | Foudre divine (60 blocs) · Châtiment · Miracle (pousse, nourrit, soigne) |
+| Dieu | Convocation des fidèles · Aura de domination (onde de choc) · Pluie de météores |
+| Dieu suprême | Jugement · Maîtrise du temps · Maîtrise de l'espace |
+
+Chaque pouvoir coûte de la Foi et a son temps de recharge (visible dans le menu). Les pouvoirs
+offensifs sont désactivés au Sanctuaire.
+
 **Caractéristiques** (1 point / 200 Essence + 3 par palier) : Force (dégâts), Vitalité (vie),
 Agilité (vitesse), Esprit (Foi max, régénération, puissance et recharge des artefacts).
 **Foi** : ressource des pouvoirs, régénérée par le temps, l'Esprit et le nombre de fidèles.
@@ -153,7 +208,7 @@ Les artefacts sont des objets vanilla enchantés et renommés, reconnus par le s
 ## Commandes
 
 Joueurs : `/dieu` · `/dieu profil [joueur]` · `/dieu stats <carac>` · `/dieu specialisation <ocean|ciel|cosmos>`
-· `/dieu pouvoir <benir|convoquer|chatier|temps|espace>` · `/dieu fideles` · `/dieu liberer <joueur>`
+· `/pouvoir [nom]` · `/metiers` · `/quetes` · `/caisses` · `/cles` · `/progression` · `/hud` · `/mine` · `/dieu fideles` · `/dieu liberer <joueur>`
 · `/dieu choix <trone|refuser>` · `/monde [quitter|visiter <joueur>]` · `/shop [vendre [un]]` · `/argent`
 · `/rebellion [declarer|rejoindre]` · `/tournoi [rejoindre|quitter]` · `/trone reclamer <dieu>`
 · `/guerre [declarer <dieu>]` · `/classement`
@@ -166,6 +221,8 @@ Admins :
 
 `/godadmin mode petit` adapte le mod à une petite survie (seuils ×0,25, Essence ×2,
 rébellion toutes les 12 h, inactivité 2 jours).
+
+Les blocs du Sanctuaire ne peuvent être cassés que par un admin en mode éditeur.
 
 Les données sont sauvegardées dans le monde (`world/data/godmod.dat`). Le journal
 (`/godadmin journal`) trace conversions, chutes, rébellions, achats premium et actions admin.
