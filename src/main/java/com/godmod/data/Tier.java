@@ -1,0 +1,45 @@
+package com.godmod.data;
+
+import net.minecraft.ChatFormatting;
+
+/**
+ * Les 5 paliers de puissance, du mortel au dieu suprême.
+ * Le seuil est exprimé en Essence divine (XP du mod). Il est multiplié par
+ * {@link Settings#thresholdMultiplier} (mode « petite survie » = seuils réduits).
+ */
+public enum Tier {
+    MORTEL("Mortel", ChatFormatting.GRAY, 0, 0, 3),
+    EVEILLE("Éveillé", ChatFormatting.GREEN, 250, 0, 6),
+    DEMI_DIEU("Demi-dieu", ChatFormatting.AQUA, 1000, 0, 10),
+    DIEU("Dieu", ChatFormatting.GOLD, 3000, 1, 15),
+    DIEU_SUPREME("Dieu suprême", ChatFormatting.LIGHT_PURPLE, 12000, 8, 25);
+
+    public final String label;
+    public final ChatFormatting color;
+    /** Essence nécessaire pour atteindre ce palier. */
+    public final int essence;
+    /** Fidèles directs nécessaires pour atteindre ce palier. */
+    public final int followers;
+    /** Niveau maximum de chaque caractéristique à ce palier. */
+    public final int statCap;
+
+    Tier(String label, ChatFormatting color, int essence, int followers, int statCap) {
+        this.label = label;
+        this.color = color;
+        this.essence = essence;
+        this.followers = followers;
+        this.statCap = statCap;
+    }
+
+    public boolean isGod() {
+        return this.ordinal() >= DIEU.ordinal();
+    }
+
+    public boolean atLeast(Tier other) {
+        return this.ordinal() >= other.ordinal();
+    }
+
+    public Tier next() {
+        return this == DIEU_SUPREME ? null : values()[this.ordinal() + 1];
+    }
+}

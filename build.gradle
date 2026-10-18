@@ -1,0 +1,64 @@
+// God Mod - Simulation de dieux (Forge 1.21.11)
+// Basé sur le MDK officiel Forge 1.21.11 (ForgeGradle 7).
+
+plugins {
+    id 'java'
+    id 'idea'
+    id 'eclipse'
+    id 'net.minecraftforge.gradle' version '[7.0.3,8)'
+}
+
+version = mod_version
+group = 'com.godmod'
+base.archivesName = 'godmod'
+
+// Minecraft 1.21.11 utilise Java 21.
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+
+    runs {
+        configureEach {
+            workingDir = layout.projectDirectory.dir('run')
+            systemProperty 'eventbus.api.strictRuntimeChecks', 'true'
+        }
+
+        register('client')
+
+        register('server') {
+            args '--nogui'
+        }
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}")
+    annotationProcessor "net.minecraftforge:eventbus-validator:${eventbus_version}"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('jar', Jar) {
+    manifest {
+        attributes([
+            'Specification-Title'     : 'godmod',
+            'Specification-Vendor'    : 'God-mod',
+            'Specification-Version'   : '1',
+            'Implementation-Title'    : 'God Mod',
+            'Implementation-Version'  : project.version,
+            'Implementation-Vendor'   : 'God-mod'
+        ])
+    }
+}

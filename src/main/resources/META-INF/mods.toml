@@ -1,0 +1,24 @@
+modLoader="javafml"
+loaderVersion="[61,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="godmod"
+version="${file.jarVersion}"
+displayName="God Mod"
+authors="God-mod"
+description='''Simulation de dieux multijoueur : montez de mortel à dieu suprême, convertissez des fidèles, menez des guerres divines, survivez aux rébellions et bâtissez votre monde divin.'''
+
+[[dependencies.godmod]]
+    modId="forge"
+    mandatory=true
+    versionRange="[61,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.godmod]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.21.11,1.22)"
+    ordering="NONE"
+    side="BOTH"
