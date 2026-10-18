@@ -43,6 +43,7 @@ public final class PowerSystem {
         double mult = GodData.settings().essenceMultiplier;
         if (GodData.settings().payEnabled && System.currentTimeMillis() < p.boostUntil) mult *= 2;
         if (p.isOathbreaker()) mult *= 0.5;
+        mult *= com.godmod.progress.EventSystem.essenceMultiplier();
         long gain = Math.max(1, Math.round(amount * mult));
         p.essence += gain;
         GodData.dirty();

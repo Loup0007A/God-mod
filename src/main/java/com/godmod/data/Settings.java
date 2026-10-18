@@ -46,5 +46,15 @@ public class Settings {
     /** Le Sanctuaire a été vidé par un admin pour être rebâti à la main. */
     public boolean customSpawn = false;
     public boolean hubSet = false;
+
+    // --- Événements ---
+    /** Lance automatiquement un événement à intervalle régulier. */
+    public boolean eventsAuto = true;
+    /** Minutes entre deux événements automatiques. */
+    public int eventIntervalMinutes = 45;
+    /** Joueurs connectés nécessaires pour un événement automatique. */
+    public int eventMinPlayers = 2;
+    /** Délai (secondes) avant une téléportation par commande. */
+    public int teleportWarmupSeconds = 3;
     public double hubX, hubY, hubZ;
 }

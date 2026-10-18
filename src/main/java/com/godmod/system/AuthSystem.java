@@ -113,11 +113,11 @@ public final class AuthSystem {
         int t = GodData.settings().authTimeoutSeconds;
         if (p.passwordHash == null) {
             Msg.send(player, Msg.text("Bienvenue ! Protégez votre compte : ", ChatFormatting.GOLD)
-                    .append(Msg.text("/register <motdepasse> <motdepasse>", ChatFormatting.YELLOW))
+                    .append(Msg.suggest("/register <motdepasse> <motdepasse>", "/register ", "Cliquez puis tapez deux fois votre mot de passe", ChatFormatting.YELLOW))
                     .append(Msg.text("  (" + t + " s)", ChatFormatting.DARK_GRAY)));
         } else {
             Msg.send(player, Msg.text("Connectez-vous : ", ChatFormatting.GOLD)
-                    .append(Msg.text("/login <motdepasse>", ChatFormatting.YELLOW))
+                    .append(Msg.suggest("/login <motdepasse>", "/login ", "Cliquez puis tapez votre mot de passe", ChatFormatting.YELLOW))
                     .append(Msg.text("  (" + t + " s)", ChatFormatting.DARK_GRAY)));
         }
     }
@@ -225,7 +225,7 @@ public final class AuthSystem {
     public static boolean allowedCommand(String command) {
         String c = command.startsWith("/") ? command.substring(1) : command;
         String root = c.split(" ", 2)[0].toLowerCase();
-        return root.equals("login") || root.equals("register") || root.equals("l") || root.equals("reg");
+        return java.util.Set.of("login", "register", "l", "reg", "connexion", "inscription").contains(root);
     }
 
     // ------------------------------------------------------------------ Hachage

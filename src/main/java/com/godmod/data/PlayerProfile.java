@@ -102,6 +102,22 @@ public class PlayerProfile {
     /** Fraction d'Essence accumulée par les métiers (versée par unités entières). */
     public double essenceFraction = 0;
 
+    // --- Social ---
+    /** Refuse toutes les demandes /tpa. */
+    public boolean tpaBlocked = false;
+    /** Dernier signalement envoyé (anti-spam). */
+    public long lastReport = 0;
+
+    // --- Récompense quotidienne ---
+    /** Jour (AAAA-MM-JJ) de la dernière récompense récupérée. */
+    public String dailyLast = "";
+    /** Nombre de jours consécutifs. */
+    public int dailyStreak = 0;
+    public int dailyBest = 0;
+
+    // --- Événements ---
+    public int eventsWon = 0;
+
     // --- Choix en attente après avoir vaincu un dieu ---
     public String pendingThroneVictim = null;
     public long pendingThroneUntil = 0;

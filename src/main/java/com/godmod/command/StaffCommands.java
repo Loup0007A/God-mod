@@ -57,26 +57,40 @@ public final class StaffCommands {
         return 1;
     }
 
+    /**
+     * Les mots de passe sont lus en texte libre (tous les caractères sont acceptés : !, @, é…),
+     * puis découpés sur les espaces : /register &lt;mdp&gt; &lt;mdp&gt;.
+     */
+    private static String[] twoWords(String raw) {
+        String[] parts = raw.trim().split("\\s+");
+        return parts.length == 2 ? parts : null;
+    }
+
     private static void registerAccount(CommandDispatcher<CommandSourceStack> d) {
-        var register = Commands.argument("motdepasse", StringArgumentType.string())
-                .then(Commands.argument("confirmation", StringArgumentType.string())
-                        .executes(ctx -> player(ctx, p -> AuthSystem.register(p,
-                                StringArgumentType.getString(ctx, "motdepasse"), StringArgumentType.getString(ctx, "confirmation")))));
-        d.register(Commands.literal("register").then(register));
-        d.register(Commands.literal("reg").then(Commands.argument("motdepasse", StringArgumentType.string())
-                .then(Commands.argument("confirmation", StringArgumentType.string())
-                        .executes(ctx -> player(ctx, p -> AuthSystem.register(p,
-                                StringArgumentType.getString(ctx, "motdepasse"), StringArgumentType.getString(ctx, "confirmation")))))));
-
-        d.register(Commands.literal("login").then(Commands.argument("motdepasse", StringArgumentType.greedyString())
-                .executes(ctx -> player(ctx, p -> AuthSystem.login(p, StringArgumentType.getString(ctx, "motdepasse"))))));
-        d.register(Commands.literal("l").then(Commands.argument("motdepasse", StringArgumentType.greedyString())
-                .executes(ctx -> player(ctx, p -> AuthSystem.login(p, StringArgumentType.getString(ctx, "motdepasse"))))));
-
-        d.register(Commands.literal("motdepasse").then(Commands.argument("ancien", StringArgumentType.string())
-                .then(Commands.argument("nouveau", StringArgumentType.string())
-                        .executes(ctx -> player(ctx, p -> AuthSystem.changePassword(p,
-                                StringArgumentType.getString(ctx, "ancien"), StringArgumentType.getString(ctx, "nouveau")))))));
+        for (String name : new String[]{"register", "reg", "inscription"}) {
+            d.register(Commands.literal(name)
+                    .executes(ctx -> player(ctx, p -> "Choisissez un mot de passe et tapez-le deux fois : /register <motdepasse> <motdepasse>"))
+                    .then(Commands.argument("motdepasses", StringArgumentType.greedyString())
+                            .executes(ctx -> player(ctx, p -> {
+                                String[] w = twoWords(StringArgumentType.getString(ctx, "motdepasses"));
+                                if (w == null) return "Tapez le mot de passe deux fois, séparé par un espace (sans espace dedans) : /register <motdepasse> <motdepasse>";
+                                return AuthSystem.register(p, w[0], w[1]);
+                            }))));
+        }
+        for (String name : new String[]{"login", "l", "connexion"}) {
+            d.register(Commands.literal(name)
+                    .executes(ctx -> player(ctx, p -> "Tapez : /login <motdepasse>"))
+                    .then(Commands.argument("motdepasse", StringArgumentType.greedyString())
+                            .executes(ctx -> player(ctx, p -> AuthSystem.login(p, StringArgumentType.getString(ctx, "motdepasse").trim())))));
+        }
+        d.register(Commands.literal("motdepasse")
+                .executes(ctx -> player(ctx, p -> "Tapez : /motdepasse <ancien> <nouveau>"))
+                .then(Commands.argument("ancien_nouveau", StringArgumentType.greedyString())
+                        .executes(ctx -> player(ctx, p -> {
+                            String[] w = twoWords(StringArgumentType.getString(ctx, "ancien_nouveau"));
+                            if (w == null) return "Tapez : /motdepasse <ancien> <nouveau> (sans espace dans les mots de passe).";
+                            return AuthSystem.changePassword(p, w[0], w[1]);
+                        }))));
     }
 
     // ------------------------------------------------------------------ /mod
@@ -97,6 +111,10 @@ public final class StaffCommands {
             ctx.getSource().sendFailure(Component.literal("Joueur inconnu (il doit s'être connecté au moins une fois)."));
             return 0;
         }
+        if (ctx.getSource().getEntity() != null && ctx.getSource().getEntity().getUUID().toString().equals(t.uuid)) {
+            ctx.getSource().sendFailure(Component.literal("Vous ne pouvez pas vous viser vous-même."));
+            return 0;
+        }
         Role mine = Moderation.roleOf(ctx.getSource());
         Role theirs = t.role == null ? Role.JOUEUR : t.role;
         if (theirs.ordinal() > mine.ordinal()) {
@@ -110,6 +128,64 @@ public final class StaffCommands {
         }
         ctx.getSource().sendSuccess(() -> Msg.prefix().append(Msg.text(res, ChatFormatting.GREEN)), false);
         return 1;
+    }
+
+    /** Consultation (pas une sanction) : aucun contrôle de rang. */
+    private static int look(CommandContext<CommandSourceStack> ctx, Function<PlayerProfile, String> action) {
+        if (!GodData.ready()) return 0;
+        PlayerProfile t = target(ctx);
+        if (t == null) {
+            ctx.getSource().sendFailure(Component.literal("Joueur inconnu (il doit s'être connecté au moins une fois)."));
+            return 0;
+        }
+        String res = action.apply(t);
+        if (res.startsWith("!")) {
+            ctx.getSource().sendFailure(Component.literal(res.substring(1)));
+            return 0;
+        }
+        ctx.getSource().sendSuccess(() -> Msg.prefix().append(Msg.text(res, ChatFormatting.GREEN)), false);
+        return 1;
+    }
+
+    private static final SuggestionProvider<CommandSourceStack> ONLINE = (ctx, b) ->
+            SharedSuggestionProvider.suggest(ctx.getSource().getServer().getPlayerNames(), b);
+
+    /** Copie en lecture seule de l'inventaire (ou du coffre de l'Ender) d'un joueur. */
+    private static void showInventory(ServerPlayer viewer, ServerPlayer target, boolean ender) {
+        String name = target.getName().getString();
+        com.godmod.menu.Page page = new com.godmod.menu.Page((ender ? "Coffre de l'Ender de " : "Inventaire de ") + name);
+        if (ender) {
+            var ec = target.getEnderChestInventory();
+            for (int i = 0; i < Math.min(27, ec.getContainerSize()); i++) page.set(i, ec.getItem(i).copy());
+        } else {
+            var inv = target.getInventory();
+            for (int i = 9; i < 36; i++) page.set(i - 9, inv.getItem(i).copy());
+            for (int i = 0; i < 9; i++) page.set(27 + i, inv.getItem(i).copy());
+            for (int i = 36; i < Math.min(41, inv.getContainerSize()); i++) page.set(i, inv.getItem(i).copy());
+        }
+        page.set(45, com.godmod.menu.Page.icon(net.minecraft.world.item.Items.PAPER, name, ChatFormatting.YELLOW,
+                ender ? "§7Coffre de l'Ender" : "§7Rangées 1-3 : inventaire · rangée 4 : barre d'outils",
+                ender ? "" : "§7Rangée 5 : armure et main secondaire",
+                "§7Vie : " + Math.round(target.getHealth()) + " · Niveau d'XP : " + target.experienceLevel,
+                "§8Lecture seule — cliquez pour actualiser"), (sp, c) -> sp.level().getServer().execute(() -> showInventory(sp, target, ender)));
+        page.close();
+        page.open(viewer);
+    }
+
+    /** Liste de l'équipe (en ligne / hors ligne). */
+    public static void listTeam(CommandSourceStack src) {
+        src.sendSystemMessage(Msg.header("Équipe du serveur"));
+        int n = 0;
+        for (PlayerProfile p : GodData.state().players.values()) {
+            if (p.role == null || p.role == Role.JOUEUR) continue;
+            boolean online = PowerSystem.online(src.getServer(), p.uuid) != null;
+            src.sendSystemMessage(Msg.text(online ? "● " : "○ ", online ? ChatFormatting.GREEN : ChatFormatting.DARK_GRAY)
+                    .append(Component.literal(p.name).withStyle(p.role.color))
+                    .append(Msg.text(" — " + p.role.label + (online ? "" : " (vu il y a " + Msg.time(System.currentTimeMillis() - p.lastSeen) + ")"), ChatFormatting.GRAY)));
+            n++;
+        }
+        if (n == 0) src.sendSystemMessage(Msg.text("Personne pour l'instant : /modo ajouter <joueur>", ChatFormatting.GRAY));
+        src.sendSystemMessage(Msg.text("Les opérateurs du serveur (op) sont aussi admins.", ChatFormatting.DARK_GRAY));
     }
 
     private static String reason(CommandContext<CommandSourceStack> ctx) {
@@ -150,18 +226,52 @@ public final class StaffCommands {
                                 .executes(ctx -> act(ctx, t -> Moderation.warn(ctx.getSource().getServer(), t, reason(ctx), by(ctx)))))))
                 .then(Commands.literal("freeze").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN)
                         .executes(ctx -> act(ctx, t -> Moderation.toggleFreeze(ctx.getSource().getServer(), t, by(ctx))))))
-                .then(Commands.literal("tp").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN)
+                .then(Commands.literal("tp").then(Commands.argument("joueur", StringArgumentType.word()).suggests(ONLINE)
                         .executes(ctx -> {
                             ServerPlayer me = ctx.getSource().getPlayerOrException();
-                            return act(ctx, t -> {
+                            return look(ctx, t -> {
                                 ServerPlayer sp = PowerSystem.online(ctx.getSource().getServer(), t.uuid);
                                 if (sp == null) return "!" + t.name + " n'est pas connecté.";
                                 Teleport.to(me, (ServerLevel) sp.level(), sp.getX(), sp.getY(), sp.getZ());
                                 return "Téléporté auprès de " + t.name + ".";
                             });
                         })))
+                .then(Commands.literal("tphere").then(Commands.argument("joueur", StringArgumentType.word()).suggests(ONLINE)
+                        .executes(ctx -> {
+                            ServerPlayer me = ctx.getSource().getPlayerOrException();
+                            return act(ctx, t -> {
+                                ServerPlayer sp = PowerSystem.online(ctx.getSource().getServer(), t.uuid);
+                                if (sp == null) return "!" + t.name + " n'est pas connecté.";
+                                Teleport.to(sp, (ServerLevel) me.level(), me.getX(), me.getY(), me.getZ());
+                                Msg.info(sp, "Vous avez été téléporté par l'équipe de modération.");
+                                GodData.log("TP : " + by(ctx) + " fait venir " + t.name);
+                                return t.name + " a été téléporté auprès de vous.";
+                            });
+                        })))
+                .then(Commands.literal("invsee").then(Commands.argument("joueur", StringArgumentType.word()).suggests(ONLINE)
+                        .executes(ctx -> {
+                            ServerPlayer me = ctx.getSource().getPlayerOrException();
+                            return look(ctx, t -> {
+                                ServerPlayer sp = PowerSystem.online(ctx.getSource().getServer(), t.uuid);
+                                if (sp == null) return "!" + t.name + " n'est pas connecté.";
+                                me.level().getServer().execute(() -> showInventory(me, sp, false));
+                                GodData.log("INVSEE : " + by(ctx) + " consulte l'inventaire de " + t.name);
+                                return "Inventaire de " + t.name + " (lecture seule).";
+                            });
+                        })))
+                .then(Commands.literal("ecsee").then(Commands.argument("joueur", StringArgumentType.word()).suggests(ONLINE)
+                        .executes(ctx -> {
+                            ServerPlayer me = ctx.getSource().getPlayerOrException();
+                            return look(ctx, t -> {
+                                ServerPlayer sp = PowerSystem.online(ctx.getSource().getServer(), t.uuid);
+                                if (sp == null) return "!" + t.name + " n'est pas connecté.";
+                                me.level().getServer().execute(() -> showInventory(me, sp, true));
+                                GodData.log("ECSEE : " + by(ctx) + " consulte le coffre de l'Ender de " + t.name);
+                                return "Coffre de l'Ender de " + t.name + " (lecture seule).";
+                            });
+                        })))
                 .then(Commands.literal("info").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN)
-                        .executes(ctx -> act(ctx, t -> info(ctx, t)))))
+                        .executes(ctx -> look(ctx, t -> info(ctx, t)))))
                 .then(Commands.literal("journal")
                         .executes(ctx -> log(ctx, 15))
                         .then(Commands.argument("lignes", IntegerArgumentType.integer(1, 100))
@@ -177,13 +287,23 @@ public final class StaffCommands {
 
         // Signalement accessible à tous les joueurs.
         d.register(Commands.literal("signaler").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN)
-                .then(Commands.argument("raison", StringArgumentType.greedyString()).executes(ctx -> {
-                    String who = StringArgumentType.getString(ctx, "joueur");
-                    Moderation.staffAlert(ctx.getSource().getServer(), "Signalement de " + by(ctx) + " contre " + who + " : " + reason(ctx));
-                    GodData.log("SIGNALEMENT : " + by(ctx) + " -> " + who + " (" + reason(ctx) + ")");
-                    ctx.getSource().sendSuccess(() -> Msg.prefix().append(Msg.text("Signalement transmis à l'équipe. Merci !", ChatFormatting.GREEN)), false);
-                    return 1;
-                }))));
+                .then(Commands.argument("raison", StringArgumentType.greedyString()).executes(ctx -> player(ctx, me -> {
+                    PlayerProfile t = target(ctx);
+                    if (t == null) return "Joueur inconnu : vérifiez l'orthographe du pseudo.";
+                    if (t.uuid.equals(me.getUUID().toString())) return "Vous ne pouvez pas vous signaler vous-même.";
+                    PlayerProfile mine = GodData.get(me);
+                    long wait = mine.lastReport + 60_000 - System.currentTimeMillis();
+                    if (wait > 0) return "Patientez " + Msg.time(wait) + " avant un nouveau signalement.";
+                    mine.lastReport = System.currentTimeMillis();
+                    GodData.dirty();
+                    int staff = 0;
+                    for (ServerPlayer sp : ctx.getSource().getServer().getPlayerList().getPlayers())
+                        if (Moderation.roleOf(sp).atLeast(Role.MODERATEUR)) staff++;
+                    Moderation.staffAlert(ctx.getSource().getServer(), "Signalement de " + by(ctx) + " contre " + t.name + " : " + reason(ctx));
+                    GodData.log("SIGNALEMENT : " + by(ctx) + " -> " + t.name + " (" + reason(ctx) + ")");
+                    Msg.ok(me, "Signalement transmis à l'équipe" + (staff == 0 ? " (aucun membre connecté : il est enregistré dans le journal)" : "") + ". Merci !");
+                    return null;
+                })))));
     }
 
     private static String info(CommandContext<CommandSourceStack> ctx, PlayerProfile t) {
@@ -206,18 +326,16 @@ public final class StaffCommands {
 
     private static int log(CommandContext<CommandSourceStack> ctx, int n) {
         List<String> log = GodData.state().log;
+        if (log.isEmpty()) line(ctx.getSource(), "Le journal est vide.");
         int from = Math.max(0, log.size() - n);
         for (int i = from; i < log.size(); i++) line(ctx.getSource(), log.get(i));
         return 1;
     }
 
     private static int help(CommandContext<CommandSourceStack> ctx) {
-        CommandSourceStack src = ctx.getSource();
-        line(src, "Modération : /mod kick|mute|unmute|ban|unban|warn|freeze|tp|info <joueur> · /mod journal");
-        line(src, "Chat d'équipe : /sc <message> · Les modérateurs bannissent " + Moderation.MOD_MAX_BAN_HOURS + " h max (0 h = définitif, admin).");
-        if (Moderation.roleOf(src).atLeast(Role.ADMIN)) {
-            line(src, "Admin : /staff ajouter|retirer|liste · /godadmin ... · /pay enable|disable · /auth on|off|reset <joueur>");
-        }
+        Help.show(ctx.getSource(), "moderation");
+        if (Moderation.roleOf(ctx.getSource()).atLeast(Role.ADMIN))
+            ctx.getSource().sendSystemMessage(Msg.text("Administration : ", ChatFormatting.GRAY).append(Msg.button("/aide admin", "/aide admin", "Commandes d'administration", ChatFormatting.RED)));
         return 1;
     }
 
@@ -236,10 +354,7 @@ public final class StaffCommands {
                 .then(Commands.literal("retirer").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN)
                         .executes(ctx -> act(ctx, t -> Moderation.setRole(ctx.getSource().getServer(), t, Role.JOUEUR, by(ctx))))))
                 .then(Commands.literal("liste").executes(ctx -> {
-                    for (PlayerProfile p : GodData.state().players.values()) {
-                        if (p.role != null && p.role != Role.JOUEUR) line(ctx.getSource(), p.role.label + " : " + p.name);
-                    }
-                    line(ctx.getSource(), "(Les opérateurs du serveur sont aussi admins.)");
+                    listTeam(ctx.getSource());
                     return 1;
                 })));
 

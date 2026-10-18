@@ -85,6 +85,17 @@ public final class MineReset {
         return "Reset programmé : le monde ressource sera régénéré au prochain redémarrage. (/mine reset maintenant pour redémarrer tout de suite)";
     }
 
+    /** Annule une réinitialisation programmée (sans redémarrage immédiat). */
+    public static boolean cancel(MinecraftServer server) {
+        try {
+            boolean had = Files.deleteIfExists(worldDir(server).resolve(FLAG));
+            if (had) GodData.log("MINE : reset annulé");
+            return had;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     public static boolean pending(MinecraftServer server) {
         return Files.exists(worldDir(server).resolve(FLAG));
     }

@@ -21,10 +21,15 @@ public final class GameStart {
             p.codexGiven = true; // le Codex est placé dans sa case par CodexGuard
             if (s.hubSet) Hub.teleport(sp);
             Msg.send(sp, Msg.text("Bienvenue au Sanctuaire, mortel. Votre ascension commence. Ouvrez le Codex divin (clic droit) ou tapez ", ChatFormatting.GOLD)
-                    .append(Msg.button("/dieu", "/dieu", "Ouvrir le Panthéon", ChatFormatting.YELLOW)));
+                    .append(Msg.button("/dieu", "/dieu", "Ouvrir le Panthéon", ChatFormatting.YELLOW))
+                    .append(Msg.text(" — toutes les commandes : ", ChatFormatting.GOLD))
+                    .append(Msg.button("/aide", "/aide", "Liste des commandes", ChatFormatting.AQUA)));
             GodData.log("NOUVEAU JOUEUR : " + p.name);
         } else {
-            Msg.info(sp, "Bon retour, " + p.tier.label + " " + p.name + ". Tapez /dieu pour ouvrir le Panthéon.");
+            Msg.send(sp, Msg.text("Bon retour, " + p.tier.label + " " + p.name + ". ", ChatFormatting.WHITE)
+                    .append(Msg.button("Panthéon", "/dieu", "Ouvrir le menu principal", ChatFormatting.YELLOW))
+                    .append(Msg.text(" ", ChatFormatting.WHITE))
+                    .append(Msg.button("Aide", "/aide", "Toutes les commandes", ChatFormatting.AQUA)));
         }
         Role role = Moderation.roleOf(sp);
         if (role.atLeast(Role.MODERATEUR)) {
@@ -32,6 +37,10 @@ public final class GameStart {
                     .append(Msg.text(" — /mod pour la modération, /sc pour le chat d'équipe.", ChatFormatting.GRAY)));
         }
         GodData.dirty();
+        com.godmod.progress.EventSystem.onLogin(sp);
+        com.godmod.util.Scheduler.later(60, () -> {
+            if (!sp.hasDisconnected()) com.godmod.progress.DailyReward.remind(sp);
+        });
         PowerSystem.applyAttributes(sp);
         Ranks.refresh(sp);
     }

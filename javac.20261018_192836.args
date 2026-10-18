@@ -1,0 +1,11 @@
+-Xmaxerrs
+500
+-nowarn
+-proc:none
+-encoding
+UTF-8
+-cp
+/tmp/claude-0/-home-claude/55ccdf53-d627-5b1d-9639-ba54a351a637/scratchpad/stubs/classes:/tmp/claude-0/-home-claude/55ccdf53-d627-5b1d-9639-ba54a351a637/scratchpad/libs/brig
+-d
+/tmp/claude-0/-home-claude/55ccdf53-d627-5b1d-9639-ba54a351a637/scratchpad/out
+@/tmp/claude-0/-home-claude/55ccdf53-d627-5b1d-9639-ba54a351a637/scratchpad/srcs2.txt

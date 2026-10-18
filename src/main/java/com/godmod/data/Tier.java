@@ -42,4 +42,16 @@ public enum Tier {
     public Tier next() {
         return this == DIEU_SUPREME ? null : values()[this.ordinal() + 1];
     }
+
+    /** Palier depuis un texte : « dieu_supreme », « Dieu suprême », « demi-dieu »… */
+    public static Tier parse(String s) {
+        String n = java.text.Normalizer.normalize(s.trim().toLowerCase(), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").replaceAll("[\\s-]", "_");
+        for (Tier t : values()) {
+            String l = java.text.Normalizer.normalize(t.label.toLowerCase(), java.text.Normalizer.Form.NFD)
+                    .replaceAll("\\p{M}", "").replaceAll("[\\s-]", "_");
+            if (t.name().equalsIgnoreCase(n) || l.equals(n)) return t;
+        }
+        return null;
+    }
 }

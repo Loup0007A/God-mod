@@ -81,8 +81,8 @@ public final class Menus {
                     "§7" + DivineWorld.describe(p), "", "§eClic gauche : y aller", "§eClic droit : revenir au monde principal"),
                     (sp, c) -> {
                         sp.closeContainer();
-                        if (c == GodMenu.Click.RIGHT) DivineWorld.leave(sp);
-                        else report(sp, DivineWorld.sendHome(sp));
+                        if (c == GodMenu.Click.RIGHT) report(sp, com.godmod.system.Travel.startRun(sp, "Vers le Sanctuaire", () -> DivineWorld.leave(sp)));
+                        else report(sp, com.godmod.system.Travel.start(sp, "Vers votre monde divin", () -> DivineWorld.sendHome(sp)));
                     });
         } else {
             page.set(25, Page.icon(Items.DIRT, "Monde divin (verrouillé)", ChatFormatting.DARK_GRAY,
@@ -102,6 +102,35 @@ public final class Menus {
         page.set(16, Page.icon(Items.EXPERIENCE_BOTTLE, "Comment progresser ?", ChatFormatting.AQUA,
                 "§7Tout ce qui rapporte de l'Essence", "§7et fait monter de palier", "", "§eCliquez pour lire"),
                 (sp, c) -> later(sp, () -> openGuide(sp)));
+        boolean daily = com.godmod.progress.DailyReward.available(p);
+        page.set(20, Page.icon(daily ? Items.CHEST_MINECART : Items.CLOCK, 1, "Récompense quotidienne", ChatFormatting.GOLD, List.of(
+                Page.line(daily ? "§aDisponible ! Cliquez pour la récupérer" : "§7Déjà récupérée aujourd'hui"),
+                Page.line("§7Série : §e" + p.dailyStreak + " jour(s)§7 · record " + p.dailyBest),
+                Page.line(daily ? "" : "§7Prochaine dans " + Msg.time(com.godmod.progress.QuestSystem.untilTomorrow())),
+                Page.line("§8(/recompense)")), daily), (sp, c) -> {
+            if (com.godmod.progress.DailyReward.available(GodData.get(sp))) report(sp, com.godmod.progress.DailyReward.claim(sp));
+            later(sp, () -> com.godmod.progress.DailyReward.open(sp));
+        });
+        com.godmod.progress.EventSystem.Type ev = com.godmod.progress.EventSystem.current();
+        long nextEv = com.godmod.progress.EventSystem.nextAt();
+        page.set(22, Page.icon(ev != null ? ev.icon : Items.FIREWORK_ROCKET, 1, ev != null ? "Événement : " + ev.label : "Événements", ev != null ? ev.color : ChatFormatting.AQUA, List.of(
+                Page.line(ev != null ? "§f" + ev.description : "§7Aucun événement en cours"),
+                Page.line(ev != null ? "§eFin dans " + Msg.clock(com.godmod.progress.EventSystem.timeLeft())
+                        : nextEv > 0 ? "§7Prochain dans " + Msg.time(Math.max(0, nextEv - System.currentTimeMillis())) : "§7Lancés par les admins"),
+                Page.line(""),
+                Page.line(ev != null ? "§eCliquez pour participer" : "§eCliquez pour les détails"),
+                Page.line("§8(/event)")), ev != null), (sp, c) -> {
+            sp.closeContainer();
+            if (com.godmod.progress.EventSystem.current() != null) {
+                String err = com.godmod.progress.EventSystem.join(sp);
+                if (err != null) Msg.info(sp, err);
+            } else com.godmod.progress.EventSystem.info(sp);
+        });
+        page.set(24, Page.icon(Items.KNOWLEDGE_BOOK, "Aide et commandes", ChatFormatting.AQUA,
+                "§7Toutes les commandes, par thème,", "§7cliquables dans le chat", "", "§eCliquez pour ouvrir  §8(/aide)"), (sp, c) -> {
+            sp.closeContainer();
+            com.godmod.command.Help.summary(sp);
+        });
         if (com.godmod.system.Moderation.roleOf(player).atLeast(com.godmod.data.Role.ADMIN)) {
             page.set(42, Page.icon(Items.GOLDEN_HELMET, "Équipe du serveur", ChatFormatting.RED,
                     "§7Nommer modérateurs et admins", "", "§eCliquez pour ouvrir"), (sp, c) -> later(sp, () -> openTeam(sp)));
@@ -109,12 +138,12 @@ public final class Menus {
         page.set(11, Page.icon(Items.BEACON, "Sanctuaire (spawn)", ChatFormatting.LIGHT_PURPLE,
                 "§7Retour au temple céleste", "", "§eCliquez pour y aller  §8(/spawn)"), (sp, c) -> {
             sp.closeContainer();
-            com.godmod.system.Hub.teleport(sp);
+            report(sp, com.godmod.system.Travel.startRun(sp, "Vers le Sanctuaire", () -> com.godmod.system.Hub.teleport(sp)));
         });
         page.set(15, Page.icon(Items.DIAMOND_PICKAXE, "Monde ressource", ChatFormatting.AQUA,
                 "§7Un monde sauvage pour miner et récolter", "", "§eCliquez pour y aller  §8(/mine)"), (sp, c) -> {
             sp.closeContainer();
-            report(sp, com.godmod.system.Hub.toMine(sp));
+            report(sp, com.godmod.system.Travel.start(sp, "Vers le monde ressource", () -> com.godmod.system.Hub.toMine(sp)));
         });
         if (DivineWorld.hasWorld(p)) {
             page.set(40, Page.icon(Items.IRON_DOOR, "Permissions de l'île", ChatFormatting.GOLD,
@@ -754,6 +783,15 @@ public final class Menus {
         page.set(24, Page.icon(Items.CLOCK, "6. Le temps de jeu", ChatFormatting.WHITE, "§7+2 Essence par minute connectée."));
         page.set(25, Page.icon(Items.BLAZE_POWDER, "7. Les caractéristiques", ChatFormatting.RED,
                 "§7Chaque palier et chaque tranche d'Essence", "§7donnent des points : Force, Vitalité, Agilité, Esprit."));
+        page.set(28, Page.icon(Items.CLOCK, "8. La récompense quotidienne", ChatFormatting.GOLD,
+                "§7Connectez-vous chaque jour : série de 7 jours,", "§7+10 % par semaine complète, clés au jour 3, 5 et 7.", "§e/recompense"),
+                (sp, c) -> later(sp, () -> com.godmod.progress.DailyReward.open(sp)));
+        page.set(29, Page.icon(Items.FIREWORK_ROCKET, "9. Les événements", ChatFormatting.AQUA,
+                "§7Régulièrement : XP ou Essence ×2, Titan à abattre,", "§7chasse au trésor, concours, quiz, pluie de clés…", "§e/event"),
+                (sp, c) -> {
+                    sp.closeContainer();
+                    com.godmod.progress.EventSystem.info(sp);
+                });
         int i = 0;
         int[] tierSlots = {37, 38, 39, 40, 41};
         for (com.godmod.data.Tier t : com.godmod.data.Tier.values()) {
@@ -891,7 +929,7 @@ public final class Menus {
                     Page.line(mine ? "§cMaj + clic : supprimer" : "")), mine), (sp, c) -> {
                 sp.closeContainer();
                 if (c == GodMenu.Click.SHIFT && w.owner.equals(sp.getUUID().toString())) report(sp, com.godmod.system.WarpSystem.delete(sp, w.name));
-                else report(sp, com.godmod.system.WarpSystem.go(sp, w.name));
+                else report(sp, com.godmod.command.GodCommands.goWarp(sp, w.name));
             });
         }
         if (warps.isEmpty()) {

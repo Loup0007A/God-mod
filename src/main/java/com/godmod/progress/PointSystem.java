@@ -33,6 +33,11 @@ public final class PointSystem {
     public static boolean use(ServerPlayer player, BlockPos pos) {
         String type = at(player.level(), pos);
         if (type == null) return false;
+        if (type.equals("tresor")) {
+            BlockPos at = pos.immutable();
+            player.level().getServer().execute(() -> EventSystem.openTreasure(player, at));
+            return true;
+        }
         player.level().getServer().execute(() -> open(player, type));
         return true;
     }

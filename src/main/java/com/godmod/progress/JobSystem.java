@@ -127,7 +127,8 @@ public final class JobSystem {
         PlayerProfile p = GodData.get(player);
         double mult = GodData.settings().essenceMultiplier;
         if (GodData.settings().payEnabled && System.currentTimeMillis() < p.boostUntil) mult *= 2;
-        amount *= mult;
+        amount *= mult * EventSystem.jobXpMultiplier();
+        EventSystem.onJobXp(player, job, amount);
         int lvl = level(p, job);
         if (lvl >= Job.MAX_LEVEL) {
             giveEssence(player, p, amount * ESSENCE_PER_XP);
@@ -151,7 +152,7 @@ public final class JobSystem {
     }
 
     private static void giveEssence(ServerPlayer player, PlayerProfile p, double amount) {
-        p.essenceFraction += amount;
+        p.essenceFraction += amount * EventSystem.essenceMultiplier();
         long whole = (long) Math.floor(p.essenceFraction);
         if (whole <= 0) return;
         p.essenceFraction -= whole;

@@ -169,6 +169,11 @@ public final class Shop {
 
     /** Prix de revente unitaire, ou 0 si l'item n'est pas racheté. */
     public static long sellPrice(Item item) {
+        long base = baseSellPrice(item);
+        return base <= 0 ? 0 : Math.max(1, Math.round(base * com.godmod.progress.EventSystem.sellMultiplier()));
+    }
+
+    private static long baseSellPrice(Item item) {
         long buy = buyPrice(item);
         if (buy > 0) return Math.max(1, buy / ratio(item));
         Long base = SELL_ONLY.get(item);
@@ -201,7 +206,32 @@ public final class Shop {
         stack.shrink(n);
         PlayerProfile p = GodData.get(player);
         PowerSystem.earnMoney(player.level().getServer(), p, unit * n);
-        Msg.ok(player, "Vendu : " + n + " × " + name + " pour " + (unit * n) + " pièces.");
+        Msg.ok(player, "Vendu : " + n + " × " + name + " pour " + Msg.money(unit * n) + "."
+                + (com.godmod.progress.EventSystem.sellMultiplier() > 1 ? " (Ruée vers l'or : +50 %)" : ""));
+        return null;
+    }
+
+    /** Vend tous les objets de ce type présents dans l'inventaire. */
+    public static String sellAll(ServerPlayer player, ItemStack sample) {
+        if (sample.isEmpty()) return "Tenez en main un exemplaire de l'objet à vendre.";
+        if (DivineItems.isDivine(sample)) return "Les objets divins et les générateurs ne peuvent pas être revendus.";
+        Item item = sample.getItem();
+        long unit = sellPrice(item);
+        if (unit <= 0) return "Le marchand divin ne rachète pas cet objet.";
+        String name = sample.getHoverName().getString();
+        var inv = player.getInventory();
+        int n = 0;
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack st = inv.getItem(i);
+            if (st.isEmpty() || st.getItem() != item || DivineItems.isDivine(st)) continue;
+            // Les objets renommés ou enchantés ne sont vendus que s'ils sont tenus en main (évite les erreurs).
+            if (st != sample && (st.has(net.minecraft.core.component.DataComponents.CUSTOM_NAME) || st.isEnchanted())) continue;
+            n += st.getCount();
+            inv.setItem(i, ItemStack.EMPTY);
+        }
+        if (n == 0) return "Rien à vendre.";
+        PowerSystem.earnMoney(player.level().getServer(), GodData.get(player), unit * n);
+        Msg.ok(player, "Vendu : " + n + " × " + name + " pour " + Msg.money(unit * n) + ".");
         return null;
     }
 

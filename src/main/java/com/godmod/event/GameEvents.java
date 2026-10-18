@@ -66,6 +66,9 @@ import com.godmod.system.BlockJobs;
 import com.godmod.system.CodexGuard;
 import com.godmod.system.Hub;
 import com.godmod.system.Ranks;
+import com.godmod.system.Travel;
+import com.godmod.system.TpaSystem;
+import com.godmod.progress.EventSystem;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 
@@ -85,6 +88,9 @@ public final class GameEvents {
         ServerAboutToStartEvent.BUS.addListener((Consumer<ServerAboutToStartEvent>) e -> MineReset.onServerAboutToStart(e.getServer()));
         ServerStartingEvent.BUS.addListener((Consumer<ServerStartingEvent>) e -> GodData.load(e.getServer()));
         ServerStartedEvent.BUS.addListener((Consumer<ServerStartedEvent>) e -> onServerStarted(e.getServer()));
+        net.minecraftforge.event.server.ServerStoppingEvent.BUS.addListener((Consumer<net.minecraftforge.event.server.ServerStoppingEvent>) e -> {
+            if (GodData.ready()) EventSystem.onServerStopping(e.getServer());
+        });
         ServerStoppedEvent.BUS.addListener((Consumer<ServerStoppedEvent>) e -> GodData.unload());
 
         PlayerEvent.PlayerLoggedInEvent.BUS.addListener((Consumer<PlayerEvent.PlayerLoggedInEvent>) GameEvents::onLogin);
@@ -115,6 +121,7 @@ public final class GameEvents {
         ItemTossEvent.BUS.addListener((Predicate<ItemTossEvent>) e -> CodexGuard.isCodex(e.getEntity().getItem()));
         LivingDropsEvent.BUS.addListener((Predicate<LivingDropsEvent>) e -> {
             e.getDrops().removeIf(item -> CodexGuard.isCodex(item.getItem()));
+            if (EventSystem.isEventMob(e.getEntity())) e.getDrops().clear(); // serviteurs du Titan : pas de butin à farmer
             return false;
         });
 
@@ -180,7 +187,7 @@ public final class GameEvents {
 
         // Sanctuaire : pas de monstres, et les explosions n'y cassent rien.
         EntityJoinLevelEvent.BUS.addListener((Predicate<EntityJoinLevelEvent>) e -> GodData.ready() && !e.loadedFromDisk()
-                && e.getEntity() instanceof Enemy && Hub.isProtected(e.getLevel(), e.getEntity().blockPosition()));
+                && e.getEntity() instanceof Enemy && !EventSystem.isEventMob(e.getEntity()) && Hub.isProtected(e.getLevel(), e.getEntity().blockPosition()));
         ExplosionEvent.Detonate.BUS.addListener((Consumer<ExplosionEvent.Detonate>) e -> {
             if (GodData.ready()) e.getAffectedBlocks().removeIf(pos -> Hub.isProtected(e.getLevel(), pos));
         });
@@ -189,8 +196,18 @@ public final class GameEvents {
                 locked(e.getEntity()) || entityInteractDenied(e.getEntity(), e.getTarget()));
         AttackEntityEvent.BUS.addListener((Predicate<AttackEntityEvent>) e -> locked(e.getEntity()) || frozen(e.getEntity()));
         EntityItemPickupEvent.BUS.addListener((Predicate<EntityItemPickupEvent>) e -> locked(e.getEntity()));
-        LivingAttackEvent.BUS.addListener((Predicate<LivingAttackEvent>) e -> locked(e.getEntity()) || locked(e.getSource().getEntity())
-                || pvpDenied(e.getEntity(), e.getSource().getEntity()));
+        LivingAttackEvent.BUS.addListener((Predicate<LivingAttackEvent>) e -> {
+            boolean deny = locked(e.getEntity()) || locked(e.getSource().getEntity()) || pvpDenied(e.getEntity(), e.getSource().getEntity());
+            // Combat entre joueurs : pas de téléportation pendant 12 s (anti-fuite).
+            if (!deny && e.getEntity() instanceof ServerPlayer v && e.getSource().getEntity() instanceof ServerPlayer a && v != a && e.getAmount() > 0)
+                Travel.tagCombat(v, a);
+            return deny;
+        });
+        // Dégâts infligés (après armure) : participation au combat contre le Titan.
+        net.minecraftforge.event.entity.living.LivingDamageEvent.BUS.addListener((Predicate<net.minecraftforge.event.entity.living.LivingDamageEvent>) e -> {
+            if (GodData.ready()) EventSystem.onDamage(e.getEntity(), e.getSource().getEntity(), e.getAmount());
+            return false;
+        });
     }
 
     /** Clic droit sur une caisse ou un tableau du Sanctuaire. */
@@ -306,14 +323,25 @@ public final class GameEvents {
                     + (p.muteReason == null ? "." : " : " + p.muteReason));
             return true;
         }
+        EventSystem.onChat(sp, e.getRawText());
         return false;
     }
 
     private static boolean onCommand(CommandEvent e) {
         if (!GodData.ready()) return false;
         Entity ent = e.getParseResults().getContext().getSource().getEntity();
-        if (!(ent instanceof ServerPlayer sp) || !AuthSystem.isLocked(sp)) return false;
+        if (!(ent instanceof ServerPlayer sp)) return false;
         String cmd = e.getParseResults().getReader().getString();
+        if (!AuthSystem.isLocked(sp)) {
+            // Un joueur muet ne contourne pas la sanction par les messages privés.
+            PlayerProfile p = GodData.get(sp);
+            String root = (cmd.startsWith("/") ? cmd.substring(1) : cmd).split(" ", 2)[0].toLowerCase();
+            if (Moderation.isMuted(p) && java.util.Set.of("msg", "tell", "w", "me", "teammsg", "tm", "say").contains(root)) {
+                Msg.err(sp, "Vous êtes muet encore " + Msg.time(p.mutedUntil - System.currentTimeMillis()) + " : messages privés impossibles.");
+                return true;
+            }
+            return false;
+        }
         if (AuthSystem.allowedCommand(cmd)) return false;
         Msg.err(sp, "Connectez-vous d'abord : /login <motdepasse> (ou /register <motdepasse> <motdepasse>).");
         return true;
@@ -372,6 +400,9 @@ public final class GameEvents {
         Hud.onLogout(sp);
         CrateSystem.onLogout(sp);
         PowerActions.onLogout(sp);
+        Travel.onLogout(sp);
+        TpaSystem.onLogout(sp);
+        EventSystem.onLogout(sp);
         PlayerProfile p = GodData.get(sp);
         p.lastSeen = System.currentTimeMillis();
         GodData.dirty();
@@ -390,6 +421,9 @@ public final class GameEvents {
         Scheduler.tick();
         CrateSystem.tick(server);
         PowerActions.tick(server);
+        Travel.tick(server);
+        TpaSystem.tick(server);
+        EventSystem.tick(server);
         for (ServerPlayer sp : server.getPlayerList().getPlayers()) {
             if (AuthSystem.isLocked(sp)) continue;
             DivineWorld.enforce(sp);
@@ -442,6 +476,7 @@ public final class GameEvents {
             return false;
         }
 
+        EventSystem.onDeath(dead.level().getServer(), dead);
         if (attacker instanceof ServerPlayer killer && dead instanceof Mob) {
             JobSystem.onKill(killer, dead);
         }
@@ -457,8 +492,14 @@ public final class GameEvents {
             hp.displayClientMessage(Msg.text("Le Sanctuaire est protégé par les dieux.", ChatFormatting.RED), true);
             return true;
         }
+        // Coffre au trésor (événement) et autres points interactifs : on ne les casse pas.
+        if (GodData.ready() && e.getLevel() instanceof Level pl && e.getPlayer() instanceof ServerPlayer pp
+                && PointSystem.at(pl, e.getPos()) != null && !Hub.canEditHub(pp)) {
+            pp.displayClientMessage(Msg.text("Faites un clic droit dessus plutôt que de le casser.", ChatFormatting.YELLOW), true);
+            return true;
+        }
         if (!GodData.ready() || !(e.getLevel() instanceof Level level) || !DivineWorld.isDivine(level)) return false;
-        if (!(e.getPlayer() instanceof ServerPlayer sp) || sp.isCreative()) return false;
+        if (!(e.getPlayer() instanceof ServerPlayer sp) || adminBypass(sp)) return false;
         PlayerProfile actor = GodData.get(sp);
         PlayerProfile owner = DivineWorld.ownerAt(e.getPos());
         if (owner == null || !DivineWorld.has(actor, owner, com.godmod.data.IslandPerm.CASSER) || !DivineWorld.insidePlot(owner, e.getPos())) {
@@ -483,7 +524,7 @@ public final class GameEvents {
         if (!(entity instanceof ServerPlayer sp)) return false;
         PlayerProfile actor = GodData.get(sp);
         PlayerProfile owner = DivineWorld.ownerAt(pos);
-        if (!sp.isCreative() && (owner == null || !DivineWorld.has(actor, owner, com.godmod.data.IslandPerm.POSER) || !DivineWorld.insidePlot(owner, pos))) {
+        if (!adminBypass(sp) && (owner == null || !DivineWorld.has(actor, owner, com.godmod.data.IslandPerm.POSER) || !DivineWorld.insidePlot(owner, pos))) {
             sp.displayClientMessage(Msg.text("Vous n'avez pas la permission de poser des blocs ici.", ChatFormatting.RED), true);
             return true;
         }
@@ -493,6 +534,11 @@ public final class GameEvents {
             Msg.info(sp, "Votre monde prend vie : le bloc originel n'est plus protégé.");
         }
         return false;
+    }
+
+    /** Seul un admin en créatif passe outre les permissions des îles (le créatif seul ne suffit pas). */
+    private static boolean adminBypass(ServerPlayer sp) {
+        return sp.isCreative() && Moderation.roleOf(sp).atLeast(com.godmod.data.Role.ADMIN);
     }
 
     private static boolean onTravel(EntityTravelToDimensionEvent e) {

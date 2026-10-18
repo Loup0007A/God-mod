@@ -28,14 +28,27 @@ Chaque connexion, chaque réapparition après une mort et `/spawn` mènent au Sa
 Il est entièrement protégé : impossible de casser, poser, utiliser seaux/feu ou d'y combattre (sauf duels),
 aucun monstre, aucune explosion. Tomber dans le vide ramène au point d'apparition.
 
-Admins : `/godadmin spawn reconstruire` · `/godadmin spawn vider` (tout effacer pour bâtir le vôtre) ·
+Admins : `/godadmin spawn reconstruire` · `/godadmin spawn vider confirmer` (tout effacer pour bâtir le vôtre) ·
 `/godadmin spawn edition` (activer/désactiver le droit de modifier) · `/godadmin spawn definir` (point d'apparition).
+
+## Aide en jeu
+
+`/aide` affiche toutes les commandes par thème (Essentiel, Progression, Pouvoirs, Mondes, Économie, Conflits,
+Compte, et Modération / Administration pour l'équipe). Chaque commande est **cliquable** (elle se pré-remplit
+dans le chat) et son survol l'explique. La liste s'adapte au rang du joueur.
 
 ## Déplacements
 
 - `/spawn` : Sanctuaire · `/mine` : monde ressource (endroit aléatoire et sûr) · `/monde` : votre monde divin.
 - `/setwarp <nom>` : warp public à votre position (1 pour un mortel → 10 pour un dieu suprême) ·
   `/warp [nom]` (sans nom : liste cliquable) · `/warps` · `/delwarp <nom>`.
+- `/tpa <joueur>` (aller vers lui) · `/tpahere <joueur>` (le faire venir) · `/tpaccept` · `/tpdeny`
+  (boutons cliquables dans le chat) · `/tpatoggle` (refuser toutes les demandes). La destination doit être
+  accessible au voyageur (permissions des îles respectées).
+- **3 secondes sans bouger** avant chaque téléportation par commande (annulée si l'on bouge ou si l'on est
+  blessé), et **aucune téléportation pendant 12 s après un coup reçu ou donné à un joueur** : on ne fuit plus
+  un combat avec `/spawn`. Départ immédiat depuis le Sanctuaire et pour l'équipe.
+  Réglable : `/godadmin teleport <secondes>` (0 = immédiat).
 
 ## Monde divin
 
@@ -79,16 +92,20 @@ Admins : `/auth on|off`, `/auth reset <joueur>`.
 | `/mod kick <joueur> [raison]` | ✔ | ✔ |
 | `/mod mute <joueur> <minutes> [raison]` · `/mod unmute <joueur>` | ✔ | ✔ |
 | `/mod ban <joueur> <heures> [raison]` (0 = définitif) | 72 h max | ✔ |
-| `/mod unban` · `/mod warn` · `/mod freeze` · `/mod tp` · `/mod info` | ✔ | ✔ |
+| `/mod unban` · `/mod warn` · `/mod freeze` · `/mod tp` · `/mod tphere` · `/mod info` | ✔ | ✔ |
+| `/mod invsee <joueur>` · `/mod ecsee <joueur>` (inventaire / coffre de l'Ender, lecture seule) · `/argent <joueur>` | ✔ | ✔ |
 | `/mod journal [lignes]` · `/sc <message>` (chat d'équipe) | ✔ | ✔ |
 | `/tournoi creer [prix]` · `/tournoi annuler` | ✔ | ✔ |
 | `/delwarp` sur n'importe quel warp | ✔ | ✔ |
 | `/staff`, `/auth`, `/structurer`, `/godadmin`, `/pay` | | ✔ |
-| `/mine reset` (le monde ressource est régénéré au prochain redémarrage) · `/mine reset maintenant` (arrêt du serveur dans 15 s) | | ✔ |
+| `/mine reset` (le monde ressource est régénéré au prochain redémarrage) · `/mine reset maintenant` (arrêt du serveur dans 15 s) · `/mine reset annuler` | | ✔ |
+| `/event lancer\|stop\|auto\|intervalle\|joueurs` · `/godadmin teleport <s>` · `/godadmin reglages` · `/godadmin metier <joueur> <métier> <niveau>` | | ✔ |
+| `/godadmin argent\|essence\|gemmes <joueur> <definir\|ajouter\|retirer> <valeur>` · `/godadmin journal [lignes] [filtre]` | | ✔ |
 | `/cle donner <joueur> <commune\|rare\|epique\|divine> [n]` · `/godadmin point placer <type>` / `retirer` (déplacer caisses et pupitres) | | ✔ |
 | `/godadmin clearile <joueur>` (remet un monde divin à zéro) · `/godadmin clearzone <rayon> [hauteur]` | | ✔ |
 
-Tout joueur peut faire `/signaler <joueur> <raison>` : l'équipe connectée est prévenue.
+Tout joueur peut faire `/signaler <joueur> <raison>` (une fois par minute) : l'équipe connectée est prévenue
+et le signalement est enregistré dans le journal. Un joueur muet ne peut pas non plus utiliser `/msg`, `/tell`, `/w` ou `/me`.
 Un membre de l'équipe ne peut pas sanctionner quelqu'un de rang supérieur.
 
 ## Compiler le .jar avec GitHub (développeurs)
@@ -99,6 +116,31 @@ Un membre de l'équipe ne peut pas sanctionner quelqu'un de rang supérieur.
 4. Placez le .jar dans le dossier `mods/` du serveur (inutile chez les joueurs).
 
 En local : `./gradlew build` (le .jar est dans `build/libs/`).
+
+## Événements (`/event`)
+
+Toutes les **45 minutes** (dès 2 joueurs connectés), un événement est annoncé 2 minutes à l'avance puis lancé,
+avec une barre en haut de l'écran de tous les joueurs :
+
+| Événement | Durée | Principe |
+|---|---|---|
+| Bénédiction des artisans | 15 min | XP de métier ×2 |
+| Éclipse divine | 15 min | Essence ×2 |
+| Ruée vers l'or | 15 min | Le marchand rachète tout 50 % plus cher |
+| Concours de métier | 10 min | Le plus d'XP dans le métier tiré au sort : podium (clé Rare, 4 000 / 2 000 / 1 000 pièces) |
+| Assaut du Titan | 10 min | Un Titan géant et ses serviteurs envahissent l'Arène (`/event rejoindre`). Récompense selon les dégâts : clé Épique au meilleur, Rare aux 2 suivants, Commune aux autres |
+| Chasse au trésor | 15 min | Un coffre est caché dans le monde ressource ; la barre d'action indique distance et direction. Le premier qui l'ouvre gagne 3 000 pièces, 300 Essence, une clé Épique et 8 diamants |
+| Question des dieux | ~4 min | 3 questions (calcul, mot mélangé, culture Minecraft) : le premier qui répond juste dans le chat gagne |
+| Faveur divine | 5 min | Toutes les 30 s, la foudre bénie frappe des joueurs au hasard et leur offre clés ou pièces |
+
+Admins : `/event lancer <type>` · `/event stop` · `/event auto on|off` · `/event intervalle <minutes>` ·
+`/event joueurs <minimum>` · `/event liste`.
+
+## Récompense quotidienne (`/recompense`)
+
+Un cycle de 7 jours : 250 → 2 500 pièces, 40 → 350 Essence, clés Commune aux jours 3 et 5, clé Rare au jour 7.
+Chaque semaine complète sans interruption ajoute **+10 %** (jusqu'à +100 %), et 28 jours de suite offrent une
+clé Épique. Un jour manqué remet la série à 1. Rappel cliquable à la connexion, calendrier dans `/dieu`.
 
 ## Progression
 
@@ -207,15 +249,21 @@ Les artefacts sont des objets vanilla enchantés et renommés, reconnus par le s
 
 ## Commandes
 
-Joueurs : `/dieu` · `/dieu profil [joueur]` · `/dieu stats <carac>` · `/dieu specialisation <ocean|ciel|cosmos>`
-· `/pouvoir [nom]` · `/metiers` · `/quetes` · `/caisses` · `/cles` · `/progression` · `/hud` · `/mine` · `/dieu fideles` · `/dieu liberer <joueur>`
-· `/dieu choix <trone|refuser>` · `/monde [quitter|visiter <joueur>]` · `/shop [vendre [un]]` · `/argent`
-· `/rebellion [declarer|rejoindre]` · `/tournoi [rejoindre|quitter]` · `/trone reclamer <dieu>`
-· `/guerre [declarer <dieu>]` · `/classement`
+`/aide` les liste toutes, cliquables. Principales :
+
+Joueurs : `/dieu` · `/aide` · `/recompense` · `/event [rejoindre]` · `/profil [joueur]` · `/dieu stats <carac> [points]`
+· `/dieu specialisation <ocean|ciel|cosmos>` · `/pouvoir [nom] [cible]` · `/metiers` · `/quetes` · `/cles` · `/progression` · `/hud [on|off]`
+· `/spawn` · `/mine` · `/monde [quitter|visiter <joueur>]` · `/warp` · `/setwarp` · `/delwarp` · `/tpa` · `/tpahere` · `/tpaccept` · `/tpdeny` · `/tpatoggle`
+· `/ile [ajouter|retirer|membres|perm|pvp]` · `/shop [vendre [un|tout]|prix]` · `/argent` · `/payer <joueur> <montant>` · `/baltop`
+· `/classement [puissance|argent|metiers|quetes|evenements|fideles]` · `/dieu fideles` · `/dieu liberer <joueur>` · `/dieu choix <trone|refuser>`
+· `/rebellion [declarer|rejoindre]` · `/tournoi [rejoindre|quitter]` · `/trone reclamer <dieu>` · `/guerre [declarer <dieu>]`
+· `/motdepasse <ancien> <nouveau>` · `/signaler <joueur> <raison>`
+
+Les mots de passe acceptent tous les caractères (`!`, `@`, accents…), sans espace.
 
 Admins :
-`/godadmin voir <joueur>` · `essence|argent|gemmes <joueur> <valeur>` · `palier <joueur> <palier>`
-· `maitre <joueur> <maître|aucun>` · `reset <joueur>` · `arene` · `mode <serveur|petit>`
+`/godadmin voir <joueur>` · `essence|argent|gemmes <joueur> [definir|ajouter|retirer] <valeur>` · `palier <joueur> <palier>`
+· `maitre <joueur> <maître|aucun>` · `reset <joueur> confirmer` · `arene` · `mode <serveur|petit>`
 · `cooldown <heures>` · `inactivite <jours>` · `netherend <bloquer|autoriser>` · `journal [lignes]`
 · `/pay <enable|disable|status>`
 

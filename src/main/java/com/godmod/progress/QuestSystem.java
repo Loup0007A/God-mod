@@ -81,8 +81,18 @@ public final class QuestSystem {
     private QuestSystem() {
     }
 
+    /** Fuseau des « jours » du serveur (quêtes, récompense quotidienne). */
+    public static final java.time.ZoneId ZONE = java.time.ZoneId.of("Europe/Paris");
+
     public static String today() {
-        return LocalDate.now().toString();
+        return LocalDate.now(ZONE).toString();
+    }
+
+    /** Millisecondes avant minuit (nouvelles quêtes, nouvelle récompense). */
+    public static long untilTomorrow() {
+        java.time.ZonedDateTime now = java.time.ZonedDateTime.now(ZONE);
+        java.time.ZonedDateTime next = now.toLocalDate().plusDays(1).atStartOfDay(ZONE);
+        return java.time.Duration.between(now, next).toMillis();
     }
 
     /** Renouvelle les quêtes proposées si un nouveau jour a commencé. */

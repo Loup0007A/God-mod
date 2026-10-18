@@ -60,6 +60,12 @@ public final class RebellionSystem {
         return null;
     }
 
+    /** Une rébellion se bat-elle en ce moment dans l'Arène ? */
+    public static boolean anyFighting() {
+        for (Rebellion r : ACTIVE.values()) if (r.fighting) return true;
+        return false;
+    }
+
     public static long cooldownLeft(PlayerProfile p) {
         return Math.max(0, p.rebellionCooldownUntil - System.currentTimeMillis());
     }

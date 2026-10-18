@@ -110,8 +110,8 @@ public final class Hud {
         if (p.tier.atLeast(Tier.EVEILLE)) lines.add(kv("Foi", Component.literal((int) p.faith + " / " + (int) p.maxFaith()).withStyle(ChatFormatting.AQUA)));
         lines.add(Component.literal("  "));
         Job best = JobSystem.best(p);
-        lines.add(kv("Métier", Component.literal(best.icon + " " + best.label + " " + JobSystem.level(p, best)).withStyle(best.color)));
-        lines.add(kv("Niveaux", Component.literal(String.valueOf(JobSystem.totalLevels(p))).withStyle(ChatFormatting.WHITE)));
+        lines.add(kv("Métier", Component.literal(best.icon + " " + best.label + " " + JobSystem.level(p, best)
+                + " (" + JobSystem.totalLevels(p) + " niv.)").withStyle(best.color)));
         lines.add(kv("Quêtes", Component.literal(p.quests.size() + " / " + QuestSystem.MAX_ACTIVE).withStyle(ChatFormatting.YELLOW)));
         lines.add(kv("Clés", Component.literal(String.valueOf(CrateSystem.totalKeys(p))).withStyle(ChatFormatting.GREEN)));
         lines.add(Component.literal("   "));
@@ -121,7 +121,10 @@ public final class Hud {
         }
         int followers = GodData.followersOf(p.uuid).size();
         if (followers > 0 || p.tier.atLeast(Tier.DEMI_DIEU)) lines.add(kv("Fidèles", Component.literal(String.valueOf(followers)).withStyle(ChatFormatting.YELLOW)));
-        lines.add(Component.literal("/dieu · /quetes · /metiers").withStyle(ChatFormatting.DARK_GRAY));
+        EventSystem.Type ev = EventSystem.current();
+        if (ev != null) lines.add(kv("Événement", Component.literal(ev.label).withStyle(ev.color)));
+        if (DailyReward.available(p)) lines.add(Component.literal("★ /recompense disponible").withStyle(ChatFormatting.GOLD));
+        lines.add(Component.literal("/dieu · /aide · /event").withStyle(ChatFormatting.DARK_GRAY));
 
         boolean fresh = !SENT_LINES.containsKey(player.getUUID());
         if (fresh) {

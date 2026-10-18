@@ -57,6 +57,43 @@ public final class Msg {
                 .withHoverEvent(new HoverEvent.ShowText(Component.literal(hover))));
     }
 
+    /** Texte cliquable qui pré-remplit la barre de commande (sans l'exécuter). */
+    public static MutableComponent suggest(String label, String command, String hover, ChatFormatting color) {
+        return Component.literal(label).withStyle(s -> s
+                .withColor(color)
+                .withClickEvent(new ClickEvent.SuggestCommand(command))
+                .withHoverEvent(new HoverEvent.ShowText(Component.literal(hover))));
+    }
+
+    /** Montant formaté : « 12 345 pièces ». */
+    public static String money(long amount) {
+        return num(amount) + " pièce" + (Math.abs(amount) > 1 ? "s" : "");
+    }
+
+    /** Nombre avec séparateur de milliers (espace). */
+    public static String num(long n) {
+        String s = String.valueOf(Math.abs(n));
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            if (i > 0 && (s.length() - i) % 3 == 0) b.append('\u00A0');
+            b.append(s.charAt(i));
+        }
+        return (n < 0 ? "-" : "") + b;
+    }
+
+    /** Ligne de titre centrée pour les messages longs (aide, profils…). */
+    public static MutableComponent header(String title) {
+        return Component.literal("━━━━━━ ").withStyle(ChatFormatting.DARK_GRAY)
+                .append(Component.literal("✦ " + title + " ✦").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+                .append(Component.literal(" ━━━━━━").withStyle(ChatFormatting.DARK_GRAY));
+    }
+
+    /** Durée exprimée en minutes et secondes « 4:05 ». */
+    public static String clock(long ms) {
+        long s = Math.max(0, ms / 1000);
+        return (s / 60) + ":" + String.format("%02d", s % 60);
+    }
+
     public static String time(long ms) {
         long s = Math.max(0, ms / 1000);
         long d = s / 86400, h = (s % 86400) / 3600, m = (s % 3600) / 60;
