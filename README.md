@@ -39,7 +39,8 @@ dans le chat) et son survol l'explique. La liste s'adapte au rang du joueur.
 
 ## Déplacements
 
-- `/spawn` : Sanctuaire · `/mine` : monde ressource (endroit aléatoire et sûr) · `/monde` : votre monde divin.
+- `/spawn` : Sanctuaire · `/mine` : monde ressource (endroit aléatoire ; si aucun sol sûr n'est trouvé, on y va quand même
+  avec une petite plateforme et 15 s sans aucun dégât) · `/monde` : votre monde divin.
 - `/setwarp <nom>` : warp public à votre position (1 pour un mortel → 10 pour un dieu suprême) ·
   `/warp [nom]` (sans nom : liste cliquable) · `/warps` · `/delwarp <nom>`.
 - `/tpa <joueur>` (aller vers lui) · `/tpahere <joueur>` (le faire venir) · `/tpaccept` · `/tpdeny`
@@ -116,6 +117,41 @@ Un membre de l'équipe ne peut pas sanctionner quelqu'un de rang supérieur.
 4. Placez le .jar dans le dossier `mods/` du serveur (inutile chez les joueurs).
 
 En local : `./gradlew build` (le .jar est dans `build/libs/`).
+
+## Statistiques (`/stats`)
+
+`/stats [joueur]` ouvre un panneau complet : combat (victoires, morts, ratio, monstres), récolte (blocs minés,
+minerais, diamants, bûches, cultures, poissons, blocs posés), artisanat et commerce (objets fabriqués, fondus,
+animaux nés, échanges, ventes, pièces gagnées), progression, assiduité, richesse et métiers, avec le rang du
+joueur dans chaque classement. `/stats serveur` : totaux du serveur et records (top 3 de chaque catégorie).
+
+## Zone AFK (`/afk`, `/afkshop`)
+
+`/afk` envoie dans la zone AFK du Sanctuaire (construite automatiquement à l'écart, en x = -220) :
+**1 jeton AFK et 5 pièces par minute**, 8 h par jour au plus. Un joueur dans la zone n'est jamais expulsé pour
+inactivité ; il reste donc connecté et compte comme joueur en ligne. Un joueur immobile 5 minutes est marqué
+`[AFK]` dans la liste des joueurs. `/afk` ou `/spawn` pour sortir.
+
+`/afkshop` : pièces, Essence, clés (Commune 60, Rare 240, Épique 900 jetons), boost des métiers ×1,5 pendant 1 h,
+fioles d'XP, pomme dorée enchantée, générateurs, et tous les privilèges.
+
+## Privilèges (`/shop` → Privilèges, ou `/privileges`)
+
+Des commandes de confort achetées une fois pour toutes, volontairement chères (ou en jetons AFK) :
+
+| Commande | Effet | Prix | Jetons AFK |
+|---|---|---|---|
+| `/chapeau` | porter l'objet en main sur la tête | 15 000 | 400 |
+| `/craft` | établi portable | 25 000 | 600 |
+| `/manger` | se rassasier (toutes les 10 min) | 30 000 | 700 |
+| `/ec` | coffre de l'Ender portable | 40 000 | 900 |
+| `/enclume` | enclume portable | 50 000 | 1 200 |
+| `/tete [joueur]` | tête d'un joueur (toutes les heures) | 60 000 | 1 500 |
+| `/soin` | soin complet (toutes les 30 min, hors combat) | 80 000 | 2 000 |
+| `/reparer` | répare l'objet en main (toutes les 2 h) | 120 000 | 3 000 |
+| `/vol` | voler dans son propre monde divin | 200 000 | 5 000 |
+
+Les admins ont tous les privilèges. `/skin` n'est pas possible avec un mod côté serveur (il faut un mod dédié).
 
 ## Événements (`/event`)
 

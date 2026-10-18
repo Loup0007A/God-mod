@@ -195,6 +195,7 @@ public final class JobSystem {
         double mult = GodData.settings().essenceMultiplier;
         if (GodData.settings().payEnabled && System.currentTimeMillis() < p.boostUntil) mult *= 2;
         if (job == featured()) mult *= 1.5;
+        if (System.currentTimeMillis() < p.jobBoostUntil) mult *= 1.5;
         amount *= mult * EventSystem.jobXpMultiplier();
         EventSystem.onJobXp(player, job, amount);
         int lvl = level(p, job);
@@ -329,6 +330,9 @@ public final class JobSystem {
         Double ore = ORES.get(b);
         if (ore != null) {
             gain(player, Job.MINEUR, ore);
+            StatsSystem.add(p, StatsSystem.MINED, 1);
+            StatsSystem.add(p, StatsSystem.ORES, 1);
+            if (oreFamily(id).equals("diamond")) StatsSystem.add(p, StatsSystem.DIAMONDS, 1);
             QuestSystem.progress(player, List.of("mine:" + oreFamily(id), "mine:ore", "mine:any"), 1);
             int lvl = level(p, Job.MINEUR);
             double chance = Math.min(0.40, lvl * 0.008) + (lvl >= 50 ? 0.15 : 0);
@@ -341,11 +345,13 @@ public final class JobSystem {
         }
         if (STONES.contains(b)) {
             gain(player, Job.MINEUR, 0.25);
+            StatsSystem.add(p, StatsSystem.MINED, 1);
             QuestSystem.progress(player, List.of("mine:stone", "mine:any"), 1);
             return;
         }
         if (state.is(BlockTags.LOGS)) {
             gain(player, Job.BUCHERON, 2.5);
+            StatsSystem.add(p, StatsSystem.LOGS, 1);
             QuestSystem.progress(player, List.of("chop:" + path(id), "chop:any"), 1);
             int lvl = level(p, Job.BUCHERON);
             if (RANDOM.nextDouble() < Math.min(0.40, lvl * 0.01)) Block.popResource(level, pos, new ItemStack(b.asItem()));
@@ -371,6 +377,7 @@ public final class JobSystem {
         }
         if (b == Blocks.MELON || b == Blocks.PUMPKIN || b == Blocks.SUGAR_CANE || b == Blocks.CACTUS || b == Blocks.COCOA) {
             gain(player, Job.FERMIER, 1.5);
+            StatsSystem.add(p, StatsSystem.CROPS, 1);
             QuestSystem.progress(player, List.of("harvest:" + path(id), "harvest:any"), 1);
         }
     }
@@ -378,6 +385,7 @@ public final class JobSystem {
     /** Une culture mûre vient d'être récoltée (directement ou par la moisson large). */
     private static void harvested(ServerPlayer player, ServerLevel level, BlockPos pos, Block b, PlayerProfile p, String id) {
         gain(player, Job.FERMIER, 3);
+        StatsSystem.add(p, StatsSystem.CROPS, 1);
         QuestSystem.progress(player, List.of("harvest:" + path(id), "harvest:any"), 1);
         int lvl = level(p, Job.FERMIER);
         if (RANDOM.nextDouble() < Math.min(0.40, lvl * 0.01)) Block.popResource(level, pos, new ItemStack(cropDrop(b)));
@@ -416,6 +424,10 @@ public final class JobSystem {
             }
             if (n > 0) {
                 gain(player, Job.MINEUR, xp * n * 0.75);
+                PlayerProfile vp = GodData.get(player);
+                StatsSystem.add(vp, StatsSystem.MINED, n);
+                StatsSystem.add(vp, StatsSystem.ORES, n);
+                if (oreFamily(id).equals("diamond")) StatsSystem.add(vp, StatsSystem.DIAMONDS, n);
                 QuestSystem.progress(player, List.of("mine:" + oreFamily(id), "mine:ore", "mine:any"), n);
                 Fx.sound(player, SoundEvents.AMETHYST_BLOCK_CHIME, 0.6F, 1.6F);
             }
@@ -443,6 +455,7 @@ public final class JobSystem {
             }
             if (felled > 0) {
                 gain(player, Job.BUCHERON, felled * 1.2);
+                StatsSystem.add(GodData.get(player), StatsSystem.LOGS, felled);
                 QuestSystem.progress(player, List.of("chop:" + path(BuiltInRegistries.BLOCK.getKey(log).toString()), "chop:any"), felled);
                 if (gatherer) {
                     if (RANDOM.nextDouble() < 0.5) Block.popResource(level, start, new ItemStack(Items.APPLE, 1 + RANDOM.nextInt(2)));
@@ -471,6 +484,7 @@ public final class JobSystem {
         PlayerProfile p = GodData.get(player);
         String id = BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()).toString();
         boolean hostile = victim instanceof Enemy;
+        StatsSystem.add(p, hostile ? StatsSystem.MOBS : StatsSystem.ANIMALS, 1);
         double xp = hostile ? 7 : 2.5;
         if (id.endsWith("wither") || id.endsWith("ender_dragon") || id.endsWith("warden")) xp = 300;
         int lvl = level(p, Job.CHASSEUR);
@@ -500,6 +514,7 @@ public final class JobSystem {
     public static void onFish(ServerPlayer player, List<ItemStack> drops) {
         PlayerProfile p = GodData.get(player);
         gain(player, Job.PECHEUR, 10);
+        StatsSystem.add(p, StatsSystem.FISH, 1);
         List<String> keys = new ArrayList<>(List.of("fish:any"));
         if (!drops.isEmpty()) keys.add("fish:" + path(BuiltInRegistries.ITEM.getKey(drops.get(0).getItem()).toString()));
         QuestSystem.progress(player, keys, 1);
@@ -523,6 +538,7 @@ public final class JobSystem {
     /** Objet fabriqué à l'établi (ou dans l'inventaire). */
     public static void onCraft(ServerPlayer player, ItemStack result) {
         if (result.isEmpty()) return;
+        StatsSystem.add(GodData.get(player), StatsSystem.CRAFTED, Math.max(1, result.getCount()));
         String id = path(BuiltInRegistries.ITEM.getKey(result.getItem()).toString());
         QuestSystem.progress(player, List.of("craft:any", "craft:" + id), Math.max(1, result.getCount()));
     }
@@ -531,6 +547,7 @@ public final class JobSystem {
     public static void onSmelt(ServerPlayer player, ItemStack result) {
         if (result.isEmpty()) return;
         String id = path(BuiltInRegistries.ITEM.getKey(result.getItem()).toString());
+        StatsSystem.add(GodData.get(player), StatsSystem.SMELTED, Math.max(1, result.getCount()));
         List<String> keys = new ArrayList<>(List.of("smelt:any", "smelt:" + id));
         if (result.get(net.minecraft.core.component.DataComponents.FOOD) != null) keys.add("smelt:food");
         QuestSystem.progress(player, keys, Math.max(1, result.getCount()));
@@ -541,12 +558,14 @@ public final class JobSystem {
     public static void onBreed(ServerPlayer player, LivingEntity child) {
         PlayerProfile p = GodData.get(player);
         p.bred++;
+        StatsSystem.add(p, StatsSystem.BRED, 1);
         gain(player, Job.FERMIER, 6);
         String id = path(BuiltInRegistries.ENTITY_TYPE.getKey(child.getType()).toString());
         QuestSystem.progress(player, List.of("breed:any", "breed:" + id), 1);
     }
 
     public static void onTrade(ServerPlayer player) {
+        StatsSystem.add(GodData.get(player), StatsSystem.TRADES, 1);
         QuestSystem.progress(player, List.of("trade:any"), 1);
     }
 

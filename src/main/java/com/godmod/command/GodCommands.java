@@ -190,7 +190,46 @@ public final class GodCommands {
         registerShop(d);
         registerConflicts(d);
         registerAdmin(d);
+        registerComfort(d);
         StaffCommands.register(d);
+    }
+
+    // ------------------------------------------------------------------ /stats, /afk, privilèges
+
+    private static void registerComfort(CommandDispatcher<CommandSourceStack> d) {
+        for (String name : new String[]{"stats", "statistiques"}) {
+            d.register(Commands.literal(name)
+                    .executes(ctx -> open(ctx, p -> com.godmod.progress.StatsSystem.open(p, GodData.get(p))))
+                    .then(Commands.literal("serveur").executes(ctx -> open(ctx, com.godmod.progress.StatsSystem::openServer)))
+                    .then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                            .executes(ctx -> run(ctx, p -> {
+                                PlayerProfile t = profileArg(ctx, "joueur");
+                                if (t == null) return unknown(ctx, "joueur");
+                                com.godmod.progress.StatsSystem.open(p, t);
+                                return null;
+                            }))));
+        }
+        d.register(Commands.literal("afk").executes(ctx -> run(ctx, com.godmod.system.AfkSystem::toggle)));
+        for (String name : new String[]{"afkshop", "boutiqueafk"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, com.godmod.progress.AfkShop::open)));
+        d.register(Commands.literal("privileges").executes(ctx -> open(ctx, Menus::openPerkShop)));
+
+        for (String n : new String[]{"craft", "atelier", "etabli"}) d.register(Commands.literal(n).executes(ctx -> run(ctx, com.godmod.system.Perks::craft)));
+        for (String n : new String[]{"ec", "enderchest"}) d.register(Commands.literal(n).executes(ctx -> run(ctx, com.godmod.system.Perks::enderChest)));
+        for (String n : new String[]{"enclume", "anvil"}) d.register(Commands.literal(n).executes(ctx -> run(ctx, com.godmod.system.Perks::anvil)));
+        for (String n : new String[]{"manger", "feed"}) d.register(Commands.literal(n).executes(ctx -> run(ctx, com.godmod.system.Perks::feed)));
+        for (String n : new String[]{"soin", "heal"}) d.register(Commands.literal(n).executes(ctx -> run(ctx, com.godmod.system.Perks::heal)));
+        for (String n : new String[]{"chapeau", "hat"}) d.register(Commands.literal(n).executes(ctx -> run(ctx, com.godmod.system.Perks::hat)));
+        for (String n : new String[]{"reparer", "repair"}) d.register(Commands.literal(n).executes(ctx -> run(ctx, com.godmod.system.Perks::repair)));
+        for (String n : new String[]{"vol", "fly"}) d.register(Commands.literal(n).executes(ctx -> run(ctx, com.godmod.system.Perks::fly)));
+        for (String n : new String[]{"tete", "head"}) {
+            d.register(Commands.literal(n)
+                    .executes(ctx -> run(ctx, p -> com.godmod.system.Perks.head(p, null)))
+                    .then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.Perks.head(p, StringArgumentType.getString(ctx, "joueur"))))));
+        }
+        d.register(Commands.literal("skin").executes(ctx -> run(ctx, p ->
+                "Changer de skin n'est pas possible avec ce mod : le serveur ne peut pas modifier votre apparence sans un mod dédié. "
+                        + "Changez votre skin sur minecraft.net puis reconnectez-vous.")));
     }
 
     // ------------------------------------------------------------------ /aide

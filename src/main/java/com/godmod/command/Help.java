@@ -53,6 +53,9 @@ public final class Help {
                 p("/event", "Événement en cours et prochain événement"),
                 p("/event rejoindre", "Rejoindre l'événement en cours (Titan, chasse au trésor)"),
                 p("/hud [on|off]", "Affiche ou masque la barre de progression et le tableau latéral"),
+                p("/stats [joueur|serveur]", "Panneau de statistiques (combat, récolte, artisanat, temps) et records"),
+                p("/afk", "Zone AFK : 1 jeton et 5 pièces par minute, sans être expulsé"),
+                p("/afkshop", "Dépenser ses jetons AFK : clés, boosts, générateurs, privilèges"),
                 p("/dieu codex", "Récupérer un Codex divin perdu"));
         cat("progression", "Progression", ChatFormatting.GREEN,
                 p("/metiers [métier]", "Vos 5 métiers, leurs talents, le barème d'XP et le classement"),
@@ -105,6 +108,17 @@ public final class Help {
                 p("/tournoi [rejoindre|quitter]", "Tournoi 1v1 en cours"),
                 p("/trone reclamer <dieu>", "Lancer un tournoi pour le trône d'un dieu inactif"),
                 p("/guerre [declarer <dieu>]", "Guerre entre panthéons (30 min)"));
+        cat("privileges", "Privilèges", ChatFormatting.LIGHT_PURPLE,
+                p("/privileges", "Acheter des privilèges (aussi dans /shop et /afkshop)"),
+                p("/craft", "Établi portable"),
+                p("/ec", "Coffre de l'Ender portable"),
+                p("/enclume", "Enclume portable"),
+                p("/manger", "Se rassasier (toutes les 10 min)"),
+                p("/soin", "Se soigner (toutes les 30 min, hors combat)"),
+                p("/chapeau", "Porter l'objet en main sur la tête"),
+                p("/tete [joueur]", "Tête d'un joueur (toutes les heures)"),
+                p("/reparer", "Réparer l'objet en main (toutes les 2 h)"),
+                p("/vol", "Voler dans son propre monde divin"));
         cat("compte", "Compte", ChatFormatting.GRAY,
                 p("/motdepasse <ancien> <nouveau>", "Changer de mot de passe"),
                 p("/signaler <joueur> <raison>", "Prévenir l'équipe d'un problème"));

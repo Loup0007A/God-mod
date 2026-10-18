@@ -191,6 +191,7 @@ public final class Shop {
         ItemStack bought = proto.copy();
         bought.setCount(count);
         give(player, bought);
+        com.godmod.progress.StatsSystem.add(p, com.godmod.progress.StatsSystem.BOUGHT, count);
         Msg.ok(player, "Acheté : " + count + " × " + proto.getHoverName().getString() + " pour " + total + " pièces.");
         return null;
     }
@@ -207,6 +208,7 @@ public final class Shop {
         PlayerProfile p = GodData.get(player);
         PowerSystem.earnMoney(player.level().getServer(), p, unit * n);
         com.godmod.progress.QuestSystem.progress(player, java.util.List.of("sell:any"), n);
+        com.godmod.progress.StatsSystem.add(GodData.get(player), com.godmod.progress.StatsSystem.SOLD, n);
         Msg.ok(player, "Vendu : " + n + " × " + name + " pour " + Msg.money(unit * n) + "."
                 + (com.godmod.progress.EventSystem.sellMultiplier() > 1 ? " (Ruée vers l'or : +50 %)" : ""));
         return null;
@@ -233,6 +235,7 @@ public final class Shop {
         if (n == 0) return "Rien à vendre.";
         PowerSystem.earnMoney(player.level().getServer(), GodData.get(player), unit * n);
         com.godmod.progress.QuestSystem.progress(player, java.util.List.of("sell:any"), n);
+        com.godmod.progress.StatsSystem.add(GodData.get(player), com.godmod.progress.StatsSystem.SOLD, n);
         Msg.ok(player, "Vendu : " + n + " × " + name + " pour " + Msg.money(unit * n) + ".");
         return null;
     }

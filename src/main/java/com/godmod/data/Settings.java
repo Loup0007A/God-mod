@@ -46,6 +46,8 @@ public class Settings {
     /** Le Sanctuaire a été vidé par un admin pour être rebâti à la main. */
     public boolean customSpawn = false;
     public boolean hubSet = false;
+    /** Zone AFK construite dans le Sanctuaire. */
+    public boolean afkZoneBuilt = false;
 
     // --- Événements ---
     /** Lance automatiquement un événement à intervalle régulier. */

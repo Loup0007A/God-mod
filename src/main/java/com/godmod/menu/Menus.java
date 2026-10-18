@@ -126,6 +126,18 @@ public final class Menus {
                 if (err != null) Msg.info(sp, err);
             } else com.godmod.progress.EventSystem.info(sp);
         });
+        page.set(28, Page.icon(Items.WRITABLE_BOOK, "Statistiques", ChatFormatting.AQUA,
+                "§7Combat, récolte, artisanat, temps de jeu…", "§7et les records du serveur", "", "§eCliquez pour ouvrir  §8(/stats)"),
+                (sp, c) -> later(sp, () -> com.godmod.progress.StatsSystem.open(sp, GodData.get(sp))));
+        page.set(34, Page.icon(Items.RECOVERY_COMPASS, "Zone AFK", ChatFormatting.LIGHT_PURPLE,
+                "§71 jeton et 5 pièces par minute", "§7Jetons : §d" + p.afkTokens,
+                "", "§eClic gauche : y aller  §8(/afk)", "§eClic droit : boutique AFK  §8(/afkshop)"), (sp, c) -> {
+            if (c == GodMenu.Click.RIGHT) later(sp, () -> com.godmod.progress.AfkShop.open(sp));
+            else {
+                sp.closeContainer();
+                report(sp, com.godmod.system.AfkSystem.toggle(sp));
+            }
+        });
         page.set(24, Page.icon(Items.KNOWLEDGE_BOOK, "Aide et commandes", ChatFormatting.AQUA,
                 "§7Toutes les commandes, par thème,", "§7cliquables dans le chat", "", "§eCliquez pour ouvrir  §8(/aide)"), (sp, c) -> {
             sp.closeContainer();
@@ -419,6 +431,36 @@ public final class Menus {
 
     // ================================================================== Boutique
 
+    public static void openPerkShop(ServerPlayer player) {
+        PlayerProfile p = GodData.get(player);
+        Page page = new Page("Privilèges — " + Msg.money(p.money)).frame(Items.MAGENTA_STAINED_GLASS_PANE);
+        page.set(4, Page.icon(Items.GOLDEN_HELMET, "Privilèges", ChatFormatting.LIGHT_PURPLE,
+                "§7Achetés une fois, utilisables pour toujours.", "§7Aussi disponibles en jetons AFK (/afkshop).",
+                "§7Possédés : " + p.perks.size() + "/" + com.godmod.system.Perks.Perk.values().length));
+        int[] slots = {19, 20, 21, 22, 23, 24, 25, 30, 32};
+        com.godmod.system.Perks.Perk[] all = com.godmod.system.Perks.Perk.values();
+        for (int i = 0; i < all.length && i < slots.length; i++) {
+            com.godmod.system.Perks.Perk k = all[i];
+            boolean owned = com.godmod.system.Perks.ownsProfile(p, k);
+            boolean can = p.money >= k.price;
+            page.set(slots[i], Page.icon(owned ? Items.LIME_DYE : k.icon, 1, k.usage, owned ? ChatFormatting.GREEN : can ? ChatFormatting.GOLD : ChatFormatting.GRAY, List.of(
+                    Page.line("§7" + k.description),
+                    Page.line(k.cooldownSeconds > 0 ? "§7Délai : " + Msg.time(k.cooldownSeconds * 1000L) : "§7Sans délai"),
+                    Page.line(owned ? "§aDébloqué" : "§6Prix : " + Msg.money(k.price) + " §8(ou " + k.tokens + " jetons AFK)"),
+                    Page.line(owned ? "" : can ? "§eMaj + clic pour acheter" : "§cPas assez d'argent")), owned), (sp, c) -> {
+                if (owned) return;
+                if (c != GodMenu.Click.SHIFT) {
+                    Msg.info(sp, "Maj + clic pour confirmer l'achat de " + k.usage + " (" + Msg.money(k.price) + ").");
+                    return;
+                }
+                report(sp, com.godmod.system.Perks.buy(sp, k, false));
+                later(sp, () -> openPerkShop(sp));
+            });
+        }
+        page.back((sp, c) -> later(sp, () -> openShop(sp))).close();
+        page.open(player);
+    }
+
     public static void openShop(ServerPlayer player) {
         PlayerProfile p = GodData.get(player);
         Page page = new Page("Boutique — " + p.money + " pièces").frame(Items.LIME_STAINED_GLASS_PANE);
@@ -430,6 +472,9 @@ public final class Menus {
                     "§7" + Shop.entries(cat).size() + " articles", "", "§eCliquez pour parcourir"),
                     (sp, c) -> later(sp, () -> openShopCategory(sp, cat, 0)));
         }
+        page.set(29, Page.icon(Items.GOLDEN_HELMET, "Privilèges", ChatFormatting.LIGHT_PURPLE,
+                "§7Commandes de confort à vie :", "§7/craft, /ec, /enclume, /tete, /soin, /vol…", "§7Chères, mais définitives", "", "§eCliquez pour ouvrir"),
+                (sp, c) -> later(sp, () -> openPerkShop(sp)));
         page.set(31, Page.icon(Items.HOPPER, "Vendre", ChatFormatting.GOLD,
                 "§7Revendez vos objets (5 à 10× moins cher qu'à l'achat)", "", "§eCliquez pour ouvrir"),
                 (sp, c) -> later(sp, () -> openSell(sp)));

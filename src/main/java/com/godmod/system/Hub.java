@@ -16,6 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
@@ -194,23 +195,58 @@ public final class Hub {
         return server.getLevel(RESOURCES);
     }
 
-    /** Téléporte à un endroit sûr et aléatoire du monde ressource. */
+    /**
+     * Téléporte à un endroit aléatoire du monde ressource. On cherche d'abord un sol sûr ; si aucun n'est trouvé,
+     * on y va quand même : une petite plateforme remplace le liquide sous les pieds et le joueur est
+     * protégé de tout dégât pendant 15 secondes.
+     */
     public static String toMine(ServerPlayer player) {
         ServerLevel mine = resources(player.level().getServer());
         if (mine == null) return "Le monde ressource n'est pas chargé (datapack manquant).";
         RandomSource rnd = mine.random;
+        int fx = 0, fz = 0;
+        BlockPos fallback = null;
         for (int attempt = 0; attempt < 12; attempt++) {
             double angle = rnd.nextDouble() * Math.PI * 2;
             int dist = MINE_MIN + rnd.nextInt(MINE_MAX - MINE_MIN);
             int x = (int) (Math.cos(angle) * dist), z = (int) (Math.sin(angle) * dist);
             BlockPos top = mine.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(x, 0, z));
+            if (top.getY() <= mine.getMinY() + 1) continue;
             BlockState ground = mine.getBlockState(top.below());
-            if (top.getY() <= mine.getMinY() + 1 || !ground.getFluidState().isEmpty()) continue;
+            if (fallback == null) {
+                fallback = top;
+                fx = x;
+                fz = z;
+            }
+            if (!ground.getFluidState().isEmpty() || ground.is(Blocks.MAGMA_BLOCK) || ground.is(Blocks.CACTUS) || ground.is(Blocks.POWDER_SNOW)) continue;
             Teleport.to(player, mine, x + 0.5, top.getY() + 0.1, z + 0.5);
+            Travel.protect(player, 5_000);
             Msg.ok(player, "Bienvenue dans le monde ressource (" + x + ", " + top.getY() + ", " + z + "). /spawn pour revenir au Sanctuaire.");
             return null;
         }
-        return "Aucun endroit sûr trouvé, réessayez.";
+        // Aucun endroit parfait : on y va quand même, en sécurité.
+        if (fallback == null) {
+            fx = 0;
+            fz = MINE_MIN;
+            fallback = new BlockPos(fx, Math.max(mine.getSeaLevel() + 1, 64), fz);
+        }
+        BlockPos below = fallback.below();
+        for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+            BlockPos p = below.offset(dx, 0, dz);
+            BlockState st = mine.getBlockState(p);
+            if (st.isAir() || !st.getFluidState().isEmpty()) mine.setBlockAndUpdate(p, Blocks.COBBLESTONE.defaultBlockState());
+        }
+        for (int dy = 0; dy <= 1; dy++) {
+            BlockPos p = fallback.above(dy);
+            if (!mine.getFluidState(p).isEmpty()) mine.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
+        }
+        Teleport.to(player, mine, fx + 0.5, fallback.getY() + 0.1, fz + 0.5);
+        player.setDeltaMovement(0, 0, 0);
+        Travel.protect(player, 15_000);
+        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 400, 0));
+        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WATER_BREATHING, 400, 0));
+        Msg.ok(player, "Bienvenue dans le monde ressource (" + fx + ", " + fallback.getY() + ", " + fz + "). Endroit incertain : vous êtes protégé 15 secondes.");
+        return null;
     }
 
     public static boolean isResources(Level level) {

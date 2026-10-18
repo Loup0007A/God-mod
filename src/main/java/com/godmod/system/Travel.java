@@ -126,6 +126,26 @@ public final class Travel {
         });
     }
 
+    // ------------------------------------------------------------------ Protection à l'arrivée
+
+    private static final Map<UUID, Long> PROTECTED = new HashMap<>();
+
+    /** Aucun dégât pendant {@code ms} millisecondes (arrivée dans un endroit incertain). */
+    public static void protect(ServerPlayer p, long ms) {
+        PROTECTED.put(p.getUUID(), System.currentTimeMillis() + ms);
+        p.resetFallDistance();
+    }
+
+    public static boolean isProtected(ServerPlayer p) {
+        Long until = PROTECTED.get(p.getUUID());
+        if (until == null) return false;
+        if (System.currentTimeMillis() > until) {
+            PROTECTED.remove(p.getUUID());
+            return false;
+        }
+        return true;
+    }
+
     public static boolean pending(ServerPlayer p) {
         return PENDING.containsKey(p.getUUID());
     }
@@ -183,5 +203,6 @@ public final class Travel {
 
     public static void onLogout(ServerPlayer p) {
         PENDING.remove(p.getUUID());
+        PROTECTED.remove(p.getUUID());
     }
 }

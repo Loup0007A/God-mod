@@ -129,6 +129,22 @@ public class PlayerProfile {
     public int dailyStreak = 0;
     public int dailyBest = 0;
 
+    // --- AFK ---
+    public long afkTokens = 0;
+    public int afkTokensToday = 0;
+    public String afkDay = "";
+    public long afkMinutes = 0;
+    /** Boost d'XP de métier (×1,5) acheté dans /afkshop, jusqu'à cette date. */
+    public long jobBoostUntil = 0;
+
+    // --- Privilèges (commandes achetées) ---
+    public java.util.List<String> perks = new java.util.ArrayList<>();
+    public java.util.Map<String, Long> perkCooldowns = new java.util.HashMap<>();
+
+    // --- Statistiques ---
+    public java.util.Map<String, Long> counters = new java.util.HashMap<>();
+    public long firstSeen = 0;
+
     // --- Événements ---
     public int eventsWon = 0;
 

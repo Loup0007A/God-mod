@@ -46,6 +46,7 @@ public final class Ranks {
         PlayerProfile p = GodData.get(player);
         MutableComponent c = Component.empty();
         Role role = Moderation.roleOf(player);
+        if (AfkSystem.isAfk(player)) c.append(Component.literal("[AFK] ").withStyle(ChatFormatting.DARK_GRAY));
         if (role == Role.ADMIN) c.append(Component.literal("[Admin] ").withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
         else if (role == Role.MODERATEUR) c.append(Component.literal("[Modo] ").withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
         c.append(Component.literal("[" + tierTag(p.tier) + "] ").withStyle(p.tier.color));

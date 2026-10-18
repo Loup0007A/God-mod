@@ -220,6 +220,7 @@ public final class PowerSystem {
             amount -= tithe;
         }
         p.money += amount;
+        com.godmod.progress.StatsSystem.add(p, com.godmod.progress.StatsSystem.EARNED, amount);
         GodData.dirty();
     }
 

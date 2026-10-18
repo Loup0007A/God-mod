@@ -162,6 +162,7 @@ public final class GameEvents {
             boolean deny = onPlace(e.getLevel(), e.getPos(), e.getEntity());
             if (!deny && GodData.ready() && e.getLevel() instanceof ServerLevel sl) {
                 JobSystem.onPlaced(sl, e.getPos());
+                if (e.getEntity() instanceof ServerPlayer pl) com.godmod.progress.StatsSystem.add(GodData.get(pl), com.godmod.progress.StatsSystem.PLACED, 1);
                 if (e.getEntity() instanceof ServerPlayer sp) SpawnerSystem.onPlaced(sp, sl, e.getPos(), e.getPlacedBlock());
             }
             return deny;
@@ -212,7 +213,8 @@ public final class GameEvents {
         AttackEntityEvent.BUS.addListener((Predicate<AttackEntityEvent>) e -> locked(e.getEntity()) || frozen(e.getEntity()));
         EntityItemPickupEvent.BUS.addListener((Predicate<EntityItemPickupEvent>) e -> locked(e.getEntity()));
         LivingAttackEvent.BUS.addListener((Predicate<LivingAttackEvent>) e -> {
-            boolean deny = locked(e.getEntity()) || locked(e.getSource().getEntity()) || pvpDenied(e.getEntity(), e.getSource().getEntity());
+            boolean deny = locked(e.getEntity()) || locked(e.getSource().getEntity()) || pvpDenied(e.getEntity(), e.getSource().getEntity())
+                    || (e.getEntity() instanceof ServerPlayer prot && Travel.isProtected(prot));
             // Combat entre joueurs : pas de téléportation pendant 12 s (anti-fuite).
             if (!deny && e.getEntity() instanceof ServerPlayer v && e.getSource().getEntity() instanceof ServerPlayer a && v != a && e.getAmount() > 0)
                 Travel.tagCombat(v, a);
@@ -339,6 +341,7 @@ public final class GameEvents {
             return true;
         }
         EventSystem.onChat(sp, e.getRawText());
+        sp.level().getServer().execute(() -> com.godmod.system.AfkSystem.onActivity(sp));
         return false;
     }
 
@@ -347,6 +350,7 @@ public final class GameEvents {
         Entity ent = e.getParseResults().getContext().getSource().getEntity();
         if (!(ent instanceof ServerPlayer sp)) return false;
         String cmd = e.getParseResults().getReader().getString();
+        if (!cmd.startsWith("afk") && !cmd.startsWith("/afk")) com.godmod.system.AfkSystem.onActivity(sp);
         if (!AuthSystem.isLocked(sp)) {
             // Un joueur muet ne contourne pas la sanction par les messages privés.
             PlayerProfile p = GodData.get(sp);
@@ -418,6 +422,7 @@ public final class GameEvents {
         Travel.onLogout(sp);
         TpaSystem.onLogout(sp);
         EventSystem.onLogout(sp);
+        com.godmod.system.AfkSystem.onLogout(sp);
         PlayerProfile p = GodData.get(sp);
         p.lastSeen = System.currentTimeMillis();
         GodData.dirty();
@@ -453,10 +458,12 @@ public final class GameEvents {
         WarSystem.tick(server);
         boolean five = tickCounter % 100 == 0;
         boolean minute = tickCounter % 1200 == 0;
+        com.godmod.system.AfkSystem.tickSecond(server, minute);
         for (ServerPlayer sp : server.getPlayerList().getPlayers()) {
             if (AuthSystem.isLocked(sp)) continue;
             PlayerProfile p = GodData.get(sp);
             p.playTicks += 20;
+            com.godmod.system.Perks.tickFly(sp);
             DivineWorld.syncBorder(sp);
             Hud.update(sp);
             if (five) {

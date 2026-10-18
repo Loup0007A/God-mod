@@ -182,8 +182,10 @@ public final class WorldBuilder {
             registerPortals();
             labels(server, l, cx, cy, cz, ax);
             GodData.settings().customSpawn = false;
+            GodData.settings().afkZoneBuilt = false;
             GodData.settings().pointsPlaced = false;
             com.godmod.progress.PointSystem.autoPlace(server);
+            AfkSystem.ensureBuilt(server);
             GodData.log("MONDE : Sanctuaire construit (godmod:spawn)");
             Msg.broadcast(server, "✦ Le Sanctuaire des Dieux est prêt ! /spawn pour le découvrir.", ChatFormatting.GOLD);
             if (notify != null) notify.sendSuccess(() -> Msg.prefix().append(Msg.text("Sanctuaire reconstruit.", ChatFormatting.GREEN)), true);
@@ -206,6 +208,7 @@ public final class WorldBuilder {
             s.hubZ = 0.5;
             s.structureVersion = VERSION; // ne pas reconstruire tout seul au prochain démarrage
             s.customSpawn = true;
+            s.afkZoneBuilt = false;
             com.godmod.progress.PointSystem.clearIn(Hub.SPAWN);
             GodData.dirty();
             if (notify != null) notify.sendSuccess(() -> Msg.prefix().append(Msg.text(
