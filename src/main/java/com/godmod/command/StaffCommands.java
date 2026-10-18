@@ -260,9 +260,8 @@ public final class StaffCommands {
                         })))));
 
         d.register(Commands.literal("structurer").requires(Moderation.require(Role.ADMIN)).executes(ctx -> {
-            ServerPlayer p = ctx.getSource().getPlayerOrException();
-            WorldBuilder.build(ctx.getSource().getServer(), p.blockPosition());
-            line(ctx.getSource(), "Sanctuaire et arène reconstruits ici ; le spawn du serveur a été déplacé.");
+            WorldBuilder.build(ctx.getSource().getServer(), ctx.getSource());
+            line(ctx.getSource(), "Reconstruction du Sanctuaire lancée (dimension godmod:spawn).");
             return 1;
         }));
     }

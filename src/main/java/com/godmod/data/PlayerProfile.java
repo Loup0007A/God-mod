@@ -71,6 +71,16 @@ public class PlayerProfile {
     public boolean hasReturn = false;
     public double retX, retY, retZ;
 
+    // --- Permissions de l'île (monde divin) ---
+    /** Joueurs autorisés : uuid -> permissions (voir IslandPerm). */
+    public java.util.Map<String, java.util.List<String>> islandMembers = new java.util.HashMap<>();
+    /** Permissions des fidèles du propriétaire. */
+    public java.util.List<String> islandFollowerPerms = new java.util.ArrayList<>(java.util.List.of("ENTRER", "INTERAGIR"));
+    /** Permissions de tous les autres joueurs (visiteurs). */
+    public java.util.List<String> islandVisitorPerms = new java.util.ArrayList<>();
+    /** Combats entre joueurs autorisés sur l'île (hors guerre, rébellion et tournoi). */
+    public boolean islandPvp = false;
+
     // --- Choix en attente après avoir vaincu un dieu ---
     public String pendingThroneVictim = null;
     public long pendingThroneUntil = 0;

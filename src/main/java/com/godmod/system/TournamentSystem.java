@@ -249,7 +249,7 @@ public final class TournamentSystem {
         }
         t.current = m;
         t.matchEnd = System.currentTimeMillis() + MATCH_MS;
-        ServerLevel arena = server.overworld();
+        ServerLevel arena = Hub.level(server);
         double[] c = arenaCenter(server);
         save(t, pa);
         save(t, pb);
@@ -268,7 +268,7 @@ public final class TournamentSystem {
     }
 
     private static void save(Tournament t, ServerPlayer p) {
-        if (p.level() == p.level().getServer().overworld()) {
+        if (p.level() == Hub.level(p.level().getServer())) {
             t.returnPos.put(p.getUUID().toString(), new double[]{p.getX(), p.getY(), p.getZ()});
         } else {
             t.returnPos.remove(p.getUUID().toString());
@@ -302,7 +302,8 @@ public final class TournamentSystem {
             if (sp == null) continue;
             prepare(sp);
             double[] pos = current == null ? null : current.returnPos.get(u);
-            if (pos != null) Teleport.to(sp, server.overworld(), pos[0], pos[1], pos[2]);
+            if (pos != null) Teleport.to(sp, Hub.level(server), pos[0], pos[1], pos[2]);
+            else Hub.teleport(sp);
         }
     }
 
@@ -342,7 +343,7 @@ public final class TournamentSystem {
     public static double[] arenaCenter(MinecraftServer server) {
         Settings s = GodData.settings();
         if (s.arenaSet) return new double[]{s.arenaX, s.arenaY, s.arenaZ};
-        BlockPos top = server.overworld().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, BlockPos.ZERO);
+        BlockPos top = Hub.level(server).getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, BlockPos.ZERO);
         return new double[]{0.5, top.getY() + 1, 0.5};
     }
 

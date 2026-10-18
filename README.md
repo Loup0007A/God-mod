@@ -15,16 +15,21 @@ et doit survivre aux rébellions de ses propres fidèles.
 2. Déposer `godmod-x.y.z.jar` dans le dossier `mods/` du serveur, puis démarrer.
 3. Se donner les droits : `op TonPseudo` dans la console (les opérateurs sont admins du mod).
 
-Au **premier démarrage**, le mod construit automatiquement (en arrière-plan, sans bloquer le serveur) :
-- le **Sanctuaire**, temple céleste sur une île flottante ~50 blocs au-dessus du spawn : place en mosaïque
-  quartz/or/violet, fontaine surmontée d'un trident d'or et d'une spirale d'eau, temple à colonnade et bannières
-  violettes, portail-vortex, faisceau violet, monuments Océan / Ciel / Cosmos, jardin et petites îles autour ;
-- l'**île de l'Arène des tournois**, reliée au Sanctuaire par un pont ;
-- la **dimension divine** (`godmod:divine`) et le **monde ressource** (`godmod:ressources`, Overworld classique).
+Au **premier démarrage**, le mod construit automatiquement (en arrière-plan, sans bloquer le serveur)
+le **Sanctuaire des Dieux** dans sa propre dimension vide `godmod:spawn` :
+- grande île flottante aux falaises de pierre, cascades qui tombent dans le vide, jardins de cerisiers et d'azalées ;
+- place en rose des vents (quartz, or, violet), fontaine à deux vasques et trident d'or géant entouré d'une spirale ;
+- temple du Panthéon : escalier monumental, colonnade, bannières violettes, fronton, tours d'améthyste,
+  **portail-vortex** (vers votre monde divin) et faisceau violet ;
+- **portails** : monde ressource (arche d'émeraude à l'ouest), pavillons **Boutique** et **Warps**, pont vers l'**Arène** ;
+- panneaux flottants pour se repérer, îles satellites.
 
-Le Sanctuaire est protégé (pas de construction, de seaux, de feu, d'explosions ni de monstres) ; une chute depuis
-les îles ramène au Sanctuaire. Un Sanctuaire v0.2 (au sol) est automatiquement démonté et remplacé.
-`/structurer` (admin) reconstruit le Sanctuaire au-dessus de votre position.
+Chaque connexion, chaque réapparition après une mort et `/spawn` mènent au Sanctuaire.
+Il est entièrement protégé : impossible de casser, poser, utiliser seaux/feu ou d'y combattre (sauf duels),
+aucun monstre, aucune explosion. Tomber dans le vide ramène au point d'apparition.
+
+Admins : `/godadmin spawn reconstruire` · `/godadmin spawn vider` (tout effacer pour bâtir le vôtre) ·
+`/godadmin spawn edition` (activer/désactiver le droit de modifier) · `/godadmin spawn definir` (point d'apparition).
 
 ## Déplacements
 
@@ -38,7 +43,10 @@ les îles ramène au Sanctuaire. Un Sanctuaire v0.2 (au sol) est automatiquement
 - Chaque monde a une **bordure visible** (world border) à sa taille. Impossible de la franchir : on est simplement
   repoussé à sa dernière position. Seule une chute dans le vide ramène au centre.
 - Les pistons ne peuvent pas faire passer de blocs de l'autre côté de la bordure.
-- Visiteurs : seigneurs, fidèles, ennemis en guerre, et tout le monde si le dieu y a posé un warp.
+- **Permissions de l'île** (`/ile` ou le menu) : pour vos **fidèles**, les **visiteurs** et chaque joueur ajouté,
+  activez ou non : Entrer, Casser, Poser, Interagir (portes, leviers…), Coffres. `/ile ajouter <joueur>` donne tout,
+  `/ile retirer <joueur>`, `/ile perm <joueur|fideles|visiteurs> <perm> <on|off>`, `/ile pvp <on|off>`.
+  Vos seigneurs et les ennemis en guerre gardent tous les droits.
 
 ## Codex divin et rangs
 
@@ -47,12 +55,12 @@ les îles ramène au Sanctuaire. Un Sanctuaire v0.2 (au sol) est automatiquement
 
 ## Comptes protégés par mot de passe
 
-À chaque connexion, le joueur est envoyé au Sanctuaire, figé, aveuglé et invulnérable jusqu'à :
+À **chaque** connexion, le joueur est envoyé au Sanctuaire, figé, aveuglé et invulnérable jusqu'à :
 - `/register <motdepasse> <motdepasse>` la première fois ;
 - `/login <motdepasse>` ensuite (raccourci `/l`).
 
-Après `/login`, il retrouve l'endroit où il s'était déconnecté. Chat, commandes et interactions sont bloqués avant connexion. 3 erreurs ou 90 s sans connexion = expulsion.
-Reconnexion automatique depuis la même adresse IP pendant 12 h (`/auth session <heures>`, 0 = jamais).
+Chat, commandes et interactions sont bloqués avant connexion. 3 erreurs ou 90 s sans connexion = expulsion.
+Le mot de passe est demandé à chaque connexion (`/auth session <heures>` pour autoriser une reconnexion automatique depuis la même IP).
 Mots de passe hachés (PBKDF2-SHA256 salé), jamais stockés en clair. `/motdepasse <ancien> <nouveau>` pour changer.
 Admins : `/auth on|off`, `/auth reset <joueur>`.
 

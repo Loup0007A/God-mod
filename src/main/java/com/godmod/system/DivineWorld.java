@@ -107,18 +107,70 @@ public final class DivineWorld {
         return x >= c.getX() - r && x <= c.getX() + r + 1 && z >= c.getZ() - r && z <= c.getZ() + r + 1;
     }
 
-    /** Peut construire/casser : propriétaire (s'il est dieu), un de ses seigneurs, ou un ennemi en guerre (saccage). */
-    public static boolean canBuild(PlayerProfile actor, PlayerProfile owner) {
-        if (owner == null) return false;
-        if (actor.uuid.equals(owner.uuid)) return hasWorld(owner);
-        if (GodData.isAbove(actor.uuid, owner)) return true;
-        return WarSystem.atWar(actor, owner);
+    // ------------------------------------------------------------------ Permissions de l'île
+
+    /**
+     * Permissions d'un joueur sur l'île d'un dieu :
+     * propriétaire et seigneurs = tout ; ennemi en guerre = saccage ; sinon permissions accordées
+     * au joueur, plus celles du groupe « fidèles » ou « visiteurs ». Un warp public ouvre l'entrée à tous.
+     */
+    public static java.util.EnumSet<com.godmod.data.IslandPerm> permsOf(PlayerProfile actor, PlayerProfile owner) {
+        java.util.EnumSet<com.godmod.data.IslandPerm> set = java.util.EnumSet.noneOf(com.godmod.data.IslandPerm.class);
+        if (owner == null) return set;
+        if (actor.uuid.equals(owner.uuid)) {
+            if (hasWorld(owner)) set.addAll(java.util.EnumSet.allOf(com.godmod.data.IslandPerm.class));
+            return set;
+        }
+        if (GodData.isAbove(actor.uuid, owner) || WarSystem.atWar(actor, owner)) {
+            set.addAll(java.util.EnumSet.allOf(com.godmod.data.IslandPerm.class));
+            return set;
+        }
+        java.util.List<String> group = GodData.isAbove(owner.uuid, actor) ? owner.islandFollowerPerms : owner.islandVisitorPerms;
+        addAll(set, group);
+        if (owner.islandMembers != null) addAll(set, owner.islandMembers.get(actor.uuid));
+        if (hasPublicWarp(owner)) set.add(com.godmod.data.IslandPerm.ENTRER);
+        // Pouvoir agir implique de pouvoir entrer.
+        if (!set.isEmpty()) set.add(com.godmod.data.IslandPerm.ENTRER);
+        return set;
     }
 
-    /** Peut entrer : comme ci-dessus, les fidèles du propriétaire, ou tout le monde si le propriétaire y a posé un warp public. */
+    private static void addAll(java.util.EnumSet<com.godmod.data.IslandPerm> set, java.util.List<String> names) {
+        if (names == null) return;
+        for (String n : names) {
+            com.godmod.data.IslandPerm perm = com.godmod.data.IslandPerm.parse(n);
+            if (perm != null) set.add(perm);
+        }
+    }
+
+    public static boolean has(PlayerProfile actor, PlayerProfile owner, com.godmod.data.IslandPerm perm) {
+        return permsOf(actor, owner).contains(perm);
+    }
+
+    /** Ancienne règle « construire » : casser ET poser. */
+    public static boolean canBuild(PlayerProfile actor, PlayerProfile owner) {
+        return has(actor, owner, com.godmod.data.IslandPerm.CASSER) && has(actor, owner, com.godmod.data.IslandPerm.POSER);
+    }
+
     public static boolean canEnter(PlayerProfile actor, PlayerProfile owner) {
-        if (owner == null) return false;
-        return canBuild(actor, owner) || GodData.isAbove(owner.uuid, actor) || hasPublicWarp(owner);
+        return has(actor, owner, com.godmod.data.IslandPerm.ENTRER);
+    }
+
+    /** Modifie une permission. cible = uuid d'un joueur, "fideles" ou "visiteurs". */
+    public static void setPerm(PlayerProfile owner, String target, com.godmod.data.IslandPerm perm, boolean on) {
+        java.util.List<String> list;
+        if (target.equals("fideles")) list = owner.islandFollowerPerms;
+        else if (target.equals("visiteurs")) list = owner.islandVisitorPerms;
+        else list = owner.islandMembers.computeIfAbsent(target, k -> new java.util.ArrayList<>());
+        list.remove(perm.name());
+        if (on) list.add(perm.name());
+        if (!target.equals("fideles") && !target.equals("visiteurs") && list.isEmpty()) owner.islandMembers.remove(target);
+        GodData.dirty();
+    }
+
+    public static boolean hasPerm(PlayerProfile owner, String target, com.godmod.data.IslandPerm perm) {
+        java.util.List<String> list = target.equals("fideles") ? owner.islandFollowerPerms
+                : target.equals("visiteurs") ? owner.islandVisitorPerms : owner.islandMembers.get(target);
+        return list != null && list.contains(perm.name());
     }
 
     private static boolean hasPublicWarp(PlayerProfile owner) {
@@ -202,13 +254,7 @@ public final class DivineWorld {
     }
 
     public static void leave(ServerPlayer player) {
-        PlayerProfile p = GodData.get(player);
-        ServerLevel ow = player.level().getServer().overworld();
-        if (p.hasReturn) {
-            Teleport.to(player, ow, p.retX, p.retY, p.retZ);
-        } else {
-            Hub.teleport(player);
-        }
+        Hub.teleport(player);
     }
 
     // ------------------------------------------------------------------ Bordure & limites

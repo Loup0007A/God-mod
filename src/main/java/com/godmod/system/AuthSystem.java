@@ -85,15 +85,8 @@ public final class AuthSystem {
      * déconnecterait) pour lui être rendue après /login.
      */
     private static void lock(ServerPlayer player, PlayerProfile p) {
-        if (!p.hasAuthReturn && p.codexGiven) {
-            p.hasAuthReturn = true;
-            p.authReturnDim = player.level().dimension().identifier().toString();
-            p.authReturnX = player.getX();
-            p.authReturnY = player.getY();
-            p.authReturnZ = player.getZ();
-            GodData.dirty();
-        }
-        if (Hub.ready()) Hub.teleport(player);
+        p.hasAuthReturn = false;
+        Hub.teleport(player);
         PENDING.put(player.getUUID(), new Pending(player));
     }
 
@@ -141,7 +134,6 @@ public final class AuthSystem {
         setPassword(p, pass);
         GodData.log("COMPTE : " + p.name + " s'inscrit");
         unlock(player, p);
-        restore(player, p);
         Msg.ok(player, "Compte protégé ! Retenez bien votre mot de passe.");
         return null;
     }
@@ -161,7 +153,6 @@ public final class AuthSystem {
             return "Mot de passe incorrect (" + (MAX_ATTEMPTS - pending.attempts) + " essai(s) restant(s)).";
         }
         unlock(player, p);
-        restore(player, p);
         Msg.ok(player, "Connecté. Bon jeu !");
         return null;
     }

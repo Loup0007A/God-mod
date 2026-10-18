@@ -99,6 +99,11 @@ public final class Menus {
             sp.closeContainer();
             report(sp, com.godmod.system.Hub.toMine(sp));
         });
+        if (DivineWorld.hasWorld(p)) {
+            page.set(40, Page.icon(Items.IRON_DOOR, "Permissions de l'île", ChatFormatting.GOLD,
+                    "§7Qui peut entrer, casser, poser, ouvrir", "§7les coffres sur votre monde divin", "", "§eCliquez pour ouvrir"),
+                    (sp, c) -> later(sp, () -> openIsland(sp)));
+        }
         page.set(37, Page.icon(Items.ENDER_PEARL, "Warps des joueurs", ChatFormatting.DARK_AQUA,
                 "§7" + GodData.state().warps.size() + " warp(s) publics",
                 "§7Créez le vôtre : /setwarp <nom>", "", "§eCliquez pour ouvrir"), (sp, c) -> later(sp, () -> openWarps(sp, 0)));
@@ -580,6 +585,78 @@ public final class Menus {
             page.set(INNER[i], Page.icon(icon, i + 1, "#" + (i + 1) + " " + o.name, o.tier.color, lore, i == 0));
         }
         page.back((sp, c) -> later(sp, () -> openMain(sp))).close();
+        page.open(player);
+    }
+
+    // ================================================================== Permissions de l'île
+
+    public static void openIsland(ServerPlayer player) {
+        PlayerProfile p = GodData.get(player);
+        Page page = new Page("Permissions de votre île").frame(Items.ORANGE_STAINED_GLASS_PANE);
+        page.set(4, Page.icon(Items.GRASS_BLOCK, "Votre monde divin", ChatFormatting.GREEN,
+                "§7" + DivineWorld.describe(p),
+                "§7Ajouter un joueur : /ile ajouter <joueur>",
+                "§7Réglage fin : /ile perm <joueur|fideles|visiteurs> <perm> <on|off>"));
+        page.set(10, Page.icon(Items.TOTEM_OF_UNDYING, "Vos fidèles", ChatFormatting.YELLOW,
+                "§7" + permSummary(p, "fideles"), "", "§eCliquez pour régler"), (sp, c) -> later(sp, () -> openIslandTarget(sp, "fideles")));
+        page.set(11, Page.icon(Items.OAK_SIGN, "Visiteurs", ChatFormatting.WHITE,
+                "§7Tous les autres joueurs", "§7" + permSummary(p, "visiteurs"), "", "§eCliquez pour régler"), (sp, c) -> later(sp, () -> openIslandTarget(sp, "visiteurs")));
+        page.set(12, Page.icon(p.islandPvp ? Items.IRON_SWORD : Items.WOODEN_SWORD, "Combat entre joueurs : " + (p.islandPvp ? "ON" : "OFF"),
+                p.islandPvp ? ChatFormatting.RED : ChatFormatting.GRAY, "§7Guerres, rébellions et duels restent", "§7toujours possibles", "", "§eCliquez pour basculer"),
+                (sp, c) -> {
+                    PlayerProfile me = GodData.get(sp);
+                    me.islandPvp = !me.islandPvp;
+                    GodData.dirty();
+                    later(sp, () -> openIsland(sp));
+                });
+        int[] slots = {19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
+        int i = 0;
+        for (var e : p.islandMembers.entrySet()) {
+            if (i >= slots.length) break;
+            PlayerProfile m = GodData.find(e.getKey());
+            String name = m == null ? "?" : m.name;
+            String uuid = e.getKey();
+            page.set(slots[i++], Page.icon(Items.PLAYER_HEAD, 1, name, ChatFormatting.AQUA, List.of(
+                    Page.line("§7" + permSummary(p, uuid)), Page.line(""),
+                    Page.line("§eCliquez pour régler"), Page.line("§cMaj + clic : retirer")), false), (sp, c) -> {
+                if (c == GodMenu.Click.SHIFT) {
+                    GodData.get(sp).islandMembers.remove(uuid);
+                    GodData.dirty();
+                    later(sp, () -> openIsland(sp));
+                } else later(sp, () -> openIslandTarget(sp, uuid));
+            });
+        }
+        if (p.islandMembers.isEmpty()) {
+            page.set(31, Page.icon(Items.BOOK, "Aucun joueur ajouté", ChatFormatting.GRAY, "§7/ile ajouter <joueur> pour donner", "§7l'accès complet à un ami"));
+        }
+        page.back((sp, c) -> later(sp, () -> openMain(sp))).close();
+        page.open(player);
+    }
+
+    private static String permSummary(PlayerProfile owner, String target) {
+        List<String> on = new ArrayList<>();
+        for (com.godmod.data.IslandPerm perm : com.godmod.data.IslandPerm.values()) if (DivineWorld.hasPerm(owner, target, perm)) on.add(perm.label);
+        return on.isEmpty() ? "Aucune permission" : String.join(", ", on);
+    }
+
+    public static void openIslandTarget(ServerPlayer player, String target) {
+        PlayerProfile p = GodData.get(player);
+        String title = target.equals("fideles") ? "Fidèles" : target.equals("visiteurs") ? "Visiteurs" : nameOf(target);
+        Page page = new Page("Île — " + title).frame(Items.ORANGE_STAINED_GLASS_PANE);
+        int[] slots = {20, 21, 22, 23, 24};
+        com.godmod.data.IslandPerm[] perms = com.godmod.data.IslandPerm.values();
+        for (int i = 0; i < perms.length; i++) {
+            com.godmod.data.IslandPerm perm = perms[i];
+            boolean on = DivineWorld.hasPerm(p, target, perm);
+            page.set(slots[i], Page.icon(perm.icon, 1, perm.label + (on ? " : OUI" : " : NON"), on ? ChatFormatting.GREEN : ChatFormatting.RED,
+                    List.of(Page.line("§7" + perm.description), Page.line(""), Page.line("§eCliquez pour basculer")), on), (sp, c) -> {
+                PlayerProfile me = GodData.get(sp);
+                DivineWorld.setPerm(me, target, perm, !DivineWorld.hasPerm(me, target, perm));
+                later(sp, () -> openIslandTarget(sp, target));
+            });
+            page.set(slots[i] + 9, Page.icon(on ? Items.LIME_DYE : Items.GRAY_DYE, on ? "Autorisé" : "Interdit", on ? ChatFormatting.GREEN : ChatFormatting.DARK_GRAY));
+        }
+        page.back((sp, c) -> later(sp, () -> openIsland(sp))).close();
         page.open(player);
     }
 

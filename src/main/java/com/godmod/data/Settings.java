@@ -31,7 +31,7 @@ public class Settings {
     /** Temps laissé pour se connecter avant expulsion, en secondes. */
     public int authTimeoutSeconds = 90;
     /** Reconnexion automatique depuis la même adresse IP pendant ce nombre d'heures (0 = jamais). */
-    public int authSessionHours = 12;
+    public int authSessionHours = 0;
 
     // --- Structuration du monde ---
     /** Vrai une fois le Sanctuaire et l'arène construits. */
@@ -39,6 +39,8 @@ public class Settings {
     /** Version du décor construit (2 = temple céleste). Une version plus ancienne est remplacée au démarrage. */
     public int structureVersion = 0;
     public double oldHubX, oldHubY, oldHubZ;
+    /** Version des réglages (migrations automatiques). */
+    public int settingsVersion = 0;
     public boolean hubSet = false;
     public double hubX, hubY, hubZ;
 }

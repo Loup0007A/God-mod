@@ -76,7 +76,11 @@ public final class GameEvents {
         PlayerEvent.PlayerLoggedInEvent.BUS.addListener((Consumer<PlayerEvent.PlayerLoggedInEvent>) GameEvents::onLogin);
         PlayerEvent.PlayerLoggedOutEvent.BUS.addListener((Consumer<PlayerEvent.PlayerLoggedOutEvent>) GameEvents::onLogout);
         PlayerEvent.PlayerRespawnEvent.BUS.addListener((Consumer<PlayerEvent.PlayerRespawnEvent>) e -> {
-            if (e.getEntity() instanceof ServerPlayer sp && GodData.ready()) PowerSystem.applyAttributes(sp);
+            if (e.getEntity() instanceof ServerPlayer sp && GodData.ready()) {
+                // Après une mort, on réapparaît toujours au Sanctuaire.
+                if (!e.isEndConquered()) Hub.teleport(sp);
+                PowerSystem.applyAttributes(sp);
+            }
         });
         PlayerEvent.PlayerChangedDimensionEvent.BUS.addListener((Consumer<PlayerEvent.PlayerChangedDimensionEvent>) e -> {
             if (e.getEntity() instanceof ServerPlayer sp && GodData.ready()) {
@@ -130,7 +134,8 @@ public final class GameEvents {
         PlayerInteractEvent.RightClickItem.BUS.addListener((Predicate<PlayerInteractEvent.RightClickItem>) GameEvents::onRightClickItem);
         PlayerInteractEvent.RightClickBlock.BUS.addListener((Predicate<PlayerInteractEvent.RightClickBlock>) e ->
                 // Objet divin sur un bloc : on bloque l'interaction ; le clic sur l'objet suit (RightClickItem).
-                locked(e.getEntity()) || DivineItems.isDivine(e.getItemStack()) || hubGrief(e.getEntity(), e.getItemStack()));
+                locked(e.getEntity()) || DivineItems.isDivine(e.getItemStack()) || hubGrief(e.getEntity(), e.getItemStack())
+                        || blockInteractDenied(e.getEntity(), e.getPos(), e.getItemStack()));
 
         // Sanctuaire : pas de monstres, et les explosions n'y cassent rien.
         EntityJoinLevelEvent.BUS.addListener((Predicate<EntityJoinLevelEvent>) e -> GodData.ready() && !e.loadedFromDisk()
@@ -139,10 +144,70 @@ public final class GameEvents {
             if (GodData.ready()) e.getAffectedBlocks().removeIf(pos -> Hub.isProtected(e.getLevel(), pos));
         });
         PlayerInteractEvent.LeftClickBlock.BUS.addListener((Predicate<PlayerInteractEvent.LeftClickBlock>) e -> locked(e.getEntity()));
-        PlayerInteractEvent.EntityInteract.BUS.addListener((Predicate<PlayerInteractEvent.EntityInteract>) e -> locked(e.getEntity()));
+        PlayerInteractEvent.EntityInteract.BUS.addListener((Predicate<PlayerInteractEvent.EntityInteract>) e ->
+                locked(e.getEntity()) || entityInteractDenied(e.getEntity(), e.getTarget()));
         AttackEntityEvent.BUS.addListener((Predicate<AttackEntityEvent>) e -> locked(e.getEntity()) || frozen(e.getEntity()));
         EntityItemPickupEvent.BUS.addListener((Predicate<EntityItemPickupEvent>) e -> locked(e.getEntity()));
-        LivingAttackEvent.BUS.addListener((Predicate<LivingAttackEvent>) e -> locked(e.getEntity()) || locked(e.getSource().getEntity()));
+        LivingAttackEvent.BUS.addListener((Predicate<LivingAttackEvent>) e -> locked(e.getEntity()) || locked(e.getSource().getEntity())
+                || pvpDenied(e.getEntity(), e.getSource().getEntity()));
+    }
+
+    /**
+     * Clic droit sur un bloc : le Sanctuaire est intouchable (sauf mode édition) ; sur une île divine,
+     * il faut la permission COFFRES pour un conteneur, ou INTERAGIR pour le reste (portes, leviers…).
+     */
+    private static boolean blockInteractDenied(Entity e, BlockPos pos, ItemStack stack) {
+        if (!(e instanceof ServerPlayer sp) || !GodData.ready()) return false;
+        Level level = sp.level();
+        if (Hub.isSpawn(level)) return !Hub.canEditHub(sp);
+        if (!DivineWorld.isDivine(level) || sp.isCreative() && Moderation.roleOf(sp).atLeast(com.godmod.data.Role.ADMIN)) return false;
+        PlayerProfile owner = DivineWorld.ownerAt(pos);
+        if (owner == null) return true;
+        PlayerProfile actor = GodData.get(sp);
+        boolean container = level.getBlockEntity(pos) != null;
+        if (container) {
+            if (DivineWorld.has(actor, owner, com.godmod.data.IslandPerm.COFFRES)) return false;
+            sp.displayClientMessage(Msg.text("Vous n'avez pas la permission d'ouvrir les coffres de " + owner.name + ".", ChatFormatting.RED), true);
+            return true;
+        }
+        // Avec un bloc en main, c'est une pose : la permission POSER est vérifiée à la pose.
+        if (stack.getItem() instanceof net.minecraft.world.item.BlockItem) return false;
+        if (DivineWorld.has(actor, owner, com.godmod.data.IslandPerm.INTERAGIR)) return false;
+        sp.displayClientMessage(Msg.text("Vous n'avez pas la permission d'interagir sur l'île de " + owner.name + ".", ChatFormatting.RED), true);
+        return true;
+    }
+
+    private static boolean entityInteractDenied(Entity e, Entity target) {
+        if (!(e instanceof ServerPlayer sp) || !GodData.ready()) return false;
+        if (Hub.isSpawn(sp.level())) return !Hub.canEditHub(sp) && !(target instanceof ServerPlayer);
+        if (!DivineWorld.isDivine(sp.level())) return false;
+        PlayerProfile owner = DivineWorld.ownerAt(target.blockPosition());
+        if (owner == null) return false;
+        return !DivineWorld.has(GodData.get(sp), owner, com.godmod.data.IslandPerm.INTERAGIR);
+    }
+
+    /**
+     * Combats entre joueurs : interdits au Sanctuaire et sur une île sans PvP,
+     * sauf duels de tournoi, rébellions et guerres en cours.
+     */
+    private static boolean pvpDenied(Entity victim, Entity attacker) {
+        if (!(victim instanceof ServerPlayer v) || !(attacker instanceof ServerPlayer a) || v == a || !GodData.ready()) return false;
+        PlayerProfile pv = GodData.get(v), pa = GodData.get(a);
+        boolean special = (TournamentSystem.isFighting(pv.uuid) && TournamentSystem.isFighting(pa.uuid))
+                || WarSystem.atWar(pv, pa) || RebellionSystem.involving(pv.uuid) != null && RebellionSystem.involving(pv.uuid) == RebellionSystem.involving(pa.uuid);
+        if (special) return false;
+        if (Hub.isSpawn(v.level())) {
+            a.displayClientMessage(Msg.text("Le Sanctuaire est une zone de paix (hors duels).", ChatFormatting.RED), true);
+            return true;
+        }
+        if (DivineWorld.isDivine(v.level())) {
+            PlayerProfile owner = DivineWorld.ownerAt(v.blockPosition());
+            if (owner != null && !owner.islandPvp) {
+                a.displayClientMessage(Msg.text("Le combat est désactivé sur cette île.", ChatFormatting.RED), true);
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Seaux (lave, eau…), briquet et boules de feu sont interdits dans le Sanctuaire. */
@@ -241,6 +306,7 @@ public final class GameEvents {
             sp.connection.disconnect(Moderation.banMessage(p));
             return;
         }
+        Hub.teleport(sp); // chaque connexion commence au Sanctuaire
         AuthSystem.onLogin(sp);
         if (!AuthSystem.isLocked(sp)) GameStart.afterAuth(sp, p);
         else PowerSystem.applyAttributes(sp);
@@ -252,6 +318,7 @@ public final class GameEvents {
         AuthSystem.onLogout(sp);
         Moderation.onLogout(sp);
         DivineWorld.onLogout(sp);
+        Hub.onLogout(sp);
         PlayerProfile p = GodData.get(sp);
         p.lastSeen = System.currentTimeMillis();
         GodData.dirty();
@@ -272,6 +339,7 @@ public final class GameEvents {
             DivineWorld.enforce(sp);
             CodexGuard.tick(sp);
             Hub.fallNet(sp);
+            Hub.tickPortals(sp);
         }
         if (tickCounter % 20 != 0) return;
 
@@ -337,8 +405,8 @@ public final class GameEvents {
         if (!(e.getPlayer() instanceof ServerPlayer sp) || sp.isCreative()) return false;
         PlayerProfile actor = GodData.get(sp);
         PlayerProfile owner = DivineWorld.ownerAt(e.getPos());
-        if (owner == null || !DivineWorld.canBuild(actor, owner) || !DivineWorld.insidePlot(owner, e.getPos())) {
-            Msg.err(sp, "Vous ne pouvez pas modifier ce monde divin.");
+        if (owner == null || !DivineWorld.has(actor, owner, com.godmod.data.IslandPerm.CASSER) || !DivineWorld.insidePlot(owner, e.getPos())) {
+            sp.displayClientMessage(Msg.text("Vous n'avez pas la permission de casser ici.", ChatFormatting.RED), true);
             return true;
         }
         if (!owner.plotStarted && e.getPos().equals(DivineWorld.core(owner))) {
@@ -359,8 +427,8 @@ public final class GameEvents {
         if (!(entity instanceof ServerPlayer sp)) return false;
         PlayerProfile actor = GodData.get(sp);
         PlayerProfile owner = DivineWorld.ownerAt(pos);
-        if (!sp.isCreative() && (owner == null || !DivineWorld.canBuild(actor, owner) || !DivineWorld.insidePlot(owner, pos))) {
-            Msg.err(sp, "Vous ne pouvez construire que dans votre monde divin (ou celui de vos vassaux).");
+        if (!sp.isCreative() && (owner == null || !DivineWorld.has(actor, owner, com.godmod.data.IslandPerm.POSER) || !DivineWorld.insidePlot(owner, pos))) {
+            sp.displayClientMessage(Msg.text("Vous n'avez pas la permission de poser des blocs ici.", ChatFormatting.RED), true);
             return true;
         }
         if (owner != null && owner.uuid.equals(actor.uuid) && !owner.plotStarted) {

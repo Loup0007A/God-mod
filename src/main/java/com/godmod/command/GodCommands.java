@@ -81,6 +81,7 @@ public final class GodCommands {
         registerGod(d);
         registerWorld(d);
         registerTravel(d);
+        registerIsland(d);
         registerShop(d);
         registerConflicts(d);
         registerAdmin(d);
@@ -271,6 +272,81 @@ public final class GodCommands {
                 .executes(ctx -> run(ctx, p -> com.godmod.system.WarpSystem.delete(p, StringArgumentType.getString(ctx, "nom"))))));
     }
 
+    // ------------------------------------------------------------------ /ile : permissions du monde divin
+
+    private static void registerIsland(CommandDispatcher<CommandSourceStack> d) {
+        SuggestionProvider<CommandSourceStack> targets = (ctx, b) -> {
+            List<String> names = new ArrayList<>(List.of("fideles", "visiteurs"));
+            if (GodData.ready()) for (PlayerProfile p : GodData.state().players.values()) names.add(p.name);
+            return SharedSuggestionProvider.suggest(names, b);
+        };
+        SuggestionProvider<CommandSourceStack> perms = (ctx, b) -> {
+            List<String> names = new ArrayList<>();
+            for (com.godmod.data.IslandPerm perm : com.godmod.data.IslandPerm.values()) names.add(perm.name().toLowerCase());
+            return SharedSuggestionProvider.suggest(names, b);
+        };
+        d.register(Commands.literal("ile")
+                .executes(ctx -> run(ctx, p -> {
+                    if (!DivineWorld.hasWorld(GodData.get(p))) return "Vous n'avez pas encore de monde divin (devenez Dieu).";
+                    Menus.openIsland(p);
+                    return null;
+                }))
+                .then(Commands.literal("ajouter").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                        .executes(ctx -> run(ctx, p -> islandEdit(p, StringArgumentType.getString(ctx, "joueur"), null, true)))))
+                .then(Commands.literal("retirer").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                        .executes(ctx -> run(ctx, p -> islandEdit(p, StringArgumentType.getString(ctx, "joueur"), null, false)))))
+                .then(Commands.literal("perm").then(Commands.argument("cible", StringArgumentType.word()).suggests(targets)
+                        .then(Commands.argument("permission", StringArgumentType.word()).suggests(perms)
+                                .then(Commands.argument("etat", StringArgumentType.word()).suggests(words("on", "off"))
+                                        .executes(ctx -> run(ctx, p -> {
+                                            com.godmod.data.IslandPerm perm = com.godmod.data.IslandPerm.parse(StringArgumentType.getString(ctx, "permission"));
+                                            if (perm == null) return "Permission inconnue : entrer, casser, poser, interagir, coffres.";
+                                            String etat = StringArgumentType.getString(ctx, "etat");
+                                            return islandEdit(p, StringArgumentType.getString(ctx, "cible"), perm, etat.equalsIgnoreCase("on") || etat.equalsIgnoreCase("oui"));
+                                        }))))))
+                .then(Commands.literal("pvp").then(Commands.argument("etat", StringArgumentType.word()).suggests(words("on", "off"))
+                        .executes(ctx -> run(ctx, p -> {
+                            PlayerProfile me = GodData.get(p);
+                            if (!DivineWorld.hasWorld(me)) return "Vous n'avez pas de monde divin.";
+                            me.islandPvp = StringArgumentType.getString(ctx, "etat").equalsIgnoreCase("on");
+                            GodData.dirty();
+                            Msg.ok(p, "Combat entre joueurs sur votre île : " + (me.islandPvp ? "activé." : "désactivé."));
+                            return null;
+                        })))));
+    }
+
+    /** perm == null : ajouter (toutes les permissions) ou retirer un joueur. */
+    public static String islandEdit(ServerPlayer player, String target, com.godmod.data.IslandPerm perm, boolean on) {
+        PlayerProfile me = GodData.get(player);
+        if (!DivineWorld.hasWorld(me)) return "Vous n'avez pas de monde divin.";
+        String key;
+        String label;
+        if (target.equalsIgnoreCase("fideles") || target.equalsIgnoreCase("fidèles")) {
+            key = "fideles";
+            label = "vos fidèles";
+        } else if (target.equalsIgnoreCase("visiteurs")) {
+            key = "visiteurs";
+            label = "les visiteurs";
+        } else {
+            PlayerProfile t = GodData.byName(target);
+            if (t == null) return "Joueur inconnu.";
+            if (t.uuid.equals(me.uuid)) return "Vous avez déjà tous les droits sur votre île.";
+            key = t.uuid;
+            label = t.name;
+        }
+        if (perm == null) {
+            if (key.equals("fideles") || key.equals("visiteurs")) return "Utilisez /ile perm " + key + " <permission> <on|off>.";
+            if (on) for (com.godmod.data.IslandPerm pp : com.godmod.data.IslandPerm.values()) DivineWorld.setPerm(me, key, pp, true);
+            else me.islandMembers.remove(key);
+            GodData.dirty();
+            Msg.ok(player, on ? label + " peut désormais construire et tout utiliser sur votre île." : label + " n'a plus aucune permission sur votre île.");
+            return null;
+        }
+        DivineWorld.setPerm(me, key, perm, on);
+        Msg.ok(player, "Permission « " + perm.label + " » " + (on ? "accordée à " : "retirée à ") + label + ".");
+        return null;
+    }
+
     // ------------------------------------------------------------------ /shop
 
     private static void registerShop(CommandDispatcher<CommandSourceStack> d) {
@@ -440,6 +516,36 @@ public final class GodCommands {
                                     if (sp != null) PowerSystem.applyAttributes(sp);
                                     return "Profil de " + t.name + " réinitialisé.";
                                 }))))
+                .then(Commands.literal("spawn")
+                        .then(Commands.literal("reconstruire").executes(ctx -> {
+                            com.godmod.system.WorldBuilder.build(ctx.getSource().getServer(), ctx.getSource());
+                            reply(ctx, "Reconstruction du Sanctuaire lancée (quelques secondes).");
+                            return 1;
+                        }))
+                        .then(Commands.literal("vider").executes(ctx -> {
+                            com.godmod.system.WorldBuilder.clear(ctx.getSource().getServer(), ctx.getSource());
+                            reply(ctx, "Nettoyage complet du Sanctuaire lancé.");
+                            return 1;
+                        }))
+                        .then(Commands.literal("definir").executes(ctx -> {
+                            ServerPlayer p = ctx.getSource().getPlayerOrException();
+                            if (!com.godmod.system.Hub.isSpawn(p.level())) return fail(ctx, "Placez-vous dans le Sanctuaire (/spawn).");
+                            Settings s = GodData.settings();
+                            s.hubSet = true;
+                            s.hubX = p.getX();
+                            s.hubY = p.getY();
+                            s.hubZ = p.getZ();
+                            GodData.dirty();
+                            reply(ctx, "Point d'apparition du Sanctuaire défini ici.");
+                            return 1;
+                        }))
+                        .then(Commands.literal("edition").executes(ctx -> {
+                            ServerPlayer p = ctx.getSource().getPlayerOrException();
+                            boolean on = com.godmod.system.Hub.toggleEditor(p);
+                            reply(ctx, on ? "Mode édition du Sanctuaire ACTIVÉ : vous pouvez casser, poser et interagir."
+                                    : "Mode édition du Sanctuaire désactivé : il est de nouveau protégé.");
+                            return 1;
+                        })))
                 .then(Commands.literal("clearile")
                         .then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
                                 .executes(ctx -> adminEdit(ctx, t -> {
