@@ -1041,7 +1041,106 @@ public final class GodCommands {
         return Commands.literal(name).then(player);
     }
 
+    private static int antibotToggle(CommandContext<CommandSourceStack> ctx, String what) {
+        boolean v = on(StringArgumentType.getString(ctx, "etat"));
+        Settings s = GodData.settings();
+        switch (what) {
+            case "noms" -> s.antibotNames = v;
+            case "ip" -> s.antibotIpCheck = v;
+            default -> s.antibotFlood = v;
+        }
+        GodData.dirty();
+        reply(ctx, "Anti-bot (" + what + ") : " + (v ? "activé." : "désactivé."));
+        return 1;
+    }
+
+    private static void registerAntiBot(CommandDispatcher<CommandSourceStack> d) {
+        d.register(Commands.literal("antibot").requires(Moderation.require(Role.ADMIN))
+                .executes(ctx -> {
+                    Settings s = GodData.settings();
+                    ctx.getSource().sendSystemMessage(Msg.header("Anti-bot"));
+                    reply(ctx, "Pseudos générés (ex. QuietWhale5404) : " + (s.antibotNames ? "refusés" : "acceptés"));
+                    reply(ctx, "Datacenters / VPN / proxys (nouveaux comptes) : " + (s.antibotIpCheck ? "refusés" : "acceptés"));
+                    reply(ctx, "Vague de nouveaux comptes : " + (s.antibotFlood ? "fermeture 10 min" : "ignorée")
+                            + (com.godmod.system.AntiBot.lockdownLeft() > 0 ? " · FERMÉ encore " + Msg.time(com.godmod.system.AntiBot.lockdownLeft()) : ""));
+                    reply(ctx, "Mot de passe obligatoire : " + (s.authEnabled ? "oui (expulsion après " + s.authTimeoutSeconds + " s sans /register)" : "NON (/auth on conseillé)"));
+                    reply(ctx, "Pseudos autorisés : " + (s.antibotAllowed.isEmpty() ? "aucun" : String.join(", ", s.antibotAllowed))
+                            + " · IP bannies : " + s.bannedIps.size());
+                    reply(ctx, "Les joueurs déjà inscrits ne sont jamais concernés.");
+                    return 1;
+                })
+                .then(Commands.literal("noms").then(Commands.argument("etat", StringArgumentType.word()).suggests(words("on", "off")).executes(ctx -> antibotToggle(ctx, "noms"))))
+                .then(Commands.literal("ip").then(Commands.argument("etat", StringArgumentType.word()).suggests(words("on", "off")).executes(ctx -> antibotToggle(ctx, "ip"))))
+                .then(Commands.literal("vague").then(Commands.argument("etat", StringArgumentType.word()).suggests(words("on", "off")).executes(ctx -> antibotToggle(ctx, "vague"))))
+                .then(Commands.literal("autoriser").then(Commands.argument("pseudo", StringArgumentType.word()).executes(ctx -> {
+                    String n = StringArgumentType.getString(ctx, "pseudo");
+                    if (GodData.settings().antibotAllowed.stream().noneMatch(x -> x.equalsIgnoreCase(n))) GodData.settings().antibotAllowed.add(n);
+                    GodData.dirty();
+                    reply(ctx, n + " peut se connecter malgré l'anti-bot.");
+                    return 1;
+                })))
+                .then(Commands.literal("retirer").then(Commands.argument("pseudo", StringArgumentType.word()).executes(ctx -> {
+                    String n = StringArgumentType.getString(ctx, "pseudo");
+                    GodData.settings().antibotAllowed.removeIf(x -> x.equalsIgnoreCase(n));
+                    GodData.dirty();
+                    reply(ctx, n + " n'est plus autorisé d'office.");
+                    return 1;
+                })))
+                .then(Commands.literal("scan").executes(ctx -> {
+                    int n = com.godmod.system.AntiBot.scan(ctx.getSource().getServer());
+                    reply(ctx, n + " bot(s) expulsé(s) ; les adresses des autres nouveaux comptes sont en cours de vérification.");
+                    return 1;
+                }))
+                .then(Commands.literal("expulser").executes(ctx -> {
+                    int n = com.godmod.system.AntiBot.kickUnregistered(ctx.getSource().getServer(), "Expulsé : compte non inscrit.");
+                    reply(ctx, n + " joueur(s) non inscrit(s) expulsé(s).");
+                    return 1;
+                }))
+                .then(Commands.literal("ouvrir").executes(ctx -> {
+                    com.godmod.system.AntiBot.endLockdown();
+                    reply(ctx, "Inscriptions rouvertes.");
+                    return 1;
+                }))
+                .then(Commands.literal("purge").executes(ctx -> {
+                    reply(ctx, com.godmod.system.AntiBot.purge(ctx.getSource().getServer()) + " profil(s) de comptes jamais inscrits supprimé(s).");
+                    return 1;
+                }))
+                .then(Commands.literal("bannirip").then(Commands.argument("cible", StringArgumentType.word()).suggests(ONLINE).executes(ctx -> {
+                    String c = StringArgumentType.getString(ctx, "cible");
+                    ServerPlayer t = ctx.getSource().getServer().getPlayerList().getPlayerByName(c);
+                    String ip = t != null ? com.godmod.system.AuthSystem.ip(t) : c;
+                    if (ip == null || !ip.matches("[0-9a-fA-F.:]+")) {
+                        PlayerProfile pp = GodData.byName(c);
+                        ip = pp == null ? null : pp.lastIp;
+                    }
+                    if (ip == null) return fail(ctx, "Adresse introuvable : donnez un joueur connecté, un joueur connu ou une IP.");
+                    if (!GodData.settings().bannedIps.contains(ip)) GodData.settings().bannedIps.add(ip);
+                    GodData.dirty();
+                    GodData.log("ANTIBOT : IP " + ip + " bannie par " + ctx.getSource().getTextName());
+                    int n = 0;
+                    for (ServerPlayer sp : new ArrayList<>(ctx.getSource().getServer().getPlayerList().getPlayers()))
+                        if (ip.equals(com.godmod.system.AuthSystem.ip(sp))) {
+                            sp.connection.disconnect(Component.literal("Cette adresse est bannie du serveur."));
+                            n++;
+                        }
+                    reply(ctx, "Adresse " + ip + " bannie (" + n + " joueur(s) expulsé(s)).");
+                    return 1;
+                })))
+                .then(Commands.literal("debannirip").then(Commands.argument("ip", StringArgumentType.word()).executes(ctx -> {
+                    String ip = StringArgumentType.getString(ctx, "ip");
+                    boolean r = GodData.settings().bannedIps.remove(ip);
+                    GodData.dirty();
+                    return r ? reply1(ctx, "Adresse " + ip + " débannie.") : fail(ctx, "Cette adresse n'est pas bannie.");
+                }))));
+    }
+
+    private static int reply1(CommandContext<CommandSourceStack> ctx, String s) {
+        reply(ctx, s);
+        return 1;
+    }
+
     private static void registerAdmin(CommandDispatcher<CommandSourceStack> d) {
+        registerAntiBot(d);
         d.register(Commands.literal("pay").requires(Moderation.require(Role.ADMIN))
                 .executes(ctx -> {
                     reply(ctx, "Fonctionnalités payantes : " + (GodData.settings().payEnabled ? "activées" : "désactivées") + ". /pay enable|disable");

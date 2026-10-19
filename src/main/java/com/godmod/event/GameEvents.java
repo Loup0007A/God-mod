@@ -416,6 +416,7 @@ public final class GameEvents {
             sp.connection.disconnect(Moderation.banMessage(p));
             return;
         }
+        if (com.godmod.system.AntiBot.onLogin(sp, p)) return;
         Hub.teleport(sp); // chaque connexion commence au Sanctuaire
         AuthSystem.onLogin(sp);
         if (!AuthSystem.isLocked(sp)) GameStart.afterAuth(sp, p);

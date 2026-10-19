@@ -81,6 +81,22 @@ Admins : `/auth on|off`, `/auth reset <joueur>`.
 > Utile surtout si le serveur est en `online-mode=false`. En `online-mode=true`, Mojang vérifie déjà les comptes :
 > le mot de passe ajoute une seconde protection.
 
+## Anti-bot (`/antibot`)
+
+Ne concerne que les **nouveaux comptes jamais inscrits** (`/register`) : les joueurs déjà inscrits ne sont jamais touchés.
+
+- **Pseudos générés** du type `QuietWhale5404` (Adjectif + Nom + 4 chiffres) : refusés.
+- **Datacenters, VPN et proxys** : l'adresse est vérifiée en arrière-plan auprès du service gratuit ip-api.com
+  (l'adresse IP du nouveau compte lui est envoyée) ; si c'est un hébergeur, le compte est expulsé.
+- **Vague de bots** : 4 nouveaux comptes en une minute → inscriptions fermées 10 minutes et non-inscrits expulsés.
+- Un compte qui ne fait pas `/register` est de toute façon expulsé au bout de 90 secondes (si `/auth on`).
+- L'équipe connectée est prévenue de chaque refus (et tout est noté dans le journal).
+
+Admins : `/antibot` (état) · `/antibot noms|ip|vague on|off` · `/antibot autoriser <pseudo>` (laisser entrer
+un vrai joueur au pseudo généré, ex. Bedrock) · `/antibot scan` (appliquer aux joueurs connectés) ·
+`/antibot expulser` (tous les non-inscrits) · `/antibot ouvrir` (rouvrir les inscriptions) ·
+`/antibot purge` (supprimer les profils fantômes) · `/antibot bannirip <joueur|ip>` · `/antibot debannirip <ip>`.
+
 ## Équipe : modérateurs et admins
 
 - **Admin** : opérateurs du serveur + joueurs nommés par `/staff ajouter <joueur> admin`.

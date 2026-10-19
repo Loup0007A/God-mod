@@ -49,6 +49,13 @@ public class Settings {
     /** Zone AFK construite dans le Sanctuaire. */
     public boolean afkZoneBuilt = false;
 
+    // --- Anti-bot (nouveaux comptes non inscrits seulement) ---
+    public boolean antibotNames = true;
+    public boolean antibotIpCheck = true;
+    public boolean antibotFlood = true;
+    public java.util.List<String> antibotAllowed = new java.util.ArrayList<>();
+    public java.util.List<String> bannedIps = new java.util.ArrayList<>();
+
     // --- Anti-lag ---
     /** Créatures d'un même type au plus par chunk (villageois, animaux apprivoisés et nommés exceptés). */
     public int entityChunkLimit = 15;
