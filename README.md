@@ -97,6 +97,23 @@ un vrai joueur au pseudo généré, ex. Bedrock) · `/antibot scan` (appliquer a
 `/antibot expulser` (tous les non-inscrits) · `/antibot ouvrir` (rouvrir les inscriptions) ·
 `/antibot purge` (supprimer les profils fantômes) · `/antibot bannirip <joueur|ip>` · `/antibot debannirip <ip>`.
 
+## Trailer (`/trailer_lancer [adresse]`, admins)
+
+Une cinématique d'environ 2 min 20 pour filmer un trailer : la caméra de l'admin enchaîne 11 plans
+(orbite aérienne du Sanctuaire, travelling sur l'avenue, grue sur le temple, caisses, métiers et quêtes,
+boutique, Arène avec foudre divine, monde divin de l'admin s'il en a un, descente en parachute dans le monde
+ressource, feu d'artifice, final face au temple avec l'adresse du serveur). Un **mannequin portant le skin de
+l'admin** joue son personnage. Musique : disque « otherside ».
+
+Pendant le tournage : le chat est en pause pour tout le monde, l'admin ne reçoit aucun message ni HUD
+(appuyez sur **F1** pour masquer le reste de l'interface et enregistrez l'écran). `/trailer_stop` pour arrêter.
+À la fin, l'admin retrouve sa position et son mode de jeu.
+
+## Objets pour l'équipe (`/donner`, admins)
+
+`/donner <objet> [nombre] [joueur]` : `cle_commune|rare|epique|divine`, `artefact_ocean|ciel|cosmos`, `codex`,
+`jetons_afk`, `generateur_<créature>` (Tab pour la liste). Sans joueur, c'est pour soi.
+
 ## Équipe : modérateurs et admins
 
 - **Admin** : opérateurs du serveur + joueurs nommés par `/staff ajouter <joueur> admin`.

@@ -90,6 +90,7 @@ public final class GameEvents {
         ServerStartedEvent.BUS.addListener((Consumer<ServerStartedEvent>) e -> onServerStarted(e.getServer()));
         net.minecraftforge.event.server.ServerStoppingEvent.BUS.addListener((Consumer<net.minecraftforge.event.server.ServerStoppingEvent>) e -> {
             if (GodData.ready()) EventSystem.onServerStopping(e.getServer());
+            com.godmod.system.Trailer.stop(e.getServer(), "arrêt du serveur");
         });
         ServerStoppedEvent.BUS.addListener((Consumer<ServerStoppedEvent>) e -> GodData.unload());
 
@@ -347,6 +348,10 @@ public final class GameEvents {
             Msg.err(sp, "Connectez-vous d'abord : /login <motdepasse> (ou /register si c'est votre première fois).");
             return true;
         }
+        if (com.godmod.system.Trailer.active()) {
+            Msg.err(sp, "Le chat est en pause pendant le tournage du trailer.");
+            return true;
+        }
         PlayerProfile p = GodData.get(sp);
         if (Moderation.isMuted(p)) {
             Msg.err(sp, "Vous êtes muet encore " + Msg.time(p.mutedUntil - System.currentTimeMillis())
@@ -457,6 +462,7 @@ public final class GameEvents {
         CrateSystem.tick(server);
         PowerActions.tick(server);
         Travel.tick(server);
+        com.godmod.system.Trailer.tick(server);
         com.godmod.system.Parachute.tick(server);
         TpaSystem.tick(server);
         EventSystem.tick(server);

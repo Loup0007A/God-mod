@@ -53,7 +53,7 @@ public final class Hud {
 
     public static void update(ServerPlayer player) {
         PlayerProfile p = GodData.get(player);
-        if (!p.hud) {
+        if (!p.hud || com.godmod.system.Trailer.isViewer(player)) {
             hide(player);
             return;
         }

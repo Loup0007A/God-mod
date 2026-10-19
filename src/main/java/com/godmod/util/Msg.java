@@ -37,13 +37,14 @@ public final class Msg {
     }
 
     public static void send(Player p, Component c) {
-        if (p instanceof ServerPlayer sp) sp.sendSystemMessage(prefix().append(c));
+        if (p instanceof ServerPlayer sp && !com.godmod.system.Trailer.isViewer(sp)) sp.sendSystemMessage(prefix().append(c));
     }
 
     public static void broadcast(MinecraftServer server, String s, ChatFormatting color) {
         if (server == null) return;
         Component c = prefix().append(text(s, color));
         for (ServerPlayer sp : server.getPlayerList().getPlayers()) {
+            if (com.godmod.system.Trailer.isViewer(sp)) continue; // le réalisateur du trailer ne voit aucun message
             sp.sendSystemMessage(c);
         }
     }

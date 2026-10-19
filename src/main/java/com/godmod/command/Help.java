@@ -152,6 +152,8 @@ public final class Help {
                 a("/godadmin point placer <type> · retirer", "Caisses et pupitres (bloc visé)"),
                 a("/godadmin clearile <joueur> · clearzone <rayon> [hauteur]", "Nettoyer une île ou une zone"),
                 a("/mine reset [maintenant]", "Régénérer le monde ressource"),
+                a("/donner <objet> [nombre] [joueur]", "Clés de caisse, artefacts, Codex, générateurs, jetons AFK"),
+                a("/trailer_lancer [adresse] · /trailer_stop", "Cinématique de 2 min 30 pour filmer un trailer"),
                 a("/antibot [noms|ip|vague on|off · autoriser · scan · expulser · purge · bannirip]", "Protection contre les bots (nouveaux comptes)"),
                 a("/clearlag · /clearlag intervalle <s> · /clearlag entites <max>", "Nettoyer les objets au sol, régler le délai et la limite de créatures par chunk"),
                 a("/auth on|off|session <h>|reset <joueur>", "Mots de passe"),

@@ -238,6 +238,16 @@ public final class GodCommands {
                     .executes(ctx -> open(ctx, com.godmod.system.Transcendence::open))
                     .then(Commands.literal("confirmer").executes(ctx -> run(ctx, com.godmod.system.Transcendence::transcend))));
         }
+        d.register(Commands.literal("trailer_lancer").requires(Moderation.require(Role.ADMIN))
+                .executes(ctx -> run(ctx, p -> com.godmod.system.Trailer.start(p, null)))
+                .then(Commands.argument("adresse", StringArgumentType.greedyString())
+                        .executes(ctx -> run(ctx, p -> com.godmod.system.Trailer.start(p, StringArgumentType.getString(ctx, "adresse"))))));
+        d.register(Commands.literal("trailer_stop").requires(Moderation.require(Role.ADMIN)).executes(ctx -> {
+            if (!com.godmod.system.Trailer.active()) return fail(ctx, "Aucun tournage en cours.");
+            com.godmod.system.Trailer.stop(ctx.getSource().getServer(), "arrêté");
+            return 1;
+        }));
+        registerGive(d);
         d.register(Commands.literal("afk").executes(ctx -> run(ctx, com.godmod.system.AfkSystem::toggle)));
         for (String name : new String[]{"afkshop", "boutiqueafk"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, com.godmod.progress.AfkShop::open)));
         d.register(Commands.literal("privileges").executes(ctx -> open(ctx, Menus::openPerkShop)));
@@ -259,6 +269,63 @@ public final class GodCommands {
         d.register(Commands.literal("skin").executes(ctx -> run(ctx, p ->
                 "Changer de skin n'est pas possible avec ce mod : le serveur ne peut pas modifier votre apparence sans un mod dédié. "
                         + "Changez votre skin sur minecraft.net puis reconnectez-vous.")));
+    }
+
+    // ------------------------------------------------------------------ /donner (admins)
+
+    private static List<String> giveables() {
+        List<String> l = new ArrayList<>(List.of("cle_commune", "cle_rare", "cle_epique", "cle_divine",
+                "artefact_ocean", "artefact_ciel", "artefact_cosmos", "codex", "jetons_afk"));
+        for (String mob : com.godmod.progress.SpawnerSystem.MOBS.keySet()) l.add("generateur_" + mob.substring(mob.indexOf(':') + 1));
+        return l;
+    }
+
+    private static void registerGive(CommandDispatcher<CommandSourceStack> d) {
+        SuggestionProvider<CommandSourceStack> items = (c, b) -> SharedSuggestionProvider.suggest(giveables(), b);
+        d.register(Commands.literal("donner").requires(Moderation.require(Role.ADMIN))
+                .then(Commands.argument("objet", StringArgumentType.word()).suggests(items)
+                        .executes(ctx -> give(ctx, 1, null))
+                        .then(Commands.argument("nombre", IntegerArgumentType.integer(1, 10000))
+                                .executes(ctx -> give(ctx, IntegerArgumentType.getInteger(ctx, "nombre"), null))
+                                .then(Commands.argument("joueur", StringArgumentType.word()).suggests(ONLINE)
+                                        .executes(ctx -> give(ctx, IntegerArgumentType.getInteger(ctx, "nombre"), StringArgumentType.getString(ctx, "joueur")))))));
+    }
+
+    private static int give(CommandContext<CommandSourceStack> ctx, int n, String who) throws CommandSyntaxException {
+        ServerPlayer t = who == null ? ctx.getSource().getPlayerOrException() : ctx.getSource().getServer().getPlayerList().getPlayerByName(who);
+        if (t == null) return fail(ctx, "Joueur introuvable ou hors ligne.");
+        String obj = StringArgumentType.getString(ctx, "objet").toLowerCase();
+        PlayerProfile p = GodData.get(t);
+        String label;
+        if (obj.startsWith("cle_")) {
+            CrateSystem.Crate c = CrateSystem.Crate.parse(obj.substring(4));
+            if (c == null) return fail(ctx, "Clé inconnue : cle_commune, cle_rare, cle_epique, cle_divine.");
+            CrateSystem.addKey(p, c, n);
+            label = n + " clé(s) " + c.label;
+        } else if (obj.startsWith("artefact_")) {
+            Specialization s = Specialization.parse(obj.substring(9));
+            if (s == null || s == Specialization.AUCUNE) return fail(ctx, "Artefact inconnu : artefact_ocean, artefact_ciel, artefact_cosmos.");
+            for (int i = 0; i < Math.min(n, 64); i++) Shop.give(t, com.godmod.util.DivineItems.artifact(s));
+            label = Math.min(n, 64) + " artefact(s) " + s.label;
+        } else if (obj.equals("codex")) {
+            Shop.give(t, com.godmod.util.DivineItems.codex());
+            label = "un Codex divin";
+        } else if (obj.equals("jetons_afk")) {
+            p.afkTokens += n;
+            label = n + " jeton(s) AFK";
+        } else if (obj.startsWith("generateur_")) {
+            String mob = "minecraft:" + obj.substring(11);
+            if (!com.godmod.progress.SpawnerSystem.MOBS.containsKey(mob)) return fail(ctx, "Générateur inconnu. Tapez /donner generateur_ puis Tab.");
+            for (int i = 0; i < Math.min(n, 64); i++) Shop.give(t, com.godmod.progress.SpawnerSystem.item(mob));
+            label = Math.min(n, 64) + " générateur(s) de " + com.godmod.progress.SpawnerSystem.mobName(mob).toLowerCase();
+        } else {
+            return fail(ctx, "Objet inconnu. Tapez /donner puis Tab pour la liste.");
+        }
+        GodData.dirty();
+        GodData.log("ADMIN " + ctx.getSource().getTextName() + " : /donner " + label + " -> " + p.name);
+        if (!t.getName().getString().equals(ctx.getSource().getTextName())) Msg.ok(t, "Vous recevez " + label + " de l'équipe.");
+        reply(ctx, label + " donné(s) à " + p.name + ".");
+        return 1;
     }
 
     // ------------------------------------------------------------------ /aide
