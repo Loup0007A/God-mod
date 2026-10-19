@@ -196,56 +196,55 @@ public final class Hub {
     }
 
     /**
-     * Téléporte à un endroit aléatoire du monde ressource. On cherche d'abord un sol sûr ; si aucun n'est trouvé,
-     * on y va quand même : une petite plateforme remplace le liquide sous les pieds et le joueur est
-     * protégé de tout dégât pendant 15 secondes.
+     * Téléporte à un endroit aléatoire du monde ressource, <b>en parachute</b> : le joueur apparaît haut dans le ciel
+     * (toujours dans l'air libre, jamais dans le sol), descend lentement et ne subit aucun dégât de chute.
+     * On vise de préférence un sol sec ; sinon une petite plateforme remplace le liquide à l'arrivée.
      */
     public static String toMine(ServerPlayer player) {
         ServerLevel mine = resources(player.level().getServer());
         if (mine == null) return "Le monde ressource n'est pas chargé (datapack manquant).";
         RandomSource rnd = mine.random;
         int fx = 0, fz = 0;
-        BlockPos fallback = null;
-        for (int attempt = 0; attempt < 12; attempt++) {
+        BlockPos target = null;
+        boolean safe = false;
+        for (int attempt = 0; attempt < 12 && !safe; attempt++) {
             double angle = rnd.nextDouble() * Math.PI * 2;
             int dist = MINE_MIN + rnd.nextInt(MINE_MAX - MINE_MIN);
             int x = (int) (Math.cos(angle) * dist), z = (int) (Math.sin(angle) * dist);
+            mine.getChunk(x >> 4, z >> 4); // génère la zone avant de lire sa hauteur
             BlockPos top = mine.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(x, 0, z));
             if (top.getY() <= mine.getMinY() + 1) continue;
             BlockState ground = mine.getBlockState(top.below());
-            if (fallback == null) {
-                fallback = top;
+            boolean ok = ground.getFluidState().isEmpty() && !ground.is(Blocks.MAGMA_BLOCK) && !ground.is(Blocks.CACTUS) && !ground.is(Blocks.POWDER_SNOW);
+            if (target == null || ok) {
+                target = top;
                 fx = x;
                 fz = z;
+                safe = ok;
             }
-            if (!ground.getFluidState().isEmpty() || ground.is(Blocks.MAGMA_BLOCK) || ground.is(Blocks.CACTUS) || ground.is(Blocks.POWDER_SNOW)) continue;
-            Teleport.to(player, mine, x + 0.5, top.getY() + 0.1, z + 0.5);
-            Travel.protect(player, 5_000);
-            Msg.ok(player, "Bienvenue dans le monde ressource (" + x + ", " + top.getY() + ", " + z + "). /spawn pour revenir au Sanctuaire.");
-            return null;
         }
-        // Aucun endroit parfait : on y va quand même, en sécurité.
-        if (fallback == null) {
+        if (target == null) {
             fx = 0;
             fz = MINE_MIN;
-            fallback = new BlockPos(fx, Math.max(mine.getSeaLevel() + 1, 64), fz);
+            target = new BlockPos(fx, Math.max(mine.getSeaLevel() + 1, 64), fz);
         }
-        BlockPos below = fallback.below();
-        for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
-            BlockPos p = below.offset(dx, 0, dz);
-            BlockState st = mine.getBlockState(p);
-            if (st.isAir() || !st.getFluidState().isEmpty()) mine.setBlockAndUpdate(p, Blocks.COBBLESTONE.defaultBlockState());
+        if (!safe) {
+            // Liquide à l'arrivée : petite plateforme de pierre pour se poser.
+            BlockPos below = target.below();
+            for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+                BlockPos p = below.offset(dx, 0, dz);
+                BlockState st = mine.getBlockState(p);
+                if (st.isAir() || !st.getFluidState().isEmpty()) mine.setBlockAndUpdate(p, Blocks.COBBLESTONE.defaultBlockState());
+            }
         }
-        for (int dy = 0; dy <= 1; dy++) {
-            BlockPos p = fallback.above(dy);
-            if (!mine.getFluidState(p).isEmpty()) mine.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
-        }
-        Teleport.to(player, mine, fx + 0.5, fallback.getY() + 0.1, fz + 0.5);
-        player.setDeltaMovement(0, 0, 0);
-        Travel.protect(player, 15_000);
-        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 400, 0));
-        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WATER_BREATHING, 400, 0));
-        Msg.ok(player, "Bienvenue dans le monde ressource (" + fx + ", " + fallback.getY() + ", " + fz + "). Endroit incertain : vous êtes protégé 15 secondes.");
+        // Point de départ dans le ciel : 45 blocs au-dessus du sol, puis on monte jusqu'à trouver 2 blocs d'air.
+        int y = Math.min(mine.getMaxY() - 3, Math.max(target.getY(), mine.getSeaLevel()) + 45);
+        while (y < mine.getMaxY() - 2 && !(mine.getBlockState(new BlockPos(fx, y, fz)).isAir() && mine.getBlockState(new BlockPos(fx, y + 1, fz)).isAir())) y++;
+        Teleport.to(player, mine, fx + 0.5, y, fz + 0.5);
+        Travel.protect(player, 5_000);
+        Parachute.deploy(player);
+        if (!safe) player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 1200, 0));
+        Msg.ok(player, "Bienvenue dans le monde ressource (" + fx + ", " + target.getY() + ", " + fz + "). /spawn pour revenir au Sanctuaire.");
         return null;
     }
 

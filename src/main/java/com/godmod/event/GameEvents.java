@@ -226,7 +226,8 @@ public final class GameEvents {
         EntityItemPickupEvent.BUS.addListener((Predicate<EntityItemPickupEvent>) e -> locked(e.getEntity()));
         LivingAttackEvent.BUS.addListener((Predicate<LivingAttackEvent>) e -> {
             boolean deny = locked(e.getEntity()) || locked(e.getSource().getEntity()) || pvpDenied(e.getEntity(), e.getSource().getEntity())
-                    || (e.getEntity() instanceof ServerPlayer prot && Travel.isProtected(prot));
+                    || (e.getEntity() instanceof ServerPlayer prot && (Travel.isProtected(prot)
+                    || (com.godmod.system.Parachute.active(prot) && e.getSource().is(net.minecraft.tags.DamageTypeTags.IS_FALL))));
             // Combat entre joueurs : pas de téléportation pendant 12 s (anti-fuite).
             if (!deny && e.getEntity() instanceof ServerPlayer v && e.getSource().getEntity() instanceof ServerPlayer a && v != a && e.getAmount() > 0)
                 Travel.tagCombat(v, a);
@@ -432,6 +433,7 @@ public final class GameEvents {
         CrateSystem.onLogout(sp);
         PowerActions.onLogout(sp);
         Travel.onLogout(sp);
+        com.godmod.system.Parachute.onLogout(sp);
         TpaSystem.onLogout(sp);
         EventSystem.onLogout(sp);
         com.godmod.system.AfkSystem.onLogout(sp);
@@ -454,6 +456,7 @@ public final class GameEvents {
         CrateSystem.tick(server);
         PowerActions.tick(server);
         Travel.tick(server);
+        com.godmod.system.Parachute.tick(server);
         TpaSystem.tick(server);
         EventSystem.tick(server);
         for (ServerPlayer sp : server.getPlayerList().getPlayers()) {

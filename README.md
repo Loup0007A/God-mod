@@ -39,8 +39,8 @@ dans le chat) et son survol l'explique. La liste s'adapte au rang du joueur.
 
 ## Déplacements
 
-- `/spawn` : Sanctuaire · `/mine` : monde ressource (endroit aléatoire ; si aucun sol sûr n'est trouvé, on y va quand même
-  avec une petite plateforme et 15 s sans aucun dégât) · `/monde` : votre monde divin.
+- `/spawn` : Sanctuaire · `/mine` : monde ressource, arrivée **en parachute** haut dans le ciel à un endroit aléatoire
+  (chute lente, aucun dégât de chute jusqu'au sol, accroupi pour replier le parachute) · `/monde` : votre monde divin.
 - `/setwarp <nom>` : warp public à votre position (1 pour un mortel → 10 pour un dieu suprême) ·
   `/warp [nom]` (sans nom : liste cliquable) · `/warps` · `/delwarp <nom>`.
 - `/tpa <joueur>` (aller vers lui) · `/tpahere <joueur>` (le faire venir) · `/tpaccept` · `/tpdeny`
