@@ -271,6 +271,28 @@ public final class GodCommands {
                             if (err == null) Msg.ok(p, "Tableau " + IntegerArgumentType.getInteger(ctx, "numero") + " posé devant vous.");
                             return err;
                         })))))
+                .then(Commands.literal("fond").then(Commands.argument("bloc", StringArgumentType.greedyString())
+                        .suggests(words("minecraft:gray_concrete", "minecraft:black_concrete", "minecraft:white_concrete", "minecraft:blue_terracotta",
+                                "minecraft:dark_oak_planks", "minecraft:deepslate_tiles", "minecraft:light_blue_concrete"))
+                        .executes(ctx -> {
+                            String b = StringArgumentType.getString(ctx, "bloc").trim();
+                            if (!b.contains(":")) b = "minecraft:" + b;
+                            GodData.settings().tutoBackground = b;
+                            GodData.dirty();
+                            reply(ctx, "Fond des tableaux : " + b + ". Reposez les tableaux (/tuto tableau <n>) pour l'appliquer.");
+                            return 1;
+                        })))
+                .then(Commands.literal("cadre").then(Commands.argument("bloc", StringArgumentType.greedyString())
+                        .suggests(words("minecraft:gold_block", "minecraft:quartz_block", "minecraft:dark_oak_log", "aucun"))
+                        .executes(ctx -> {
+                            String b = StringArgumentType.getString(ctx, "bloc").trim();
+                            if (b.equalsIgnoreCase("aucun")) b = "";
+                            else if (!b.contains(":")) b = "minecraft:" + b;
+                            GodData.settings().tutoFrame = b;
+                            GodData.dirty();
+                            reply(ctx, b.isEmpty() ? "Tableaux sans cadre." : "Cadre des tableaux : " + b + ". Reposez les tableaux pour l'appliquer.");
+                            return 1;
+                        })))
                 .then(Commands.literal("retirer")
                         .then(Commands.literal("tous").executes(ctx -> {
                             com.godmod.system.TutoBoards.removeAll(ctx.getSource().getServer());

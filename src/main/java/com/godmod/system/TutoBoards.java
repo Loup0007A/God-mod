@@ -207,22 +207,72 @@ public final class TutoBoards {
         return "{text:\"" + t + "\",color:\"" + color + "\"" + (bold ? ",bold:true" : "") + "}";
     }
 
+    /** Largeur approximative d'un caractère de la police Minecraft, en pixels (avance comprise). */
+    private static int charWidth(char c, boolean bold) {
+        int w;
+        if ("i!.,:;|'".indexOf(c) >= 0) w = 2;
+        else if (c == 'l' || c == '`') w = 3;
+        else if (c == 't' || c == 'I' || c == ' ' || c == '[' || c == ']' || c == '(' || c == ')' || c == '*') w = 4;
+        else if (c == 'f' || c == 'k' || c == '<' || c == '>' || c == '{' || c == '}') w = 5;
+        else if (c > 0x2000) w = 9; // symboles (★ ⛏ ✿ ≈ →…)
+        else w = 6;
+        return w + (bold ? 1 : 0);
+    }
+
+    /** Largeur en pixels de la ligne la plus longue d'une page. */
+    private static int maxLineWidth(String[] lines) {
+        int max = 1;
+        for (String line : lines) {
+            int w = 0;
+            boolean bold = false;
+            for (int i = 0; i < line.length(); i++) {
+                char c = line.charAt(i);
+                if (c == '§' && i + 1 < line.length()) {
+                    char k = line.charAt(++i);
+                    bold = k == 'l' || (bold && k == 'l');
+                    if (k != 'l') bold = false;
+                    continue;
+                }
+                w += charWidth(c, bold);
+            }
+            max = Math.max(max, w);
+        }
+        return max;
+    }
+
+    /** Panneau : 5 blocs de large, 4 de haut. Le texte est mis à l'échelle pour remplir l'intérieur. */
+    public static final double WIDTH = 5, HEIGHT = 4, MARGIN = 0.3, FRAME = 0.08;
+
+    private static String transform(double tx, double ty, double tz, double sx, double sy, double sz) {
+        return String.format(java.util.Locale.ROOT,
+                "transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[%.4ff,%.4ff,%.4ff],scale:[%.4ff,%.4ff,%.4ff]}",
+                tx, ty, tz, sx, sy, sz);
+    }
+
+    private static void blockPanel(MinecraftServer server, ServerLevel level, int n, double x, double y, double z, float yaw,
+                                   String block, double tx, double ty, double tz, double sx, double sy, double sz) {
+        WorldBuilder.run(server, level, String.format(java.util.Locale.ROOT,
+                "summon minecraft:block_display %.3f %.3f %.3f {Tags:[\"%s\",\"%s_%d\"],Rotation:[%.1ff,0f],brightness:{sky:15,block:15},"
+                        + "block_state:{Name:\"%s\"},%s}",
+                x, y, z, TAG, TAG, n, yaw, block, transform(tx, ty, tz, sx, sy, sz)));
+    }
+
     /**
-     * Pose le tableau n. {@code here} : devant le joueur, tourné vers lui ; sinon plaqué sur le mur visé.
-     * Renvoie une erreur ou null.
+     * Pose le tableau n. {@code here} : devant le joueur, tourné vers lui ; sinon plaqué sur le mur visé,
+     * centré sur le point regardé. Renvoie une erreur ou null.
      */
     public static String place(ServerPlayer p, int n, boolean here) {
         if (n < 1 || n > PAGES.size()) return "Il y a " + PAGES.size() + " tableaux (1 à " + PAGES.size() + ").";
         MinecraftServer server = p.level().getServer();
         ServerLevel level = (ServerLevel) p.level();
-        double x, y, z;
+        double x, cy, z;
         float yaw;
         if (here) {
             Vec3 look = p.getLookAngle();
             Vec3 flat = new Vec3(look.x, 0, look.z).normalize();
             x = p.getX() + flat.x * 3;
             z = p.getZ() + flat.z * 3;
-            y = p.getY();
+            cy = p.getY() + 2.5;
             yaw = Math.round((p.getYRot() + 180) / 90F) * 90F; // face au joueur
         } else {
             Vec3 eye = p.getEyePosition();
@@ -231,29 +281,47 @@ public final class TutoBoards {
             BlockHitResult bh = (BlockHitResult) hit;
             Direction face = bh.getDirection();
             if (face.getAxis().isVertical()) return "Visez un mur (une face verticale), pas le sol ni le plafond.";
-            Vec3 at = bh.getLocation().add(face.getStepX() * 0.05, 0, face.getStepZ() * 0.05);
+            Vec3 at = bh.getLocation().add(face.getStepX() * 0.06, 0, face.getStepZ() * 0.06);
             x = at.x;
             z = at.z;
-            // Le texte s'affiche au-dessus de ce point (≈ 0,25 bloc par ligne) : on le centre verticalement sur le point visé.
-            y = at.y - PAGES.get(n - 1).length * 0.25 / 2;
+            cy = at.y;
             yaw = face.toYRot();
         }
         remove(server, n);
-        String cmd = String.format(java.util.Locale.ROOT,
+        String[] page = PAGES.get(n - 1);
+        String bg = GodData.settings().tutoBackground;
+
+        // 1) Fond plein de 5 × 4 blocs, toujours éclairé, et un fin cadre doré.
+        blockPanel(server, level, n, x, cy, z, yaw, bg, -WIDTH / 2, -HEIGHT / 2, -0.04, WIDTH, HEIGHT, 0.02);
+        String frame = GodData.settings().tutoFrame;
+        if (frame != null && !frame.isEmpty()) {
+            double f = FRAME;
+            blockPanel(server, level, n, x, cy, z, yaw, frame, -WIDTH / 2 - f, HEIGHT / 2, -0.045, WIDTH + 2 * f, f, 0.03);
+            blockPanel(server, level, n, x, cy, z, yaw, frame, -WIDTH / 2 - f, -HEIGHT / 2 - f, -0.045, WIDTH + 2 * f, f, 0.03);
+            blockPanel(server, level, n, x, cy, z, yaw, frame, -WIDTH / 2 - f, -HEIGHT / 2, -0.045, f, HEIGHT, 0.03);
+            blockPanel(server, level, n, x, cy, z, yaw, frame, WIDTH / 2, -HEIGHT / 2, -0.045, f, HEIGHT, 0.03);
+        }
+
+        // 2) Texte : taille calculée pour remplir l'intérieur (sans retour à la ligne automatique).
+        double px = 0.025; // 1 pixel de police = 1/40 de bloc à l'échelle 1
+        double textW = maxLineWidth(page) * px, textH = page.length * 10 * px;
+        double scale = Math.min((WIDTH - 2 * MARGIN) / textW, (HEIGHT - 2 * MARGIN) / textH);
+        double h = textH * scale;
+        WorldBuilder.run(server, level, String.format(java.util.Locale.ROOT,
                 "summon minecraft:text_display %.3f %.3f %.3f {Tags:[\"%s\",\"%s_%d\"],Rotation:[%.1ff,0f],billboard:\"fixed\",alignment:\"center\","
-                        + "line_width:196,background:-1442840576,shadow:1b,see_through:0b,"
-                        + "transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[1f,1f,1f]},text:%s}",
-                x, y, z, TAG, TAG, n, yaw, snbt(PAGES.get(n - 1)));
-        WorldBuilder.run(server, level, cmd);
+                        + "line_width:2000,background:0,shadow:1b,see_through:0b,brightness:{sky:15,block:15},%s,text:%s}",
+                x, cy - h / 2, z, TAG, TAG, n, yaw, transform(0, 0, 0, scale, scale, scale), snbt(page)));
         GodData.log("TUTO : tableau " + n + " posé par " + p.getName().getString());
         return null;
     }
 
     public static void remove(MinecraftServer server, int n) {
         WorldBuilder.run(server, Hub.level(server), "kill @e[type=minecraft:text_display,tag=" + TAG + "_" + n + "]");
+        WorldBuilder.run(server, Hub.level(server), "kill @e[type=minecraft:block_display,tag=" + TAG + "_" + n + "]");
     }
 
     public static void removeAll(MinecraftServer server) {
         WorldBuilder.run(server, Hub.level(server), "kill @e[type=minecraft:text_display,tag=" + TAG + "]");
+        WorldBuilder.run(server, Hub.level(server), "kill @e[type=minecraft:block_display,tag=" + TAG + "]");
     }
 }

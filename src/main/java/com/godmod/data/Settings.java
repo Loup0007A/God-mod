@@ -56,6 +56,11 @@ public class Settings {
     public java.util.List<String> antibotAllowed = new java.util.ArrayList<>();
     public java.util.List<String> bannedIps = new java.util.ArrayList<>();
 
+    // --- Tableaux du tutoriel ---
+    public String tutoBackground = "minecraft:gray_concrete";
+    /** Cadre (vide = sans cadre). */
+    public String tutoFrame = "minecraft:gold_block";
+
     // --- Anti-lag ---
     /** Créatures d'un même type au plus par chunk (villageois, animaux apprivoisés et nommés exceptés). */
     public int entityChunkLimit = 15;

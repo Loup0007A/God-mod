@@ -128,7 +128,9 @@ Bâton en main, les zones proches sont dessinées en particules (violet = AFK, v
 ## Tableaux du tutoriel (`/tuto`, admins)
 
 Regardez le **centre** du mur où mettre le panneau, puis `/tuto tableau <n>` (1 à 12) : la page s'affiche
-plaquée sur le mur, sur environ 5 × 3,5 blocs, fond sombre et texte coloré. `/tuto tableau <n> ici` le pose
+plaquée sur le mur sur **exactement 5 × 4 blocs** : panneau de fond toujours éclairé (même la nuit), cadre doré,
+et texte agrandi automatiquement pour remplir le panneau. `/tuto fond <bloc>` et `/tuto cadre <bloc|aucun>` changent
+le fond et le cadre. `/tuto tableau <n> ici` le pose
 3 blocs devant vous, tourné vers vous. Reposer un numéro remplace l'ancien. `/tuto` liste les pages (cliquables),
 `/tuto retirer <n>` ou `/tuto retirer tous`.
 
