@@ -152,6 +152,7 @@ public final class Help {
                 a("/godadmin point placer <type> · retirer", "Caisses et pupitres (bloc visé)"),
                 a("/godadmin clearile <joueur> · clearzone <rayon> [hauteur]", "Nettoyer une île ou une zone"),
                 a("/mine reset [maintenant]", "Régénérer le monde ressource"),
+                a("/zone creer commande <nom> <console|joueur> <commande>", "Zone qui lance une commande quand on y entre ({joueur} = pseudo)"),
                 a("/zone baton · /zone creer <afk|spawn|libre> <nom> [toutehauteur] · /zone supprimer [nom] · /zone liste", "Tracer des zones AFK, protégées ou libres avec un bâton"),
                 a("/donner <objet> [nombre] [joueur]", "Clés de caisse, artefacts, Codex, générateurs, jetons AFK"),
                 a("/trailer_lancer [adresse] · /trailer_stop", "Cinématique de 2 min 30 pour filmer un trailer"),

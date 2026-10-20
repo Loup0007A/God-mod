@@ -113,6 +113,22 @@ public final class ZoneSystem {
 
     // ------------------------------------------------------------------ Zones
 
+    /** Zone qui lance une commande quand un joueur y entre. */
+    public static String createCommand(ServerPlayer p, String name, boolean console, String command, boolean fullHeight) {
+        String cmd = command.trim();
+        if (cmd.startsWith("/")) cmd = cmd.substring(1);
+        if (cmd.isEmpty()) return "Indiquez la commande à lancer.";
+        String err = create(p, Zone.Type.COMMANDE, name, fullHeight);
+        if (err != null) return err;
+        Zone z = GodData.state().zones.get(name.toLowerCase());
+        z.command = cmd;
+        z.asConsole = console;
+        GodData.dirty();
+        GodData.log("ZONE : « " + name + " » lance « /" + cmd + " » (" + (console ? "console" : "joueur") + ")");
+        Msg.info(p, "Commande : /" + cmd + " — lancée par " + (console ? "la console ({joueur} = pseudo du joueur)" : "le joueur lui-même") + ", à chaque entrée dans la zone.");
+        return null;
+    }
+
     public static String create(ServerPlayer p, Zone.Type type, String name, boolean fullHeight) {
         if (!name.matches("[A-Za-z0-9_\\-]{2,24}")) return "Nom invalide : 2 à 24 lettres, chiffres, _ ou -.";
         Selection s = SELECTIONS.get(p.getUUID());
@@ -161,6 +177,7 @@ public final class ZoneSystem {
             case AFK -> "AFK";
             case SPAWN -> "protégée";
             case LIBRE -> "libre";
+            case COMMANDE -> "commande";
         };
     }
 
@@ -189,7 +206,7 @@ public final class ZoneSystem {
         for (Zone z : GodData.state().zones.values()) {
             String dim = z.dimension.substring(z.dimension.indexOf(':') + 1);
             p.sendSystemMessage(Msg.text(z.name, ChatFormatting.YELLOW)
-                    .append(Msg.text(" — " + label(z.type) + " · " + dim + " · " + z.minX + " " + z.minY + " " + z.minZ + " → " + z.maxX + " " + z.maxY + " " + z.maxZ + " ", ChatFormatting.GRAY))
+                    .append(Msg.text(" — " + label(z.type) + (z.type == Zone.Type.COMMANDE ? " (/" + z.command + ", " + (z.asConsole ? "console" : "joueur") + ")" : "") + " · " + dim + " · " + z.minX + " " + z.minY + " " + z.minZ + " → " + z.maxX + " " + z.maxY + " " + z.maxZ + " ", ChatFormatting.GRAY))
                     .append(Msg.button("Supprimer", "/zone supprimer " + z.name, "Supprimer cette zone", ChatFormatting.RED)));
         }
     }
@@ -208,6 +225,7 @@ public final class ZoneSystem {
                     case AFK -> ParticleTypes.WITCH;
                     case SPAWN -> ParticleTypes.HAPPY_VILLAGER;
                     case LIBRE -> ParticleTypes.FLAME;
+                    case COMMANDE -> ParticleTypes.ENCHANT;
                 };
                 int y1 = Math.max(z.minY, (int) p.getY() - 6), y2 = Math.min(z.maxY + 1, (int) p.getY() + 8);
                 outline(p, l, part, z.minX, y1, z.minZ, z.maxX + 1, y2, z.maxZ + 1);
@@ -243,7 +261,50 @@ public final class ZoneSystem {
         }
     }
 
+    // ------------------------------------------------------------------ Zones de commande (chaque tick)
+
+    /** Joueur -> zones de commande où il se trouve déjà (la commande ne part qu'à l'entrée). */
+    private static final Map<UUID, java.util.Set<String>> INSIDE = new HashMap<>();
+
+    public static void tick(MinecraftServer server) {
+        if (!GodData.ready() || GodData.state().zones.isEmpty()) {
+            INSIDE.clear();
+            return;
+        }
+        List<Zone> cmdZones = new ArrayList<>();
+        for (Zone z : GodData.state().zones.values()) if (z.type == Zone.Type.COMMANDE && z.command != null) cmdZones.add(z);
+        if (cmdZones.isEmpty()) {
+            INSIDE.clear();
+            return;
+        }
+        for (ServerPlayer p : new ArrayList<>(server.getPlayerList().getPlayers())) {
+            if (AuthSystem.isLocked(p) || p.isSpectator() || Trailer.isViewer(p)) continue;
+            java.util.Set<String> inside = INSIDE.computeIfAbsent(p.getUUID(), k -> new java.util.HashSet<>());
+            String dim = p.level().dimension().identifier().toString();
+            BlockPos pos = p.blockPosition();
+            for (Zone z : cmdZones) {
+                String key = z.name.toLowerCase();
+                boolean in = z.contains(dim, pos.getX(), pos.getY(), pos.getZ());
+                if (in && inside.add(key)) run(server, p, z);
+                else if (!in) inside.remove(key);
+            }
+        }
+    }
+
+    private static void run(MinecraftServer server, ServerPlayer p, Zone z) {
+        String cmd = z.command.replace("{joueur}", p.getName().getString()).replace("{player}", p.getName().getString());
+        try {
+            var src = z.asConsole
+                    ? server.createCommandSourceStack().withLevel((ServerLevel) p.level()).withPosition(p.position()).withSuppressedOutput()
+                    : p.createCommandSourceStack();
+            server.getCommands().performPrefixedCommand(src, cmd);
+        } catch (Exception e) {
+            com.godmod.GodMod.LOGGER.warn("[God Mod] Zone « {} » : commande impossible ({})", z.name, cmd);
+        }
+    }
+
     public static void onLogout(ServerPlayer p) {
+        INSIDE.remove(p.getUUID());
         SELECTIONS.remove(p.getUUID());
     }
 }

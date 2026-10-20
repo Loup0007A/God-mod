@@ -281,7 +281,16 @@ public final class GodCommands {
             return SharedSuggestionProvider.suggest(n, b);
         };
         var creer = Commands.literal("creer");
+        var commandeNode = Commands.argument("nom", StringArgumentType.word());
+        for (String mode : new String[]{"console", "joueur"}) {
+            boolean console = mode.equals("console");
+            commandeNode.then(Commands.literal(mode).then(Commands.argument("commande", StringArgumentType.greedyString())
+                    .executes(ctx -> run(ctx, p -> com.godmod.system.ZoneSystem.createCommand(p, StringArgumentType.getString(ctx, "nom"),
+                            console, StringArgumentType.getString(ctx, "commande"), false)))));
+        }
+        creer.then(Commands.literal("commande").then(commandeNode));
         for (com.godmod.data.Zone.Type t : com.godmod.data.Zone.Type.values()) {
+            if (t == com.godmod.data.Zone.Type.COMMANDE) continue;
             creer.then(Commands.literal(t.name().toLowerCase()).then(Commands.argument("nom", StringArgumentType.word())
                     .executes(ctx -> run(ctx, p -> com.godmod.system.ZoneSystem.create(p, t, StringArgumentType.getString(ctx, "nom"), false)))
                     .then(Commands.literal("toutehauteur")

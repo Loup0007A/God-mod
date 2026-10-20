@@ -117,10 +117,13 @@ s'affiche en particules). Puis :
 - `/zone creer afk <nom>` : la zone compte comme zone AFK (jetons, pas d'expulsion pour inactivité), dans n'importe quel monde ;
 - `/zone creer spawn <nom>` : zone protégée comme le Sanctuaire (pas de casse, pose, coffres, PvP, monstres), n'importe où ;
 - `/zone creer libre <nom>` : retire la protection d'une partie du Sanctuaire ;
+- `/zone creer commande <nom> <console|joueur> <commande>` : lance la commande chaque fois qu'un joueur **entre** dans la zone.
+  `{joueur}` est remplacé par son pseudo. `console` = avec tous les droits (ex. `/zone creer commande bonus console give {joueur} diamond 1`),
+  `joueur` = comme si le joueur la tapait (ex. `/zone creer commande portail joueur mine`) ;
 - ajouter `toutehauteur` à la fin étend la zone du bas au haut du monde ;
 - `/zone supprimer` (la zone où vous êtes) ou `/zone supprimer <nom>` · `/zone liste` · `/zone pos1|pos2` (coin à vos pieds).
 
-Bâton en main, les zones proches sont dessinées en particules (violet = AFK, vert = protégée, flammes = libre).
+Bâton en main, les zones proches sont dessinées en particules (violet = AFK, vert = protégée, flammes = libre, symboles d'enchantement = commande).
 
 ## Objets pour l'équipe (`/donner`, admins)
 

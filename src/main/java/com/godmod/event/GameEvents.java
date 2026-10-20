@@ -470,6 +470,7 @@ public final class GameEvents {
         PowerActions.tick(server);
         Travel.tick(server);
         com.godmod.system.Trailer.tick(server);
+        com.godmod.system.ZoneSystem.tick(server);
         com.godmod.system.Parachute.tick(server);
         TpaSystem.tick(server);
         EventSystem.tick(server);
