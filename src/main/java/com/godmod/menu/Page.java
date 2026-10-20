@@ -23,6 +23,7 @@ public class Page {
     private final SimpleContainer box = new SimpleContainer(GodMenu.SIZE);
     private final Map<Integer, GodMenu.Action> actions = new HashMap<>();
     private GodMenu.InventoryAction inventoryAction;
+    private String tag;
 
     public Page(String title) {
         this.title = title;
@@ -59,6 +60,11 @@ public class Page {
         return this;
     }
 
+    public Page tag(String tag) {
+        this.tag = tag;
+        return this;
+    }
+
     public Page back(GodMenu.Action action) {
         return set(45, icon(Items.ARROW, "← Retour", ChatFormatting.YELLOW), action);
     }
@@ -71,8 +77,13 @@ public class Page {
         Map<Integer, GodMenu.Action> acts = this.actions;
         GodMenu.InventoryAction inv = this.inventoryAction;
         SimpleContainer content = this.box;
+        String t = this.tag;
         player.openMenu(new SimpleMenuProvider(
-                (id, inventory, p) -> new GodMenu(id, inventory, content, acts, inv),
+                (id, inventory, p) -> {
+                    GodMenu m = new GodMenu(id, inventory, content, acts, inv);
+                    m.tag = t;
+                    return m;
+                },
                 Component.literal(title)));
     }
 

@@ -127,12 +127,14 @@ Bâton en main, les zones proches sont dessinées en particules (violet = AFK, v
 
 ## Tableaux du tutoriel (`/tuto`, admins)
 
-Regardez le **centre** du mur où mettre le panneau, puis `/tuto tableau <n>` (1 à 12) : la page s'affiche
+Regardez le **centre** du mur où mettre le panneau, puis `/tuto tableau <n>` (1 à 14) : la page s'affiche
 plaquée sur le mur sur **exactement 5 × 4 blocs** : panneau de fond toujours éclairé (même la nuit), cadre doré,
 et texte agrandi automatiquement pour remplir le panneau. `/tuto fond <bloc>` et `/tuto cadre <bloc|aucun>` changent
 le fond et le cadre. `/tuto tableau <n> ici` le pose
 3 blocs devant vous, tourné vers vous. Reposer un numéro remplace l'ancien. `/tuto` liste les pages (cliquables),
 `/tuto retirer <n>` ou `/tuto retirer tous`.
+Les positions sont enregistrées : `/tuto actualiser` redessine tous les tableaux posés (après une mise à jour des textes),
+et `/tuto` indique ✔/✖ ceux qui sont posés. Après chaque pose, un bouton propose le tableau suivant.
 
 Pages : 1 Bienvenue · 2 Essence et paliers · 3 Métiers · 4 Quêtes · 5 Caisses et clés · 6 Monde ressource ·
 7 Pouvoirs et Foi · 8 Fidèles et conflits · 9 Monde divin · 10 Économie · 11 Événements et cadeaux · 12 À vous de jouer.
@@ -380,6 +382,33 @@ Agilité (vitesse), Esprit (Foi max, régénération, puissance et recharge des 
 
 `/shop` : Nether, End, ressources, artefacts. Revente 5 à 10 fois moins chère que l'achat.
 **Premium** (Gemmes, attribuées par un admin) : désactivé par défaut, `/pay enable` / `/pay disable`.
+
+## Résidences et retour (`/sethome`, `/home`, `/homes`, `/delhome`, `/back`)
+
+- `/sethome [nom]` pose une résidence (nom par défaut : « maison »). Nombre : 1 + 1 par palier (Mortel 1 … Créateur 10),
+  +5 pour l'équipe. Interdit sur l'île d'un dieu qui ne vous laisse pas entrer.
+- `/home [nom]`, `/homes` (liste cliquable), `/delhome <nom>`. Délai de téléportation et blocage en combat habituels.
+- `/back` (ou `/retour`) : revient au lieu de votre mort, ou à l'endroit quitté lors de la dernière téléportation.
+- Si l'endroit est bouché (monde ressource réinitialisé…), on arrive au-dessus, avec 3 s d'invulnérabilité.
+
+## Kits (`/kit`)
+
+Menu cliquable, ou `/kit <nom>` : **depart** (une fois), **quotidien** (toutes les 24 h, plus riche à chaque palier),
+**eveille** (3 jours, outils en fer), **demidieu** (7 j, armure de fer), **dieu** (7 j, outils en diamant),
+**supreme** (7 j, armure de diamant), **titan** (7 j, netherite, totem…). Un rappel s'affiche à la connexion.
+
+## Échange sécurisé (`/echange <joueur>`)
+
+L'autre joueur accepte (`/echange accepter`). Chacun clique ses objets (16 piles au plus) et règle l'argent donné
+(boutons ±100 / ±1 000, clic droit ×10). Quand les deux ont validé, l'échange a lieu 3 s plus tard ; toute modification
+annule les validations. Fermer l'écran, se déconnecter ou un redémarrage annule et rend tout.
+
+## Tombes (`/tombe`)
+
+À la mort, les objets ne tombent plus au sol : ils vont dans une tombe (crâne flottant + nom) à l'endroit du décès.
+Le propriétaire récupère tout en marchant dessus ; le tueur (JcJ) peut la piller tout de suite, tout le monde après
+10 minutes ; elle disparaît au bout de 2 heures. `/tombe` liste vos tombes et permet de les récupérer à distance
+(500 pièces, gratuit après une chute dans le vide). Admins : `/tombe activer on|off`, `/tombe prix <pièces>`.
 
 ## Marché des joueurs (`/market`, `/marche`, `/hdv`)
 

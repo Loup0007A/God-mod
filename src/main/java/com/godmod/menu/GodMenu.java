@@ -34,6 +34,8 @@ public class GodMenu extends ChestMenu {
     /** Type de clic simplifié. */
     public enum Click { LEFT, RIGHT, SHIFT }
 
+    /** Étiquette libre (ex. « trade:12 ») pour reconnaître l'interface ouverte. */
+    public String tag;
     private final Map<Integer, Action> actions;
     private final InventoryAction inventoryAction;
 

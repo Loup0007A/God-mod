@@ -131,7 +131,7 @@ public final class TutoBoards {
             new String[]{"§6§l10 · ÉCONOMIE",
                     "§e/shop§7 : objets du Nether et de",
                     "§7l'End, ressources, artefacts",
-                    "§e/shop vendre tout§7 : vendre",
+                    "§e/shop vendre tout§7 : tout revendre",
                     "",
                     "§e/payer§7 : donner de l'argent",
                     "§e/baltop§7 : les plus riches",
@@ -139,7 +139,31 @@ public final class TutoBoards {
                     "§d/privileges§7 : /craft, /ec,",
                     "§7/enclume, /vol… à vie",
                     "§e/afk§7 : jetons pour §e/afkshop"},
-            new String[]{"§6§l11 · ÉVÉNEMENTS ET CADEAUX",
+            new String[]{"§6§l11 · MARCHÉ ET ÉCHANGES",
+                    "§e/market§7 : vendez vos objets",
+                    "§7aux autres joueurs, à votre prix.",
+                    "§e/market vendre <prix>§7 (objet en main)",
+                    "§7Taxe : §f1 pièce§7 par objet vendu.",
+                    "",
+                    "§fTri, recherche, §eprix moyen§f,",
+                    "§fprix du shop et §acourbes§f de",
+                    "§fl'offre et de la demande.",
+                    "",
+                    "§b/echange <joueur>§7 : échange",
+                    "§7sécurisé, validé des deux côtés"},
+            new String[]{"§6§l12 · CONFORT",
+                    "§e/sethome§7 · §e/home§7 : vos résidences",
+                    "§7(1 de plus à chaque palier)",
+                    "§e/back§7 : revenir où vous étiez",
+                    "§7ou là où vous êtes mort",
+                    "",
+                    "§e/kit§7 : kit de départ, kit du jour",
+                    "§7et un kit par palier",
+                    "",
+                    "§c⚰ Mort ?§f Vos objets sont dans",
+                    "§fune §7tombe§f : marchez dessus.",
+                    "§e/tombe§7 : où elles sont"},
+            new String[]{"§6§l13 · ÉVÉNEMENTS ET CADEAUX",
                     "§fToutes les 45 minutes : §bXP ×2§f,",
                     "§fTitan à abattre, chasse au trésor,",
                     "§fconcours, quiz, pluie de clés…",
@@ -149,11 +173,12 @@ public final class TutoBoards {
                     "§7de plus en plus gros avec la série.",
                     "",
                     "§e/stats§7 : toutes vos statistiques"},
-            new String[]{"§6§l12 · À VOUS DE JOUER !",
+            new String[]{"§6§l14 · À VOUS DE JOUER !",
                     "§fCommencez par :",
-                    "§a1.§f /recompense",
+                    "§a1.§f /kit depart et /recompense",
                     "§a2.§f /quetes (acceptez-en 5)",
                     "§a3.§f /mine pour récolter",
+                    "§a4.§f /sethome près de votre base",
                     "",
                     "§fRespectez les autres joueurs.",
                     "§e/signaler§7 : prévenir l'équipe",
@@ -287,6 +312,51 @@ public final class TutoBoards {
             cy = at.y;
             yaw = face.toYRot();
         }
+        draw(server, level, n, x, cy, z, yaw);
+        GodData.settings().tutoPlaced.put(String.valueOf(n), String.format(java.util.Locale.ROOT, "%s;%.3f;%.3f;%.3f;%.1f",
+                level.dimension().identifier().toString(), x, cy, z, yaw));
+        GodData.dirty();
+        GodData.log("TUTO : tableau " + n + " posé par " + p.getName().getString());
+        return null;
+    }
+
+    /** Redessine tous les tableaux posés, à leur place (après une mise à jour des textes ou du fond). Renvoie le nombre redessiné. */
+    public static int refresh(MinecraftServer server) {
+        int done = 0;
+        for (var e : new java.util.ArrayList<>(GodData.settings().tutoPlaced.entrySet())) {
+            try {
+                int n = Integer.parseInt(e.getKey());
+                String[] v = e.getValue().split(";");
+                ServerLevel level = server.getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION,
+                        net.minecraft.resources.Identifier.parse(v[0])));
+                if (level == null || n < 1 || n > PAGES.size()) {
+                    if (n > PAGES.size()) remove(server, n);
+                    GodData.settings().tutoPlaced.remove(e.getKey());
+                    continue;
+                }
+                draw(server, level, n, Double.parseDouble(v[1]), Double.parseDouble(v[2]), Double.parseDouble(v[3]), Float.parseFloat(v[4]));
+                done++;
+            } catch (Exception ex) {
+                GodData.settings().tutoPlaced.remove(e.getKey());
+            }
+        }
+        GodData.dirty();
+        return done;
+    }
+
+    /** Numéros des tableaux déjà posés. */
+    public static java.util.Set<Integer> placed() {
+        java.util.Set<Integer> out = new java.util.TreeSet<>();
+        for (String k : GodData.settings().tutoPlaced.keySet()) {
+            try {
+                out.add(Integer.parseInt(k));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return out;
+    }
+
+    private static void draw(MinecraftServer server, ServerLevel level, int n, double x, double cy, double z, float yaw) {
         remove(server, n);
         String[] page = PAGES.get(n - 1);
         String bg = GodData.settings().tutoBackground;
@@ -311,8 +381,19 @@ public final class TutoBoards {
                 "summon minecraft:text_display %.3f %.3f %.3f {Tags:[\"%s\",\"%s_%d\"],Rotation:[%.1ff,0f],billboard:\"fixed\",alignment:\"center\","
                         + "line_width:2000,background:0,shadow:1b,see_through:0b,brightness:{sky:15,block:15},%s,text:%s}",
                 x, cy - h / 2, z, TAG, TAG, n, yaw, transform(0, 0, 0, scale, scale, scale), snbt(page)));
-        GodData.log("TUTO : tableau " + n + " posé par " + p.getName().getString());
-        return null;
+    }
+
+    /** Retire le tableau n et l'oublie. */
+    public static void delete(MinecraftServer server, int n) {
+        remove(server, n);
+        GodData.settings().tutoPlaced.remove(String.valueOf(n));
+        GodData.dirty();
+    }
+
+    public static void deleteAll(MinecraftServer server) {
+        removeAll(server);
+        GodData.settings().tutoPlaced.clear();
+        GodData.dirty();
     }
 
     public static void remove(MinecraftServer server, int n) {

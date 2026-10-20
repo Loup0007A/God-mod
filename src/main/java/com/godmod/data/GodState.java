@@ -24,6 +24,9 @@ public class GodState {
     /** Marché entre joueurs. */
     public List<MarketListing> market = new ArrayList<>();
     public long nextMarketId = 1;
+    /** Tombes des joueurs morts. */
+    public List<Grave> graves = new ArrayList<>();
+    public long nextGraveId = 1;
     /** Historique par objet puis par jour : {quantité mise en vente, quantité vendue, pièces échangées}. */
     public Map<String, Map<String, long[]>> marketHistory = new HashMap<>();
 }

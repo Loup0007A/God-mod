@@ -90,6 +90,7 @@ public final class GameEvents {
         ServerStartedEvent.BUS.addListener((Consumer<ServerStartedEvent>) e -> onServerStarted(e.getServer()));
         net.minecraftforge.event.server.ServerStoppingEvent.BUS.addListener((Consumer<net.minecraftforge.event.server.ServerStoppingEvent>) e -> {
             if (GodData.ready()) EventSystem.onServerStopping(e.getServer());
+            if (GodData.ready()) com.godmod.system.Trade.cancelAll();
             com.godmod.system.Trailer.stop(e.getServer(), "arrêt du serveur");
         });
         ServerStoppedEvent.BUS.addListener((Consumer<ServerStoppedEvent>) e -> GodData.unload());
@@ -123,6 +124,7 @@ public final class GameEvents {
         LivingDropsEvent.BUS.addListener((Predicate<LivingDropsEvent>) e -> {
             e.getDrops().removeIf(item -> CodexGuard.isCodex(item.getItem()));
             if (EventSystem.isEventMob(e.getEntity())) e.getDrops().clear(); // serviteurs du Titan : pas de butin à farmer
+            if (e.getEntity() instanceof ServerPlayer sp && GodData.ready()) com.godmod.system.Graves.onPlayerDrops(sp, e.getDrops(), e.getSource());
             return false;
         });
 
@@ -210,6 +212,13 @@ public final class GameEvents {
         // Anti-lag : 15 créatures d'un même type par chunk au plus.
         EntityJoinLevelEvent.BUS.addListener((Predicate<EntityJoinLevelEvent>) e -> GodData.ready() && !e.loadedFromDisk()
                 && com.godmod.system.LagControl.tooMany(e.getLevel(), e.getEntity()));
+        // Affichage d'une tombe disparue pendant que son chunk était déchargé.
+        EntityJoinLevelEvent.BUS.addListener((Consumer<EntityJoinLevelEvent>) e -> {
+            if (e.loadedFromDisk() && e.getLevel().getServer() != null && com.godmod.system.Graves.isStaleMarker(e.getEntity())) {
+                Entity ent = e.getEntity();
+                e.getLevel().getServer().execute(ent::discard);
+            }
+        });
 
         // Pêche : métier Pêcheur.
         ItemFishedEvent.BUS.addListener((Predicate<ItemFishedEvent>) e -> {
@@ -433,6 +442,9 @@ public final class GameEvents {
         if (!AuthSystem.isLocked(sp)) GameStart.afterAuth(sp, p);
         else PowerSystem.applyAttributes(sp);
         com.godmod.system.Market.onLogin(sp);
+        int kits = com.godmod.system.Kits.available(p);
+        if (kits > 0 && !AuthSystem.isLocked(sp)) Msg.send(sp, Msg.prefix().append(Msg.text(kits + " kit(s) à récupérer ! ", ChatFormatting.GREEN))
+                .append(Msg.button("[/kit]", "/kit", "Ouvrir les kits", ChatFormatting.YELLOW)));
     }
 
     private static void onLogout(PlayerEvent.PlayerLoggedOutEvent e) {
@@ -452,6 +464,8 @@ public final class GameEvents {
         com.godmod.system.AfkSystem.onLogout(sp);
         com.godmod.system.ZoneSystem.onLogout(sp);
         com.godmod.system.Market.onLogout(sp);
+        com.godmod.system.Trade.onLogout(sp);
+        com.godmod.system.Homes.onLogout(sp);
         PlayerProfile p = GodData.get(sp);
         p.lastSeen = System.currentTimeMillis();
         GodData.dirty();
@@ -463,6 +477,7 @@ public final class GameEvents {
     private static void onServerTick(MinecraftServer server) {
         if (!GodData.ready()) return;
         tickCounter++;
+        com.godmod.system.Trade.tick(server);
         AuthSystem.tick(server);
         Moderation.tick(server);
         ArtifactEffects.tick(server);
@@ -492,6 +507,7 @@ public final class GameEvents {
         boolean minute = tickCounter % 1200 == 0;
         com.godmod.system.AfkSystem.tickSecond(server, minute);
         if (minute) com.godmod.system.Market.tickMinute(server);
+        com.godmod.system.Graves.tickSecond(server, (int) (tickCounter / 20));
         com.godmod.system.LagControl.tickSecond(server);
         com.godmod.system.ZoneSystem.tickSecond(server);
         for (ServerPlayer sp : server.getPlayerList().getPlayers()) {
@@ -525,6 +541,7 @@ public final class GameEvents {
                 TournamentSystem.onDuelDefeat(victim);
                 return true;
             }
+            com.godmod.system.Homes.remember(victim, true); // /back : retour au lieu de la mort
             if (attacker instanceof ServerPlayer killer && killer != victim) {
                 FaithSystem.onPlayerKill(killer, victim);
             } else {

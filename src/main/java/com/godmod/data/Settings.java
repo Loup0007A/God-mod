@@ -56,10 +56,18 @@ public class Settings {
     public java.util.List<String> antibotAllowed = new java.util.ArrayList<>();
     public java.util.List<String> bannedIps = new java.util.ArrayList<>();
 
+    // --- Tombes ---
+    public boolean graves = true;
+    public int graveOpenMinutes = 10;
+    public int graveExpireMinutes = 120;
+    public long graveRemoteCost = 500;
+
     // --- Tableaux du tutoriel ---
     public String tutoBackground = "minecraft:gray_concrete";
     /** Cadre (vide = sans cadre). */
     public String tutoFrame = "minecraft:gold_block";
+    /** Tableaux posés : numéro → « dimension;x;y;z;yaw ». */
+    public java.util.Map<String, String> tutoPlaced = new java.util.HashMap<>();
 
     // --- Anti-lag ---
     /** Créatures d'un même type au plus par chunk (villageois, animaux apprivoisés et nommés exceptés). */

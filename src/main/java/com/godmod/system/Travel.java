@@ -104,7 +104,14 @@ public final class Travel {
      * Lance un voyage. L'action réalise la téléportation et renvoie un message d'erreur ou null.
      * Renvoie une erreur immédiate (voyage refusé) ou null.
      */
-    public static String start(ServerPlayer p, String label, Supplier<String> action) {
+    public static String start(ServerPlayer p, String label, Supplier<String> rawAction) {
+        // /back : on retient l'endroit quitté si le voyage réussit.
+        Supplier<String> action = () -> {
+            Homes.Loc before = Homes.snapshot(p, false);
+            String r = rawAction.get();
+            if (r == null) Homes.commit(p, before);
+            return r;
+        };
         String why = blocked(p);
         if (why != null) return why;
         if (instant(p)) {

@@ -97,6 +97,15 @@ public final class Help {
                 p("/tpaccept [joueur]", "Accepter une demande"),
                 p("/tpdeny [joueur]", "Refuser une demande"),
                 p("/tpatoggle", "Bloquer ou autoriser les demandes de téléportation"));
+        cat("confort", "Résidences, kits, échanges", ChatFormatting.GREEN,
+                p("/sethome [nom]", "Poser une résidence ici (1 + 1 par palier)"),
+                p("/home [nom]", "Retourner à une résidence"),
+                p("/homes", "Vos résidences (cliquables)"),
+                p("/delhome <nom>", "Supprimer une résidence"),
+                p("/back", "Revenir au lieu de sa mort ou d'avant sa dernière téléportation"),
+                p("/kit", "Kits : départ, quotidien, et un par palier"),
+                p("/echange <joueur>", "Échange sécurisé d'objets et d'argent"),
+                p("/tombe", "Vos tombes : vos objets après une mort"));
         cat("economie", "Économie", ChatFormatting.YELLOW,
                 p("/argent", "Votre solde"),
                 p("/payer <joueur> <montant>", "Donner de l'argent à un joueur"),

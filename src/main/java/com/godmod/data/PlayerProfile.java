@@ -7,6 +7,11 @@ import java.util.Map;
  * Tout ce que le mod sait d'un joueur. Sérialisé en JSON dans les données du monde.
  */
 public class PlayerProfile {
+    /** Résidences (/sethome), par nom en minuscules. */
+    public java.util.Map<String, Warp> homes = new java.util.LinkedHashMap<>();
+    /** Dernière utilisation de chaque kit (ms). */
+    public java.util.Map<String, Long> kits = new java.util.HashMap<>();
+
     /** Marché : objets à rendre (offres expirées ou retirées), gains et ventes réalisés hors ligne. */
     public java.util.List<MarketListing> marketReturns = new java.util.ArrayList<>();
     public long marketOfflineMoney = 0;

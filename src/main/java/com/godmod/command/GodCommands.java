@@ -188,6 +188,7 @@ public final class GodCommands {
         registerProgress(d);
         registerEvents(d);
         registerShop(d);
+        registerEssentials(d);
         registerConflicts(d);
         registerAdmin(d);
         registerComfort(d);
@@ -252,25 +253,33 @@ public final class GodCommands {
         d.register(Commands.literal("tuto").requires(Moderation.require(Role.ADMIN))
                 .executes(ctx -> run(ctx, p -> {
                     p.sendSystemMessage(Msg.header("Tableaux du tutoriel"));
+                    var placed = com.godmod.system.TutoBoards.placed();
                     for (int i = 0; i < com.godmod.system.TutoBoards.PAGES.size(); i++) {
                         int n = i + 1;
                         String title = com.godmod.system.TutoBoards.PAGES.get(i)[0].replaceAll("§.", "");
-                        p.sendSystemMessage(Msg.suggest(title, "/tuto tableau " + n, "Visez le centre du mur puis validez", ChatFormatting.YELLOW));
+                        p.sendSystemMessage(Msg.text(placed.contains(n) ? "✔ " : "✖ ", placed.contains(n) ? ChatFormatting.GREEN : ChatFormatting.RED)
+                                .append(Msg.suggest(title, "/tuto tableau " + n, "Visez le centre du mur puis validez", ChatFormatting.YELLOW)));
                     }
-                    p.sendSystemMessage(Msg.text("/tuto tableau <n> : sur le mur visé · /tuto tableau <n> ici : devant vous · /tuto retirer <n|tous>", ChatFormatting.GRAY));
+                    p.sendSystemMessage(Msg.text("/tuto tableau <n> : sur le mur visé · /tuto tableau <n> ici : devant vous · /tuto retirer <n|tous>"
+                            + " · /tuto actualiser : redessiner les tableaux posés", ChatFormatting.GRAY));
                     return null;
                 }))
                 .then(Commands.literal("tableau").then(Commands.argument("numero", IntegerArgumentType.integer(1, 99))
                         .executes(ctx -> run(ctx, p -> {
                             String err = com.godmod.system.TutoBoards.place(p, IntegerArgumentType.getInteger(ctx, "numero"), false);
-                            if (err == null) Msg.ok(p, "Tableau " + IntegerArgumentType.getInteger(ctx, "numero") + " posé.");
+                            if (err == null) placedNext(p, IntegerArgumentType.getInteger(ctx, "numero"), "Tableau " + IntegerArgumentType.getInteger(ctx, "numero") + " posé.");
                             return err;
                         }))
                         .then(Commands.literal("ici").executes(ctx -> run(ctx, p -> {
                             String err = com.godmod.system.TutoBoards.place(p, IntegerArgumentType.getInteger(ctx, "numero"), true);
-                            if (err == null) Msg.ok(p, "Tableau " + IntegerArgumentType.getInteger(ctx, "numero") + " posé devant vous.");
+                            if (err == null) placedNext(p, IntegerArgumentType.getInteger(ctx, "numero"), "Tableau " + IntegerArgumentType.getInteger(ctx, "numero") + " posé devant vous.");
                             return err;
                         })))))
+                .then(Commands.literal("actualiser").executes(ctx -> {
+                    int n = com.godmod.system.TutoBoards.refresh(ctx.getSource().getServer());
+                    reply(ctx, n == 0 ? "Aucun tableau enregistré : posez-les avec /tuto tableau <n>." : n + " tableau(x) redessiné(s) avec les textes et le style actuels.");
+                    return 1;
+                }))
                 .then(Commands.literal("fond").then(Commands.argument("bloc", StringArgumentType.greedyString())
                         .suggests(words("minecraft:gray_concrete", "minecraft:black_concrete", "minecraft:white_concrete", "minecraft:blue_terracotta",
                                 "minecraft:dark_oak_planks", "minecraft:deepslate_tiles", "minecraft:light_blue_concrete"))
@@ -279,7 +288,7 @@ public final class GodCommands {
                             if (!b.contains(":")) b = "minecraft:" + b;
                             GodData.settings().tutoBackground = b;
                             GodData.dirty();
-                            reply(ctx, "Fond des tableaux : " + b + ". Reposez les tableaux (/tuto tableau <n>) pour l'appliquer.");
+                            reply(ctx, "Fond des tableaux : " + b + ". " + com.godmod.system.TutoBoards.refresh(ctx.getSource().getServer()) + " tableau(x) mis à jour.");
                             return 1;
                         })))
                 .then(Commands.literal("cadre").then(Commands.argument("bloc", StringArgumentType.greedyString())
@@ -290,17 +299,18 @@ public final class GodCommands {
                             else if (!b.contains(":")) b = "minecraft:" + b;
                             GodData.settings().tutoFrame = b;
                             GodData.dirty();
-                            reply(ctx, b.isEmpty() ? "Tableaux sans cadre." : "Cadre des tableaux : " + b + ". Reposez les tableaux pour l'appliquer.");
+                            int r = com.godmod.system.TutoBoards.refresh(ctx.getSource().getServer());
+                            reply(ctx, (b.isEmpty() ? "Tableaux sans cadre." : "Cadre des tableaux : " + b + ".") + " " + r + " tableau(x) mis à jour.");
                             return 1;
                         })))
                 .then(Commands.literal("retirer")
                         .then(Commands.literal("tous").executes(ctx -> {
-                            com.godmod.system.TutoBoards.removeAll(ctx.getSource().getServer());
+                            com.godmod.system.TutoBoards.deleteAll(ctx.getSource().getServer());
                             reply(ctx, "Tous les tableaux du tutoriel ont été retirés.");
                             return 1;
                         }))
                         .then(Commands.argument("numero", IntegerArgumentType.integer(1, 99)).executes(ctx -> {
-                            com.godmod.system.TutoBoards.remove(ctx.getSource().getServer(), IntegerArgumentType.getInteger(ctx, "numero"));
+                            com.godmod.system.TutoBoards.delete(ctx.getSource().getServer(), IntegerArgumentType.getInteger(ctx, "numero"));
                             reply(ctx, "Tableau " + IntegerArgumentType.getInteger(ctx, "numero") + " retiré.");
                             return 1;
                         }))));
@@ -1001,6 +1011,87 @@ public final class GodCommands {
     }
 
     // ------------------------------------------------------------------ /shop, /argent, /payer, /baltop
+
+    // ------------------------------------------------------------------ Résidences, /back, kits, échanges, tombes
+
+    private static void registerEssentials(CommandDispatcher<CommandSourceStack> d) {
+        SuggestionProvider<CommandSourceStack> homes = (ctx, b) -> {
+            ServerPlayer p = ctx.getSource().getPlayer();
+            return SharedSuggestionProvider.suggest(p == null || !GodData.ready() ? java.util.List.of() : com.godmod.system.Homes.names(GodData.get(p)), b);
+        };
+        d.register(Commands.literal("sethome")
+                .executes(ctx -> run(ctx, p -> com.godmod.system.Homes.set(p, null)))
+                .then(Commands.argument("nom", StringArgumentType.word()).suggests(homes)
+                        .executes(ctx -> run(ctx, p -> com.godmod.system.Homes.set(p, StringArgumentType.getString(ctx, "nom"))))));
+        for (String n : new String[]{"home", "maison"}) {
+            d.register(Commands.literal(n)
+                    .executes(ctx -> run(ctx, p -> com.godmod.system.Homes.go(p, null)))
+                    .then(Commands.argument("nom", StringArgumentType.word()).suggests(homes)
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.Homes.go(p, StringArgumentType.getString(ctx, "nom"))))));
+        }
+        d.register(Commands.literal("delhome")
+                .then(Commands.argument("nom", StringArgumentType.word()).suggests(homes)
+                        .executes(ctx -> run(ctx, p -> com.godmod.system.Homes.delete(p, StringArgumentType.getString(ctx, "nom"))))));
+        for (String n : new String[]{"homes", "maisons"}) d.register(Commands.literal(n).executes(ctx -> run(ctx, com.godmod.system.Homes::list)));
+        for (String n : new String[]{"back", "retour"}) d.register(Commands.literal(n).executes(ctx -> run(ctx, com.godmod.system.Homes::back)));
+
+        for (String n : new String[]{"kit", "kits"}) {
+            d.register(Commands.literal(n)
+                    .executes(ctx -> open(ctx, com.godmod.system.Kits::open))
+                    .then(Commands.argument("nom", StringArgumentType.word()).suggests((ctx, b) -> SharedSuggestionProvider.suggest(com.godmod.system.Kits.KITS.keySet(), b))
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.Kits.claim(p, StringArgumentType.getString(ctx, "nom"))))));
+        }
+
+        SuggestionProvider<CommandSourceStack> askers = (ctx, b) -> {
+            ServerPlayer p = ctx.getSource().getPlayer();
+            return SharedSuggestionProvider.suggest(p == null ? java.util.List.of() : com.godmod.system.Trade.pendingFrom(p), b);
+        };
+        for (String n : new String[]{"echange", "trade"}) {
+            d.register(Commands.literal(n)
+                    .then(Commands.literal("accepter")
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.Trade.accept(p, null)))
+                            .then(Commands.argument("joueur", StringArgumentType.word()).suggests(askers)
+                                    .executes(ctx -> run(ctx, p -> com.godmod.system.Trade.accept(p, StringArgumentType.getString(ctx, "joueur"))))))
+                    .then(Commands.literal("refuser")
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.Trade.deny(p, null)))
+                            .then(Commands.argument("joueur", StringArgumentType.word()).suggests(askers)
+                                    .executes(ctx -> run(ctx, p -> com.godmod.system.Trade.deny(p, StringArgumentType.getString(ctx, "joueur"))))))
+                    .then(Commands.argument("joueur", StringArgumentType.word()).suggests(OTHERS)
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.Trade.request(p,
+                                    p.level().getServer().getPlayerList().getPlayerByName(StringArgumentType.getString(ctx, "joueur")))))));
+        }
+
+        for (String n : new String[]{"tombe", "tombes"}) {
+            d.register(Commands.literal(n)
+                    .executes(ctx -> run(ctx, com.godmod.system.Graves::list))
+                    .then(Commands.literal("recuperer").then(Commands.argument("tombe", com.mojang.brigadier.arguments.LongArgumentType.longArg(1))
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.Graves.remote(p, com.mojang.brigadier.arguments.LongArgumentType.getLong(ctx, "tombe"))))))
+                    .then(Commands.literal("activer").requires(Moderation.require(Role.ADMIN))
+                            .then(Commands.argument("etat", StringArgumentType.word()).suggests(words("on", "off")).executes(ctx -> {
+                                GodData.settings().graves = on(StringArgumentType.getString(ctx, "etat"));
+                                GodData.dirty();
+                                reply(ctx, GodData.settings().graves ? "Tombes activées : les objets des morts y sont rangés."
+                                        : "Tombes désactivées : les objets tombent au sol (règles vanilla).");
+                                return 1;
+                            })))
+                    .then(Commands.literal("prix").requires(Moderation.require(Role.ADMIN))
+                            .then(Commands.argument("pieces", IntegerArgumentType.integer(0, 1_000_000)).executes(ctx -> {
+                                GodData.settings().graveRemoteCost = IntegerArgumentType.getInteger(ctx, "pieces");
+                                GodData.dirty();
+                                reply(ctx, "Récupération d'une tombe à distance : " + Msg.money(GodData.settings().graveRemoteCost) + ".");
+                                return 1;
+                            }))));
+        }
+    }
+
+    /** Après la pose d'un tableau : propose le suivant. */
+    private static void placedNext(ServerPlayer p, int n, String msg) {
+        int total = com.godmod.system.TutoBoards.PAGES.size();
+        var line = Msg.prefix().append(Msg.text(msg + " ", ChatFormatting.GREEN));
+        if (n < total) line.append(Msg.suggest("[Poser le tableau " + (n + 1) + "]", "/tuto tableau " + (n + 1), "Visez le mur suivant puis validez", ChatFormatting.YELLOW));
+        else line.append(Msg.text("C'était le dernier (" + total + ").", ChatFormatting.GRAY));
+        p.sendSystemMessage(line);
+    }
 
     private static void registerMarket(CommandDispatcher<CommandSourceStack> d) {
         SuggestionProvider<CommandSourceStack> listed = (ctx, b) -> SharedSuggestionProvider.suggest(com.godmod.system.Market.listedItems(), b);
