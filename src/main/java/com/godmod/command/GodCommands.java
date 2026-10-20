@@ -249,6 +249,39 @@ public final class GodCommands {
         }));
         registerGive(d);
         registerZones(d);
+        d.register(Commands.literal("tuto").requires(Moderation.require(Role.ADMIN))
+                .executes(ctx -> run(ctx, p -> {
+                    p.sendSystemMessage(Msg.header("Tableaux du tutoriel"));
+                    for (int i = 0; i < com.godmod.system.TutoBoards.PAGES.size(); i++) {
+                        int n = i + 1;
+                        String title = com.godmod.system.TutoBoards.PAGES.get(i)[0].replaceAll("§.", "");
+                        p.sendSystemMessage(Msg.suggest(title, "/tuto tableau " + n, "Visez le centre du mur puis validez", ChatFormatting.YELLOW));
+                    }
+                    p.sendSystemMessage(Msg.text("/tuto tableau <n> : sur le mur visé · /tuto tableau <n> ici : devant vous · /tuto retirer <n|tous>", ChatFormatting.GRAY));
+                    return null;
+                }))
+                .then(Commands.literal("tableau").then(Commands.argument("numero", IntegerArgumentType.integer(1, 99))
+                        .executes(ctx -> run(ctx, p -> {
+                            String err = com.godmod.system.TutoBoards.place(p, IntegerArgumentType.getInteger(ctx, "numero"), false);
+                            if (err == null) Msg.ok(p, "Tableau " + IntegerArgumentType.getInteger(ctx, "numero") + " posé.");
+                            return err;
+                        }))
+                        .then(Commands.literal("ici").executes(ctx -> run(ctx, p -> {
+                            String err = com.godmod.system.TutoBoards.place(p, IntegerArgumentType.getInteger(ctx, "numero"), true);
+                            if (err == null) Msg.ok(p, "Tableau " + IntegerArgumentType.getInteger(ctx, "numero") + " posé devant vous.");
+                            return err;
+                        })))))
+                .then(Commands.literal("retirer")
+                        .then(Commands.literal("tous").executes(ctx -> {
+                            com.godmod.system.TutoBoards.removeAll(ctx.getSource().getServer());
+                            reply(ctx, "Tous les tableaux du tutoriel ont été retirés.");
+                            return 1;
+                        }))
+                        .then(Commands.argument("numero", IntegerArgumentType.integer(1, 99)).executes(ctx -> {
+                            com.godmod.system.TutoBoards.remove(ctx.getSource().getServer(), IntegerArgumentType.getInteger(ctx, "numero"));
+                            reply(ctx, "Tableau " + IntegerArgumentType.getInteger(ctx, "numero") + " retiré.");
+                            return 1;
+                        }))));
         d.register(Commands.literal("afk").executes(ctx -> run(ctx, com.godmod.system.AfkSystem::toggle)));
         for (String name : new String[]{"afkshop", "boutiqueafk"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, com.godmod.progress.AfkShop::open)));
         d.register(Commands.literal("privileges").executes(ctx -> open(ctx, Menus::openPerkShop)));

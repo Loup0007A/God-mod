@@ -125,6 +125,16 @@ s'affiche en particules). Puis :
 
 Bâton en main, les zones proches sont dessinées en particules (violet = AFK, vert = protégée, flammes = libre, symboles d'enchantement = commande).
 
+## Tableaux du tutoriel (`/tuto`, admins)
+
+Regardez le **centre** du mur où mettre le panneau, puis `/tuto tableau <n>` (1 à 12) : la page s'affiche
+plaquée sur le mur, sur environ 5 × 3,5 blocs, fond sombre et texte coloré. `/tuto tableau <n> ici` le pose
+3 blocs devant vous, tourné vers vous. Reposer un numéro remplace l'ancien. `/tuto` liste les pages (cliquables),
+`/tuto retirer <n>` ou `/tuto retirer tous`.
+
+Pages : 1 Bienvenue · 2 Essence et paliers · 3 Métiers · 4 Quêtes · 5 Caisses et clés · 6 Monde ressource ·
+7 Pouvoirs et Foi · 8 Fidèles et conflits · 9 Monde divin · 10 Économie · 11 Événements et cadeaux · 12 À vous de jouer.
+
 ## Objets pour l'équipe (`/donner`, admins)
 
 `/donner <objet> [nombre] [joueur]` : `cle_commune|rare|epique|divine`, `artefact_ocean|ciel|cosmos`, `codex`,

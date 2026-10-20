@@ -154,6 +154,7 @@ public final class Help {
                 a("/mine reset [maintenant]", "Régénérer le monde ressource"),
                 a("/zone creer commande <nom> <console|joueur> <commande>", "Zone qui lance une commande quand on y entre ({joueur} = pseudo)"),
                 a("/zone baton · /zone creer <afk|spawn|libre> <nom> [toutehauteur] · /zone supprimer [nom] · /zone liste", "Tracer des zones AFK, protégées ou libres avec un bâton"),
+                a("/tuto · /tuto tableau <n> [ici] · /tuto retirer <n|tous>", "Tableaux du tutoriel (12 pages) sur le mur visé"),
                 a("/donner <objet> [nombre] [joueur]", "Clés de caisse, artefacts, Codex, générateurs, jetons AFK"),
                 a("/trailer_lancer [adresse] · /trailer_stop", "Cinématique de 2 min 30 pour filmer un trailer"),
                 a("/antibot [noms|ip|vague on|off · autoriser · scan · expulser · purge · bannirip]", "Protection contre les bots (nouveaux comptes)"),
