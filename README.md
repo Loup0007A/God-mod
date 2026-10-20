@@ -109,6 +109,19 @@ Pendant le tournage : le chat est en pause pour tout le monde, l'admin ne reçoi
 (appuyez sur **F1** pour masquer le reste de l'interface et enregistrez l'écran). `/trailer_stop` pour arrêter.
 À la fin, l'admin retrouve sa position et son mode de jeu.
 
+## Zones (`/zone`, admins)
+
+`/zone baton` donne un **bâton de zone** : clic gauche sur un bloc = coin 1, clic droit = coin 2 (la sélection
+s'affiche en particules). Puis :
+
+- `/zone creer afk <nom>` : la zone compte comme zone AFK (jetons, pas d'expulsion pour inactivité), dans n'importe quel monde ;
+- `/zone creer spawn <nom>` : zone protégée comme le Sanctuaire (pas de casse, pose, coffres, PvP, monstres), n'importe où ;
+- `/zone creer libre <nom>` : retire la protection d'une partie du Sanctuaire ;
+- ajouter `toutehauteur` à la fin étend la zone du bas au haut du monde ;
+- `/zone supprimer` (la zone où vous êtes) ou `/zone supprimer <nom>` · `/zone liste` · `/zone pos1|pos2` (coin à vos pieds).
+
+Bâton en main, les zones proches sont dessinées en particules (violet = AFK, vert = protégée, flammes = libre).
+
 ## Objets pour l'équipe (`/donner`, admins)
 
 `/donner <objet> [nombre] [joueur]` : `cle_commune|rare|epique|divine`, `artefact_ocean|ciel|cosmos`, `codex`,

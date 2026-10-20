@@ -248,6 +248,7 @@ public final class GodCommands {
             return 1;
         }));
         registerGive(d);
+        registerZones(d);
         d.register(Commands.literal("afk").executes(ctx -> run(ctx, com.godmod.system.AfkSystem::toggle)));
         for (String name : new String[]{"afkshop", "boutiqueafk"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, com.godmod.progress.AfkShop::open)));
         d.register(Commands.literal("privileges").executes(ctx -> open(ctx, Menus::openPerkShop)));
@@ -269,6 +270,44 @@ public final class GodCommands {
         d.register(Commands.literal("skin").executes(ctx -> run(ctx, p ->
                 "Changer de skin n'est pas possible avec ce mod : le serveur ne peut pas modifier votre apparence sans un mod dédié. "
                         + "Changez votre skin sur minecraft.net puis reconnectez-vous.")));
+    }
+
+    // ------------------------------------------------------------------ /zone (admins)
+
+    private static void registerZones(CommandDispatcher<CommandSourceStack> d) {
+        SuggestionProvider<CommandSourceStack> zones = (c, b) -> {
+            List<String> n = new ArrayList<>();
+            if (GodData.ready()) for (com.godmod.data.Zone z : GodData.state().zones.values()) n.add(z.name);
+            return SharedSuggestionProvider.suggest(n, b);
+        };
+        var creer = Commands.literal("creer");
+        for (com.godmod.data.Zone.Type t : com.godmod.data.Zone.Type.values()) {
+            creer.then(Commands.literal(t.name().toLowerCase()).then(Commands.argument("nom", StringArgumentType.word())
+                    .executes(ctx -> run(ctx, p -> com.godmod.system.ZoneSystem.create(p, t, StringArgumentType.getString(ctx, "nom"), false)))
+                    .then(Commands.literal("toutehauteur")
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.ZoneSystem.create(p, t, StringArgumentType.getString(ctx, "nom"), true))))));
+        }
+        d.register(Commands.literal("zone").requires(Moderation.require(Role.ADMIN))
+                .executes(ctx -> run(ctx, p -> {
+                    com.godmod.system.ZoneSystem.list(p);
+                    return null;
+                }))
+                .then(Commands.literal("baton").executes(ctx -> run(ctx, p -> {
+                    Shop.give(p, com.godmod.system.ZoneSystem.wand());
+                    Msg.ok(p, "Bâton de zone : clic gauche = coin 1, clic droit = coin 2, puis /zone creer <afk|spawn|libre> <nom>.");
+                    return null;
+                })))
+                .then(Commands.literal("pos1").executes(ctx -> run(ctx, p -> com.godmod.system.ZoneSystem.setCorner(p, true))))
+                .then(Commands.literal("pos2").executes(ctx -> run(ctx, p -> com.godmod.system.ZoneSystem.setCorner(p, false))))
+                .then(creer)
+                .then(Commands.literal("supprimer")
+                        .executes(ctx -> run(ctx, p -> com.godmod.system.ZoneSystem.delete(p, null)))
+                        .then(Commands.argument("nom", StringArgumentType.word()).suggests(zones)
+                                .executes(ctx -> run(ctx, p -> com.godmod.system.ZoneSystem.delete(p, StringArgumentType.getString(ctx, "nom"))))))
+                .then(Commands.literal("liste").executes(ctx -> run(ctx, p -> {
+                    com.godmod.system.ZoneSystem.list(p);
+                    return null;
+                }))));
     }
 
     // ------------------------------------------------------------------ /donner (admins)

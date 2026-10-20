@@ -87,7 +87,8 @@ public final class Hub {
 
     /** Tout le Sanctuaire est protégé, sauf pour les admins en mode édition. */
     public static boolean isProtected(Level level, BlockPos pos) {
-        return isSpawn(level);
+        if (isSpawn(level)) return !ZoneSystem.in(level, pos, com.godmod.data.Zone.Type.LIBRE);
+        return ZoneSystem.in(level, pos, com.godmod.data.Zone.Type.SPAWN);
     }
 
     public static boolean canEditHub(ServerPlayer player) {

@@ -177,7 +177,10 @@ public final class GameEvents {
         PlayerInteractEvent.RightClickItem.BUS.addListener((Predicate<PlayerInteractEvent.RightClickItem>) GameEvents::onRightClickItem);
         PlayerInteractEvent.RightClickBlock.BUS.addListener((Predicate<PlayerInteractEvent.RightClickBlock>) e ->
                 // Objet divin sur un bloc : on bloque l'interaction ; le clic sur l'objet suit (RightClickItem).
-                locked(e.getEntity()) || pointUsed(e.getEntity(), e.getPos())
+                locked(e.getEntity())
+                        || (e.getEntity() instanceof ServerPlayer wp && GodData.ready() && e.getHand() == net.minecraft.world.InteractionHand.MAIN_HAND
+                            && com.godmod.system.ZoneSystem.click(wp, e.getPos(), false))
+                        || pointUsed(e.getEntity(), e.getPos())
                         || (DivineItems.isDivine(e.getItemStack()) && !SpawnerSystem.KIND.equals(DivineItems.kind(e.getItemStack())))
                         || hubGrief(e.getEntity(), e.getItemStack()) || blockInteractDenied(e.getEntity(), e.getPos(), e.getItemStack()));
 
@@ -220,7 +223,8 @@ public final class GameEvents {
         ExplosionEvent.Detonate.BUS.addListener((Consumer<ExplosionEvent.Detonate>) e -> {
             if (GodData.ready()) e.getAffectedBlocks().removeIf(pos -> Hub.isProtected(e.getLevel(), pos));
         });
-        PlayerInteractEvent.LeftClickBlock.BUS.addListener((Predicate<PlayerInteractEvent.LeftClickBlock>) e -> locked(e.getEntity()));
+        PlayerInteractEvent.LeftClickBlock.BUS.addListener((Predicate<PlayerInteractEvent.LeftClickBlock>) e -> locked(e.getEntity())
+                || (e.getEntity() instanceof ServerPlayer wp && GodData.ready() && com.godmod.system.ZoneSystem.click(wp, e.getPos(), true)));
         PlayerInteractEvent.EntityInteract.BUS.addListener((Predicate<PlayerInteractEvent.EntityInteract>) e ->
                 locked(e.getEntity()) || entityInteractDenied(e.getEntity(), e.getTarget()));
         AttackEntityEvent.BUS.addListener((Predicate<AttackEntityEvent>) e -> locked(e.getEntity()) || frozen(e.getEntity()));
@@ -255,7 +259,8 @@ public final class GameEvents {
     private static boolean blockInteractDenied(Entity e, BlockPos pos, ItemStack stack) {
         if (!(e instanceof ServerPlayer sp) || !GodData.ready()) return false;
         Level level = sp.level();
-        if (Hub.isSpawn(level)) return !Hub.canEditHub(sp);
+        if (Hub.isProtected(level, pos)) return !Hub.canEditHub(sp);
+        if (Hub.isSpawn(level)) return false; // zone libre du Sanctuaire
         if (!DivineWorld.isDivine(level) || sp.isCreative() && Moderation.roleOf(sp).atLeast(com.godmod.data.Role.ADMIN)) return false;
         PlayerProfile owner = DivineWorld.ownerAt(pos);
         if (owner == null) return true;
@@ -275,7 +280,8 @@ public final class GameEvents {
 
     private static boolean entityInteractDenied(Entity e, Entity target) {
         if (!(e instanceof ServerPlayer sp) || !GodData.ready()) return false;
-        if (Hub.isSpawn(sp.level())) return !Hub.canEditHub(sp) && !(target instanceof ServerPlayer);
+        if (Hub.isProtected(sp.level(), target.blockPosition())) return !Hub.canEditHub(sp) && !(target instanceof ServerPlayer);
+        if (Hub.isSpawn(sp.level())) return false;
         if (!DivineWorld.isDivine(sp.level())) return false;
         PlayerProfile owner = DivineWorld.ownerAt(target.blockPosition());
         if (owner == null) return false;
@@ -292,7 +298,7 @@ public final class GameEvents {
         boolean special = (TournamentSystem.isFighting(pv.uuid) && TournamentSystem.isFighting(pa.uuid))
                 || WarSystem.atWar(pv, pa) || RebellionSystem.involving(pv.uuid) != null && RebellionSystem.involving(pv.uuid) == RebellionSystem.involving(pa.uuid);
         if (special) return false;
-        if (Hub.isSpawn(v.level())) {
+        if (Hub.isProtected(v.level(), v.blockPosition())) {
             a.displayClientMessage(Msg.text("Le Sanctuaire est une zone de paix (hors duels).", ChatFormatting.RED), true);
             return true;
         }
@@ -443,6 +449,7 @@ public final class GameEvents {
         TpaSystem.onLogout(sp);
         EventSystem.onLogout(sp);
         com.godmod.system.AfkSystem.onLogout(sp);
+        com.godmod.system.ZoneSystem.onLogout(sp);
         PlayerProfile p = GodData.get(sp);
         p.lastSeen = System.currentTimeMillis();
         GodData.dirty();
@@ -482,6 +489,7 @@ public final class GameEvents {
         boolean minute = tickCounter % 1200 == 0;
         com.godmod.system.AfkSystem.tickSecond(server, minute);
         com.godmod.system.LagControl.tickSecond(server);
+        com.godmod.system.ZoneSystem.tickSecond(server);
         for (ServerPlayer sp : server.getPlayerList().getPlayers()) {
             if (AuthSystem.isLocked(sp)) continue;
             PlayerProfile p = GodData.get(sp);
@@ -535,6 +543,7 @@ public final class GameEvents {
 
     private static boolean onBreak(BlockEvent.BreakEvent e) {
         if (locked(e.getPlayer())) return true;
+        if (e.getPlayer() instanceof ServerPlayer wb && com.godmod.system.ZoneSystem.isWand(wb.getMainHandItem())) return true; // le bâton ne casse rien
         if (GodData.ready() && e.getLevel() instanceof Level hl && e.getPlayer() instanceof ServerPlayer hp
                 && Hub.isProtected(hl, e.getPos()) && !Hub.canEditHub(hp)) {
             hp.displayClientMessage(Msg.text("Le Sanctuaire est protégé par les dieux.", ChatFormatting.RED), true);

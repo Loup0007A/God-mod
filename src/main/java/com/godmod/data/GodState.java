@@ -19,4 +19,6 @@ public class GodState {
     public Map<String, String> spawners = new HashMap<>();
     /** Points interactifs (caisses, tableau des quêtes…) : "dimension|x|y|z" -> type. */
     public Map<String, String> points = new HashMap<>();
+    /** Zones tracées au bâton de zone (clé = nom en minuscules). */
+    public Map<String, Zone> zones = new HashMap<>();
 }

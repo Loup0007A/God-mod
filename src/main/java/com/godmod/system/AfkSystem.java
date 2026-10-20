@@ -48,6 +48,7 @@ public final class AfkSystem {
     }
 
     public static boolean inZone(ServerPlayer p) {
+        if (ZoneSystem.in(p.level(), p.blockPosition(), com.godmod.data.Zone.Type.AFK)) return true;
         if (!Hub.isSpawn(p.level())) return false;
         double dx = p.getX() - (ZONE_X + 0.5), dz = p.getZ() - (ZONE_Z + 0.5);
         return dx * dx + dz * dz <= (ZONE_R + 1) * (ZONE_R + 1) && Math.abs(p.getY() - (WorldBuilder.CY + 1)) < 6;
