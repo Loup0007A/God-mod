@@ -21,4 +21,9 @@ public class GodState {
     public Map<String, String> points = new HashMap<>();
     /** Zones tracées au bâton de zone (clé = nom en minuscules). */
     public Map<String, Zone> zones = new HashMap<>();
+    /** Marché entre joueurs. */
+    public List<MarketListing> market = new ArrayList<>();
+    public long nextMarketId = 1;
+    /** Historique par objet puis par jour : {quantité mise en vente, quantité vendue, pièces échangées}. */
+    public Map<String, Map<String, long[]>> marketHistory = new HashMap<>();
 }

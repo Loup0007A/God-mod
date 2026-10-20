@@ -1002,7 +1002,56 @@ public final class GodCommands {
 
     // ------------------------------------------------------------------ /shop, /argent, /payer, /baltop
 
+    private static void registerMarket(CommandDispatcher<CommandSourceStack> d) {
+        SuggestionProvider<CommandSourceStack> listed = (ctx, b) -> SharedSuggestionProvider.suggest(com.godmod.system.Market.listedItems(), b);
+        SuggestionProvider<CommandSourceStack> mine = (ctx, b) -> {
+            ServerPlayer p = ctx.getSource().getPlayer();
+            return SharedSuggestionProvider.suggest(p == null ? java.util.List.of() : com.godmod.system.Market.myIds(p), b);
+        };
+        String[] sorts = {"recent", "prix", "prix_desc", "affaires", "quantite", "nom"};
+        for (String name : new String[]{"market", "marche", "hdv"}) {
+            d.register(Commands.literal(name)
+                    .executes(ctx -> open(ctx, com.godmod.system.Market::open))
+                    .then(Commands.literal("vendre").then(Commands.argument("prix", com.mojang.brigadier.arguments.LongArgumentType.longArg(1))
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.Market.sell(p, com.mojang.brigadier.arguments.LongArgumentType.getLong(ctx, "prix"), 0)))
+                            .then(Commands.argument("quantite", IntegerArgumentType.integer(1, 64))
+                                    .executes(ctx -> run(ctx, p -> com.godmod.system.Market.sell(p, com.mojang.brigadier.arguments.LongArgumentType.getLong(ctx, "prix"),
+                                            IntegerArgumentType.getInteger(ctx, "quantite")))))))
+                    .then(Commands.literal("recherche")
+                            .executes(ctx -> open(ctx, p -> com.godmod.system.Market.search(p, "")))
+                            .then(Commands.argument("texte", StringArgumentType.greedyString()).suggests(listed)
+                                    .executes(ctx -> open(ctx, p -> com.godmod.system.Market.search(p, StringArgumentType.getString(ctx, "texte"))))))
+                    .then(Commands.literal("tri").then(Commands.argument("ordre", StringArgumentType.word()).suggests(words(sorts))
+                            .executes(ctx -> run(ctx, p -> {
+                                var s = com.godmod.system.Market.Sort.parse(StringArgumentType.getString(ctx, "ordre"));
+                                if (s == null) return "Tri inconnu. Choix : " + String.join(", ", sorts) + ".";
+                                com.godmod.system.Market.setSort(p, s);
+                                return null;
+                            }))))
+                    .then(Commands.literal("mesventes").executes(ctx -> open(ctx, com.godmod.system.Market::openMine)))
+                    .then(Commands.literal("retirer").then(Commands.argument("offre", com.mojang.brigadier.arguments.LongArgumentType.longArg(1)).suggests(mine)
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.Market.cancel(p,
+                                    com.mojang.brigadier.arguments.LongArgumentType.getLong(ctx, "offre"), Moderation.roleOf(p).atLeast(Role.MODERATEUR))))))
+                    .then(Commands.literal("acheter").then(Commands.argument("offre", com.mojang.brigadier.arguments.LongArgumentType.longArg(1))
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.Market.buy(p, com.mojang.brigadier.arguments.LongArgumentType.getLong(ctx, "offre"), 0)))
+                            .then(Commands.argument("quantite", IntegerArgumentType.integer(1))
+                                    .executes(ctx -> run(ctx, p -> com.godmod.system.Market.buy(p, com.mojang.brigadier.arguments.LongArgumentType.getLong(ctx, "offre"),
+                                            IntegerArgumentType.getInteger(ctx, "quantite")))))))
+                    .then(Commands.literal("recuperer").executes(ctx -> run(ctx, p -> {
+                        if (GodData.get(p).marketReturns.isEmpty()) return "Rien à récupérer.";
+                        if (com.godmod.system.Market.deliver(p, true) == 0) return "Libérez de la place dans votre inventaire.";
+                        return null;
+                    })))
+                    .then(Commands.literal("prix").executes(ctx -> run(ctx, com.godmod.system.Market::priceInfo)))
+                    .then(Commands.literal("courbe")
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.Market.chart(p, null)))
+                            .then(Commands.argument("objet", StringArgumentType.greedyString()).suggests(listed)
+                                    .executes(ctx -> run(ctx, p -> com.godmod.system.Market.chart(p, StringArgumentType.getString(ctx, "objet")))))));
+        }
+    }
+
     private static void registerShop(CommandDispatcher<CommandSourceStack> d) {
+        registerMarket(d);
         for (String name : new String[]{"shop", "boutique"}) {
             d.register(Commands.literal(name)
                     .executes(ctx -> open(ctx, Menus::openShop))

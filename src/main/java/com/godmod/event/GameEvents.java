@@ -432,6 +432,7 @@ public final class GameEvents {
         AuthSystem.onLogin(sp);
         if (!AuthSystem.isLocked(sp)) GameStart.afterAuth(sp, p);
         else PowerSystem.applyAttributes(sp);
+        com.godmod.system.Market.onLogin(sp);
     }
 
     private static void onLogout(PlayerEvent.PlayerLoggedOutEvent e) {
@@ -450,6 +451,7 @@ public final class GameEvents {
         EventSystem.onLogout(sp);
         com.godmod.system.AfkSystem.onLogout(sp);
         com.godmod.system.ZoneSystem.onLogout(sp);
+        com.godmod.system.Market.onLogout(sp);
         PlayerProfile p = GodData.get(sp);
         p.lastSeen = System.currentTimeMillis();
         GodData.dirty();
@@ -489,6 +491,7 @@ public final class GameEvents {
         boolean five = tickCounter % 100 == 0;
         boolean minute = tickCounter % 1200 == 0;
         com.godmod.system.AfkSystem.tickSecond(server, minute);
+        if (minute) com.godmod.system.Market.tickMinute(server);
         com.godmod.system.LagControl.tickSecond(server);
         com.godmod.system.ZoneSystem.tickSecond(server);
         for (ServerPlayer sp : server.getPlayerList().getPlayers()) {

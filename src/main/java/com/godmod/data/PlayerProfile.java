@@ -7,6 +7,13 @@ import java.util.Map;
  * Tout ce que le mod sait d'un joueur. Sérialisé en JSON dans les données du monde.
  */
 public class PlayerProfile {
+    /** Marché : objets à rendre (offres expirées ou retirées), gains et ventes réalisés hors ligne. */
+    public java.util.List<MarketListing> marketReturns = new java.util.ArrayList<>();
+    public long marketOfflineMoney = 0;
+    public long marketOfflineSales = 0;
+    public long marketEarned = 0;
+    public long marketSpent = 0;
+
     public String uuid;
     public String name = "?";
 

@@ -381,6 +381,26 @@ Agilité (vitesse), Esprit (Foi max, régénération, puissance et recharge des 
 `/shop` : Nether, End, ressources, artefacts. Revente 5 à 10 fois moins chère que l'achat.
 **Premium** (Gemmes, attribuées par un admin) : désactivé par défaut, `/pay enable` / `/pay disable`.
 
+## Marché des joueurs (`/market`, `/marche`, `/hdv`)
+
+Les joueurs vendent leurs propres objets au prix qu'ils choisissent.
+- **Vendre** : tenez l'objet, `/market vendre <prix à l'unité> [quantité]` (toute la pile par défaut). Le bouton
+  émeraude du menu propose un prix conseillé (prix moyen, sinon boutique). 15 offres par joueur, 7 jours chacune.
+- **Taxe** : 1 pièce par objet vendu, retenue sur le gain du vendeur (prix minimum : 2 pièces).
+- **Acheter** : clic gauche = tout le lot, clic droit = 1 exemplaire (ou `/market acheter <offre> [quantité]`).
+- **Trier** (entonnoir, ou `/market tri`) : récentes, prix croissant/décroissant, meilleures affaires (prix le plus
+  bas par rapport au prix moyen), quantité, nom.
+- **Rechercher** (panneau, ou `/market recherche <texte>`) : nom ou identifiant anglais (`diamond`, `iron`), pseudo
+  du vendeur, ou `main` pour l'objet tenu.
+- **Chaque offre affiche** le prix moyen des ventes sur 7 jours, l'écart avec ce prix, le prix de la boutique
+  (achat/revente) et les courbes sur 14 jours de l'offre ▁▃▅█, de la demande et du prix.
+- **Graphique** (shift-clic sur une offre, longue-vue du menu, ou `/market courbe [objet]`) : barres sur 9 jours
+  pour l'offre, la demande ou le prix moyen, avec les chiffres au survol et une tendance.
+- `/market prix` : statistiques de l'objet tenu · `/market mesventes` : vos offres (clic pour retirer) ·
+  `/market recuperer` : objets d'offres expirées. Les ventes faites hors ligne sont résumées à la connexion.
+- Interdits : objets divins, générateurs, baguette de zone. Les modérateurs peuvent retirer une offre
+  (`/market retirer <offre>`) : les objets reviennent au vendeur.
+
 ## Artefacts (réservés aux dieux du bon domaine)
 
 Les artefacts sont des objets vanilla enchantés et renommés, reconnus par le serveur (non revendables).

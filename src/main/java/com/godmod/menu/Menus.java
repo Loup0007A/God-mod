@@ -496,6 +496,9 @@ public final class Menus {
         page.set(29, Page.icon(Items.GOLDEN_HELMET, "Privilèges", ChatFormatting.LIGHT_PURPLE,
                 "§7Commandes de confort à vie :", "§7/craft, /ec, /enclume, /tete, /soin, /vol…", "§7Chères, mais définitives", "", "§eCliquez pour ouvrir"),
                 (sp, c) -> later(sp, () -> openPerkShop(sp)));
+        page.set(13, Page.icon(Items.CHEST, "Marché des joueurs", ChatFormatting.AQUA,
+                "§7Achetez et vendez entre joueurs", "§7" + GodData.state().market.size() + " offre(s) en cours", "", "§eCliquez pour ouvrir (/market)"),
+                (sp, c) -> later(sp, () -> com.godmod.system.Market.open(sp)));
         page.set(31, Page.icon(Items.HOPPER, "Vendre", ChatFormatting.GOLD,
                 "§7Revendez vos objets (5 à 10× moins cher qu'à l'achat)", "", "§eCliquez pour ouvrir"),
                 (sp, c) -> later(sp, () -> openSell(sp)));

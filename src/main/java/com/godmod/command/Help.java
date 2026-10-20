@@ -104,7 +104,15 @@ public final class Help {
                 p("/shop", "La boutique divine (Nether, End, ressources, artefacts)"),
                 p("/shop vendre", "Vendre la pile tenue en main"),
                 p("/shop vendre un", "Vendre un seul exemplaire"),
-                p("/shop vendre tout", "Vendre tous les exemplaires de cet objet dans l'inventaire"));
+                p("/shop vendre tout", "Vendre tous les exemplaires de cet objet dans l'inventaire"),
+                p("/market", "Le marché des joueurs : acheter, trier, rechercher"),
+                p("/market vendre <prix> [quantité]", "Mettre en vente l'objet tenu (taxe : 1 pièce par objet vendu)"),
+                p("/market recherche <texte|main>", "Chercher un objet (nom anglais, identifiant ou pseudo)"),
+                p("/market tri <ordre>", "recent, prix, prix_desc, affaires, quantite, nom"),
+                p("/market prix", "Prix moyen, prix du shop et tendances de l'objet tenu"),
+                p("/market courbe [objet]", "Graphique de l'offre, de la demande et du prix"),
+                p("/market mesventes", "Vos offres (cliquez pour retirer)"),
+                p("/market recuperer", "Récupérer les objets d'offres expirées"));
         cat("conflits", "Conflits", ChatFormatting.RED,
                 p("/rebellion [declarer|rejoindre]", "Se soulever contre son dieu (tous les 3 jours)"),
                 p("/tournoi [rejoindre|quitter]", "Tournoi 1v1 en cours"),
