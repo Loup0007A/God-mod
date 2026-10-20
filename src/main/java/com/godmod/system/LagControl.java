@@ -92,7 +92,7 @@ public final class LagControl {
         int n = 0;
         for (ServerLevel l : server.getAllLevels()) {
             List<ItemEntity> items = new ArrayList<>();
-            for (Entity e : l.getAllEntities()) if (e instanceof ItemEntity it && it.isAlive()) items.add(it);
+            for (Entity e : l.getAllEntities()) if (e instanceof ItemEntity it && it.isAlive() && !it.isNoGravity()) items.add(it); // objets décoratifs (NoGravity) épargnés
             for (ItemEntity it : items) {
                 it.discard();
                 n++;

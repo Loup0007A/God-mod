@@ -172,7 +172,7 @@ l'XP de Mineur. Le menu montre la production actuelle (en %) et celle du prestig
 
 - **15 créatures d'un même type par chunk au plus** (villageois, golems, animaux apprivoisés ou nommés, Titan exceptés) :
   au-delà, les nouvelles n'apparaissent plus (spawners, élevage, apparitions naturelles).
-- **Nettoyage des objets au sol toutes les 90 secondes**. Le compte à rebours est affiché en permanence dans le
+- **Nettoyage des objets au sol toutes les 90 secondes** (les objets décoratifs sans gravité, `NoGravity:1b`, sont épargnés). Le compte à rebours est affiché en permanence dans le
   tableau à droite (❄ Nettoyage : 1:12), avec des alertes à 30 s, 10 s et 5 s.
 - Admins : `/clearlag` (tout de suite) · `/clearlag intervalle <secondes>` (0 = désactivé) · `/clearlag entites <max>` (0 = sans limite).
 
