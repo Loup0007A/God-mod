@@ -34,11 +34,24 @@ public final class ClientInit {
                 e.getLayeredDraw().replace(ForgeLayeredDraw.POST_SLEEP_STACK, ForgeLayeredDraw.CHAT_OVERLAY, ChatHud::render));
 
         // Tous les messages passent par notre panneau (sauf la barre d'action au-dessus des objets).
+        // Les messages du serveur arrivent par SystemMessageReceivedEvent, ceux des joueurs par ClientChatReceivedEvent(.Player).
+        // On ne les retire du chat vanilla que si notre panneau est bien affiché (sinon le chat resterait vide).
+        net.minecraftforge.client.event.SystemMessageReceivedEvent.BUS.addListener((Predicate<net.minecraftforge.client.event.SystemMessageReceivedEvent>) e -> {
+            if (e.isOverlay() || e.getMessage() == null) return false;
+            ChatStore.add(e.getMessage(), Minecraft.getInstance().gui.getGuiTicks());
+            return ChatHud.active();
+        });
+        ClientChatReceivedEvent.Player.BUS.addListener((Predicate<ClientChatReceivedEvent.Player>) e -> {
+            if (e.getMessage() == null) return false;
+            ChatStore.add(e.getMessage(), Minecraft.getInstance().gui.getGuiTicks());
+            return ChatHud.active();
+        });
         ClientChatReceivedEvent.BUS.addListener((Predicate<ClientChatReceivedEvent>) e -> {
+            if (e instanceof ClientChatReceivedEvent.Player) return false; // déjà traité ci-dessus
             if (e instanceof ClientChatReceivedEvent.System s && s.isOverlay()) return false;
             if (e.getMessage() == null) return false;
             ChatStore.add(e.getMessage(), Minecraft.getInstance().gui.getGuiTicks());
-            return true;
+            return ChatHud.active();
         });
 
         ScreenEvent.MouseButtonPressed.Pre.BUS.addListener((Predicate<ScreenEvent.MouseButtonPressed.Pre>) e ->
@@ -55,6 +68,8 @@ public final class ClientInit {
             ChatStore.clear();
             ChatStore.select(ChatStore.Tab.TOUT);
             ChatStore.writing = ChatStore.Tab.GLOBAL;
+            ChatStore.add(net.minecraft.network.chat.Component.literal("✦ Interface God Civilisation active : ouvrez le chat (T), les onglets sont en haut.")
+                    .withStyle(net.minecraft.ChatFormatting.GOLD), Minecraft.getInstance().gui.getGuiTicks());
         });
         ClientPlayerNetworkEvent.LoggingOut.BUS.addListener((Consumer<ClientPlayerNetworkEvent.LoggingOut>) e -> {
             announced = false;

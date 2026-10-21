@@ -43,8 +43,16 @@ public final class ChatHud {
         return ChatComponent.getWidth(mc.options.chatWidth().get());
     }
 
+    private static long lastFrame = 0;
+
+    /** Vrai si notre panneau est réellement dessiné (la couche a bien été remplacée). */
+    public static boolean active() {
+        return System.currentTimeMillis() - lastFrame < 3000;
+    }
+
     /** Couche d'interface qui remplace le chat vanilla. */
     public static void render(GuiGraphics gg, DeltaTracker dt) {
+        lastFrame = System.currentTimeMillis();
         Minecraft mc = Minecraft.getInstance();
         ROWS.clear();
         HITS.clear();
