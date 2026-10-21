@@ -20,7 +20,14 @@ import java.util.function.Predicate;
 public final class ClientInit {
     public static final String VERSION = "1";
     private static boolean announced = false;
+    /** Le chat vanilla a bien été remplacé par notre panneau : on lui retire alors tous les messages. */
+    private static boolean installed = false;
+
+    public static boolean takeover() {
+        return installed || ChatHud.active();
+    }
     private static boolean godServer = false;
+    private static int ticks = 0;
 
     private ClientInit() {
     }
@@ -30,8 +37,12 @@ public final class ClientInit {
     }
 
     public static void init() {
-        AddGuiOverlayLayersEvent.BUS.addListener((Consumer<AddGuiOverlayLayersEvent>) e ->
-                e.getLayeredDraw().replace(ForgeLayeredDraw.POST_SLEEP_STACK, ForgeLayeredDraw.CHAT_OVERLAY, ChatHud::render));
+        AddGuiOverlayLayersEvent.BUS.addListener((Consumer<AddGuiOverlayLayersEvent>) e -> {
+            var draw = e.getLayeredDraw();
+            installed = draw.locateStack(ForgeLayeredDraw.POST_SLEEP_STACK)
+                    .map(s -> s.getLayer(ForgeLayeredDraw.CHAT_OVERLAY) != null).orElse(false);
+            draw.replace(ForgeLayeredDraw.POST_SLEEP_STACK, ForgeLayeredDraw.CHAT_OVERLAY, ChatHud::render);
+        });
 
         // Tous les messages passent par notre panneau (sauf la barre d'action au-dessus des objets).
         // Les messages du serveur arrivent par SystemMessageReceivedEvent, ceux des joueurs par ClientChatReceivedEvent(.Player).
@@ -39,19 +50,19 @@ public final class ClientInit {
         net.minecraftforge.client.event.SystemMessageReceivedEvent.BUS.addListener((Predicate<net.minecraftforge.client.event.SystemMessageReceivedEvent>) e -> {
             if (e.isOverlay() || e.getMessage() == null) return false;
             ChatStore.add(e.getMessage(), Minecraft.getInstance().gui.getGuiTicks());
-            return ChatHud.active();
+            return takeover();
         });
         ClientChatReceivedEvent.Player.BUS.addListener((Predicate<ClientChatReceivedEvent.Player>) e -> {
             if (e.getMessage() == null) return false;
             ChatStore.add(e.getMessage(), Minecraft.getInstance().gui.getGuiTicks());
-            return ChatHud.active();
+            return takeover();
         });
         ClientChatReceivedEvent.BUS.addListener((Predicate<ClientChatReceivedEvent>) e -> {
             if (e instanceof ClientChatReceivedEvent.Player) return false; // déjà traité ci-dessus
             if (e instanceof ClientChatReceivedEvent.System s && s.isOverlay()) return false;
             if (e.getMessage() == null) return false;
             ChatStore.add(e.getMessage(), Minecraft.getInstance().gui.getGuiTicks());
-            return ChatHud.active();
+            return takeover();
         });
 
         ScreenEvent.MouseButtonPressed.Pre.BUS.addListener((Predicate<ScreenEvent.MouseButtonPressed.Pre>) e ->
@@ -63,6 +74,7 @@ public final class ClientInit {
         });
 
         ClientPlayerNetworkEvent.LoggingIn.BUS.addListener((Consumer<ClientPlayerNetworkEvent.LoggingIn>) e -> {
+            if (takeover()) Minecraft.getInstance().gui.getChat().clearMessages(false);
             announced = false;
             godServer = false;
             ChatStore.clear();
@@ -79,6 +91,8 @@ public final class ClientInit {
         // Se signaler au serveur dès que son arbre de commandes contient /godclient (donc seulement sur God Civilisation).
         TickEvent.ClientTickEvent.Post.BUS.addListener((Consumer<TickEvent.ClientTickEvent.Post>) e -> {
             Minecraft mc = Minecraft.getInstance();
+            // Le chat vanilla doit rester vide (sinon il s'affiche sous notre panneau, surtout chat ouvert).
+            if (takeover() && mc.player != null && ++ticks % 10 == 0) mc.gui.getChat().clearMessages(false);
             if (announced || mc.player == null || mc.getConnection() == null) return;
             var root = mc.getConnection().getCommands().getRoot();
             if (root.getChild("godclient") != null) {

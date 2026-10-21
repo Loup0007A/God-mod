@@ -491,6 +491,7 @@ public final class GameEvents {
         if (!GodData.ready()) return;
         tickCounter++;
         com.godmod.system.Trade.tick(server);
+        com.godmod.progress.CrateDecor.tick(server);
         AuthSystem.tick(server);
         Moderation.tick(server);
         ArtifactEffects.tick(server);

@@ -56,6 +56,9 @@ public class Settings {
     public java.util.List<String> antibotAllowed = new java.util.ArrayList<>();
     public java.util.List<String> bannedIps = new java.util.ArrayList<>();
 
+    // --- Décor des caisses (joyaux, panneaux, particules) ---
+    public boolean crateDecor = false;
+
     // --- Mod client (facultatif) ---
     public boolean clientPrompt = true;
     public boolean clientRequired = false;

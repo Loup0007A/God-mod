@@ -750,7 +750,24 @@ public final class GodCommands {
                     }))));
         }
         d.register(Commands.literal("ascension").executes(ctx -> open(ctx, com.godmod.progress.AscensionQuests::open)));
-        for (String name : new String[]{"caisses", "cles", "keys"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, Menus::openKeys)));
+        for (String name : new String[]{"cles", "keys"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, Menus::openKeys)));
+        d.register(Commands.literal("caisses").executes(ctx -> open(ctx, Menus::openKeys))
+                .then(Commands.literal("decor").requires(Moderation.require(Role.ADMIN))
+                        .executes(ctx -> reply1(ctx, "Décor posé sur " + com.godmod.progress.CrateDecor.place(ctx.getSource().getServer())
+                                + " caisse(s) : joyau tournant, panneau et particules (aucun bloc modifié). /caisses decor retirer pour l'enlever."))
+                        .then(Commands.literal("retirer").executes(ctx -> {
+                            com.godmod.progress.CrateDecor.remove(ctx.getSource().getServer());
+                            return reply1(ctx, "Décor des caisses retiré.");
+                        }))
+                        .then(Commands.literal("anciens").executes(ctx -> reply1(ctx, "Anciens panneaux « Caisse … / clic droit » retirés autour de "
+                                + com.godmod.progress.CrateDecor.removeOldLabels(ctx.getSource().getServer()) + " caisse(s)."))))
+                .then(Commands.literal("ouvrir").then(Commands.argument("caisse", StringArgumentType.word())
+                        .suggests(words("commune", "rare", "epique", "divine"))
+                        .then(Commands.argument("nombre", IntegerArgumentType.integer(1, 64)).executes(ctx -> run(ctx, p -> {
+                            var c = CrateSystem.Crate.parse(StringArgumentType.getString(ctx, "caisse"));
+                            if (c == null) return "Caisse inconnue : commune, rare, epique, divine.";
+                            return CrateSystem.openMany(p, c, IntegerArgumentType.getInteger(ctx, "nombre"));
+                        }))))));
         for (String name : new String[]{"progression", "guide"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, Menus::openGuide)));
         for (String name : new String[]{"recompense", "daily", "quotidien"}) {
             d.register(Commands.literal(name)

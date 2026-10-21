@@ -328,11 +328,17 @@ S'accroupir désactive l'abattage, le filon et la moisson large. Ces talents res
 
 ### Caisses et clés (`/caisses`, `/cles`)
 
-Quatre caisses sont posées au Sanctuaire : **Commune** (coffre), **Rare** (tonneau),
-**Épique** (coffre de l'Ender), **Divine** (coffre-fort). Clic droit avec une clé = ouverture
-avec animation de roulette ; sans clé = aperçu des gains. Clés : métiers, quêtes, ou achat
-(clic droit dans `/cles`, 2 500 / 10 000 / 40 000 / 150 000 ⛃). Gains : argent, Essence, objets
-rares, **générateurs de créatures**, clés, artefacts.
+Quatre caisses : **Commune**, **Rare**, **Épique**, **Divine** (points posés au Sanctuaire ou par `/godadmin point placer`).
+Clic droit = aperçu ; clés : métiers, quêtes, votes, événements, récompense du jour, `/afkshop`, ou achat dans `/cles`
+(2 500 / 10 000 / 40 000 / 150 000 ⛃). Gains : argent, Essence, objets rares, **générateurs de créatures**, clés, artefacts.
+- **Aperçu** : cadre aux couleurs de la caisse, récompenses de la plus fréquente à la plus rare avec leur rareté
+  (Commun ≥ 12 %, Peu commun ≥ 6 %, Rare ≥ 3 %, Épique ≥ 1,5 %, Légendaire), la chance exacte et une jauge.
+- **Ouverture** : roulette au cadre animé, ralentissement, révélation dorée de la récompense au centre.
+  **Ouverture rapide ×5** (bouton, ou `/caisses ouvrir <caisse> <nombre>`) : sans animation, gains résumés dans le chat.
+- **Décor** (admins, à lancer une fois) : `/caisses decor` pose au-dessus de chaque caisse un joyau qui tourne et brille
+  à sa couleur (quartz, cœur de la mer, cristal de l'End, étoile du Nether), un panneau « ✦ CAISSE … ✦ » et un anneau
+  de particules. Ce ne sont que des entités d'affichage : **aucun bloc n'est modifié**. `/caisses decor retirer` les
+  enlève ; `/caisses decor anciens` supprime les anciens panneaux posés automatiquement juste au-dessus des caisses.
 
 ### Générateurs (spawners)
 

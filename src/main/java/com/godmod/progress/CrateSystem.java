@@ -141,31 +141,16 @@ public final class CrateSystem {
 
     // ------------------------------------------------------------------ Aperçu et ouverture
 
-    public static void openPreview(ServerPlayer player, Crate c) {
-        PlayerProfile p = GodData.get(player);
-        List<Reward> list = rewards(c);
-        int total = 0;
-        for (Reward r : list) total += r.weight();
-        Page page = new Page("Caisse " + c.label + " — " + keys(p, c) + " clé(s)").frame(paneFor(c));
-        int[] inner = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34};
-        for (int i = 0; i < list.size() && i < inner.length; i++) {
-            Reward r = list.get(i);
-            ItemStack icon = r.icon().get();
-            double pct = 100.0 * r.weight() / total;
-            page.set(inner[i], Page.icon(icon.getItem(), Math.max(1, icon.getCount()), r.label(), ChatFormatting.WHITE,
-                    List.of(Page.line(String.format(java.util.Locale.ROOT, "§7Chance : %.1f %%", pct))), false));
-        }
-        boolean can = keys(p, c) > 0;
-        page.set(40, Page.icon(can ? Items.TRIPWIRE_HOOK : Items.BARRIER, 1, can ? "Ouvrir (1 clé)" : "Aucune clé " + c.label,
-                can ? ChatFormatting.GREEN : ChatFormatting.RED, List.of(
-                        Page.line("§7Vous avez " + keys(p, c) + " clé(s) " + c.label),
-                        Page.line("§7Obtenir des clés : niveaux de métier, quêtes,"),
-                        Page.line("§7pêche, ou la boutique (" + c.keyPrice + " pièces)")), can), (sp, click) -> {
-            String err = open(sp, c);
-            if (err != null) Msg.err(sp, err);
-        });
-        page.close();
-        page.open(player);
+    /** Rareté d'une récompense selon sa probabilité. */
+    public record Rarity(String label, ChatFormatting color, String code, boolean glow) {
+    }
+
+    public static Rarity rarity(double pct) {
+        if (pct >= 12) return new Rarity("Commun", ChatFormatting.GRAY, "§7", false);
+        if (pct >= 6) return new Rarity("Peu commun", ChatFormatting.GREEN, "§a", false);
+        if (pct >= 3) return new Rarity("Rare", ChatFormatting.AQUA, "§b", false);
+        if (pct >= 1.5) return new Rarity("Épique", ChatFormatting.LIGHT_PURPLE, "§d", true);
+        return new Rarity("Légendaire", ChatFormatting.GOLD, "§6", true);
     }
 
     private static Item paneFor(Crate c) {
@@ -175,6 +160,117 @@ public final class CrateSystem {
             case EPIQUE -> Items.PURPLE_STAINED_GLASS_PANE;
             case DIVINE -> Items.YELLOW_STAINED_GLASS_PANE;
         };
+    }
+
+    private static Item darkPane(Crate c) {
+        return switch (c) {
+            case COMMUNE -> Items.LIGHT_GRAY_STAINED_GLASS_PANE;
+            case RARE -> Items.LIGHT_BLUE_STAINED_GLASS_PANE;
+            case EPIQUE -> Items.MAGENTA_STAINED_GLASS_PANE;
+            case DIVINE -> Items.ORANGE_STAINED_GLASS_PANE;
+        };
+    }
+
+    /** Cadre bicolore aux couleurs de la caisse (alternance des deux teintes, décalée par {@code phase}). */
+    private static void paintFrame(SimpleContainer box, Crate c, int phase, java.util.Set<Integer> skip) {
+        for (int i = 0; i < GodMenu.SIZE; i++) {
+            int row = i / 9, col = i % 9;
+            boolean edge = row == 0 || row == GodMenu.ROWS - 1 || col == 0 || col == 8;
+            if (!edge || skip.contains(i)) continue;
+            Item pane = ((row + col + phase) % 2 == 0) ? paneFor(c) : darkPane(c);
+            box.setItem(i, Page.icon(pane, " ", ChatFormatting.DARK_GRAY));
+        }
+    }
+
+    public static void openPreview(ServerPlayer player, Crate c) {
+        PlayerProfile p = GodData.get(player);
+        List<Reward> list = new ArrayList<>(rewards(c));
+        int total = 0;
+        for (Reward r : list) total += r.weight();
+        list.sort((x, y) -> Integer.compare(y.weight(), x.weight()));
+        int keys = keys(p, c);
+        Page page = new Page("✦ Caisse " + c.label + " ✦");
+        java.util.Set<Integer> reserved = java.util.Set.of(4, 45, 47, 49, 51, 53);
+        paintFrame(page.container(), c, 0, reserved);
+
+        // En-tête : la caisse.
+        page.set(4, Page.icon(c.icon, 1, "Caisse " + c.label, c.color, List.of(
+                Page.line("§7Vos clés : " + (keys > 0 ? "§a" : "§c") + keys),
+                Page.line("§7" + list.size() + " récompenses possibles"),
+                Page.line(""),
+                Page.line("§8Clés : métiers, quêtes, votes, événements,"),
+                Page.line("§8récompense du jour, /afkshop, /cles")), true));
+
+        // Récompenses, de la plus fréquente à la plus rare.
+        int[] inner = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
+        for (int i = 0; i < list.size() && i < inner.length; i++) {
+            Reward r = list.get(i);
+            ItemStack icon = r.icon().get();
+            double pct = 100.0 * r.weight() / total;
+            Rarity rar = rarity(pct);
+            page.set(inner[i], Page.icon(icon.getItem(), Math.max(1, icon.getCount()), r.label(), rar.color(), List.of(
+                    Page.line(rar.code() + "✦ " + rar.label()),
+                    Page.line(String.format(java.util.Locale.ROOT, "§7Chance : §f%.1f %%", pct)),
+                    Page.line("§8" + chanceBar(pct))), rar.glow()));
+        }
+
+        // Boutons.
+        boolean can = keys > 0;
+        page.set(49, Page.icon(can ? Items.TRIPWIRE_HOOK : Items.BARRIER, 1, can ? "Ouvrir (1 clé)" : "Aucune clé " + c.label,
+                can ? ChatFormatting.GREEN : ChatFormatting.RED, List.of(
+                        Page.line("§7Lance la roulette"),
+                        Page.line(can ? "§a" + keys + " clé(s) disponible(s)" : "§7Prix d'une clé : " + Msg.money(c.keyPrice) + " (/cles)")), can),
+                (sp, click) -> {
+                    String err = open(sp, c);
+                    if (err != null) Msg.err(sp, err);
+                });
+        if (keys >= 5) {
+            page.set(51, Page.icon(Items.HOPPER, 5, "Ouverture rapide ×5", ChatFormatting.GOLD, List.of(
+                    Page.line("§7Ouvre 5 caisses d'un coup, sans roulette"),
+                    Page.line("§75 clés " + c.label)), true), (sp, click) -> {
+                String err = openMany(sp, c, 5);
+                if (err != null) Msg.err(sp, err);
+                sp.level().getServer().execute(() -> openPreview(sp, c));
+            });
+        }
+        page.set(47, Page.icon(Items.KNOWLEDGE_BOOK, 1, "Raretés", ChatFormatting.YELLOW, List.of(
+                Page.line("§7✦ Commun §8≥ 12 %"), Page.line("§a✦ Peu commun §8≥ 6 %"), Page.line("§b✦ Rare §8≥ 3 %"),
+                Page.line("§d✦ Épique §8≥ 1,5 %"), Page.line("§6✦ Légendaire §8< 1,5 %")), false));
+        page.set(53, Page.icon(Items.BARRIER, "Fermer", ChatFormatting.RED), (sp, click) -> sp.closeContainer());
+        page.open(player);
+    }
+
+    private static String chanceBar(double pct) {
+        int n = (int) Math.max(1, Math.min(10, Math.round(pct / 2.5)));
+        return "▮".repeat(n) + "▯".repeat(10 - n);
+    }
+
+    /** Ouvre plusieurs caisses d'un coup (sans animation) et résume les gains. */
+    public static String openMany(ServerPlayer player, Crate c, int n) {
+        PlayerProfile p = GodData.get(player);
+        if (keys(p, c) < n) return "Il vous faut " + n + " clés " + c.label + ".";
+        if (isRolling(player)) return "Une ouverture est déjà en cours.";
+        List<Reward> list = rewards(c);
+        int total = 0;
+        for (Reward r : list) total += r.weight();
+        List<String> won = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            addKey(p, c, -1);
+            p.cratesOpened++;
+            Reward win = pick(list);
+            win.give().accept(player, p);
+            Rarity rar = rarity(100.0 * win.weight() / total);
+            won.add(rar.code() + win.label());
+            if (c.ordinal() >= Crate.EPIQUE.ordinal() && rar.glow())
+                Msg.broadcast(player.level().getServer(), p.name + " a obtenu " + win.label() + " dans une caisse " + c.label + " !", c.color);
+        }
+        QuestSystem.progress(player, List.of("crate:any"), n);
+        GodData.dirty();
+        GodData.log("CAISSE : " + p.name + " ouvre " + n + " caisses " + c.label);
+        Fx.sound(player, SoundEvents.PLAYER_LEVELUP, 1.0F, 1.2F);
+        Msg.send(player, Msg.text(n + " caisses " + c.label + " ouvertes :", c.color, ChatFormatting.BOLD));
+        for (String w : won) Msg.send(player, com.godmod.menu.Page.line("  " + w));
+        return null;
     }
 
     public static String open(ServerPlayer player, Crate c) {
@@ -188,9 +284,12 @@ public final class CrateSystem {
         List<Reward> list = rewards(c);
         Reward win = pick(list);
 
-        Page page = new Page("Ouverture : caisse " + c.label).frame(paneFor(c));
-        page.set(4, Page.icon(Items.HOPPER, "▼", ChatFormatting.GOLD));
-        page.set(40, Page.icon(Items.HOPPER, "▲", ChatFormatting.GOLD));
+        Page page = new Page("✦ Caisse " + c.label + " ✦");
+        paintFrame(page.container(), c, 0, java.util.Set.of());
+        for (int i = 10; i <= 16; i++) page.set(i, Page.icon(Items.BLACK_STAINED_GLASS_PANE, " ", ChatFormatting.DARK_GRAY));
+        for (int i = 28; i <= 34; i++) page.set(i, Page.icon(Items.BLACK_STAINED_GLASS_PANE, " ", ChatFormatting.DARK_GRAY));
+        page.set(13, Page.icon(Items.HOPPER, "▼", ChatFormatting.GOLD));
+        page.set(31, Page.icon(Items.HOPPER, "▲", ChatFormatting.GOLD));
         Roll roll = new Roll(player, c, page.container(), list, win);
         roll.fill();
         page.open(player);
@@ -257,6 +356,7 @@ public final class CrateSystem {
                 offset++;
                 done++;
                 fill();
+                if (done % 2 == 0) paintFrame(box, crate, done / 2, java.util.Set.of());
                 Fx.sound(player, SoundEvents.UI_BUTTON_CLICK.value(), 0.4F, 1.0F + 0.5F * done / steps);
                 // Ralentit progressivement.
                 wait = done < steps - 12 ? 1 : done < steps - 5 ? 3 : 6;
@@ -264,6 +364,16 @@ public final class CrateSystem {
             }
             finished = true;
             PlayerProfile p = GodData.get(player);
+            // Révélation : cadre doré, la récompense au centre, mise en valeur.
+            for (int i = 0; i < GodMenu.SIZE; i++) {
+                int row = i / 9, col = i % 9;
+                if (row == 0 || row == GodMenu.ROWS - 1 || col == 0 || col == 8)
+                    box.setItem(i, Page.icon((row + col) % 2 == 0 ? Items.YELLOW_STAINED_GLASS_PANE : Items.LIME_STAINED_GLASS_PANE, " ", ChatFormatting.DARK_GRAY));
+            }
+            ItemStack shown = win.icon().get();
+            box.setItem(40, Page.icon(shown.getItem(), Math.max(1, shown.getCount()), "✦ " + win.label() + " ✦", ChatFormatting.GOLD,
+                    List.of(Page.line("§7Gagné dans la caisse " + crate.label)), true));
+            if (player.containerMenu != null) player.containerMenu.broadcastChanges();
             win.give().accept(player, p);
             GodData.dirty();
             Fx.sound(player, SoundEvents.PLAYER_LEVELUP, 1.0F, 1.0F);
