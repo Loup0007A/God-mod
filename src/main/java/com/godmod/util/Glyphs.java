@@ -28,8 +28,8 @@ public final class Glyphs {
         return String.valueOf((char) (0xE010 + t.ordinal()));
     }
 
-    /** Image seule (en blanc : la couleur du texte teinterait l'image). */
+    /** Image seule : en blanc (la couleur du texte teinterait l'image) et sans ombre portée (sinon elle paraît floue). */
     public static MutableComponent of(String glyph) {
-        return Component.literal(glyph).withStyle(s -> s.withColor(ChatFormatting.WHITE).withBold(false).withItalic(false));
+        return Component.literal(glyph).withStyle(s -> s.withColor(ChatFormatting.WHITE).withBold(false).withItalic(false).withShadowColor(0));
     }
 }

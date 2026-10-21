@@ -69,23 +69,20 @@ def badge(label, base, text=None):
     border = base
     txt = text or mix(base, (255, 255, 255), 0.75)
     w = text_width(label) + 6
-    img = Image.new("RGBA", (w, 9), CLEAR)
+    img = Image.new("RGBA", (w, 8), CLEAR)
     d = ImageDraw.Draw(img)
-    d.rectangle([0, 0, w - 1, 8], fill=border)
-    d.rectangle([1, 1, w - 2, 7], fill=fill)
-    for x, y in [(0, 0), (w - 1, 0), (0, 8), (w - 1, 8)]:
+    d.rectangle([0, 0, w - 1, 7], fill=border)
+    d.rectangle([1, 1, w - 2, 6], fill=fill)
+    for x, y in [(0, 0), (w - 1, 0), (0, 7), (w - 1, 7)]:
         img.putpixel((x, y), CLEAR)
-    # reflet en haut
-    for x in range(2, w - 2):
-        img.putpixel((x, 1), mix(fill, (255, 255, 255), 0.12))
     draw_text(img, 3, 2, label, txt)
     return img
 
 def square(letter, base):
     img = badge(letter, base)
-    if img.width < 9:  # carré de 9 × 9
-        sq = Image.new("RGBA", (9, 9), CLEAR)
-        sq.paste(img, ((9 - img.width) // 2, 0))
+    if img.width < 8:  # carré de 8 × 8
+        sq = Image.new("RGBA", (8, 8), CLEAR)
+        sq.paste(img, ((8 - img.width) // 2, 0))
         return sq
     return img
 
@@ -104,9 +101,9 @@ ICONS = {
                 {"#": hx("5b3a8e"), "p": hx("a984e6"), "P": hx("e4d4ff")}),
     "faith": (["...b...", "..bB...", "..bBb..", ".bBWBb.", ".bBWBb.", "bBBWBBb", ".bBBBb."],
               {"b": hx("2a78c9"), "B": hx("5fc4ff"), "W": hx("e6f7ff")}),
-    "key": (["..###..", ".#y.y#.", ".#yyy#.", "..#y#..", "...y...", "...yy..", "...y...", "...yy.."],
+    "key": (["..###..", ".#y.y#.", ".#yyy#.", "..#y#..", "...y...", "...yy..", "...yy.."],
             {"#": GOLD_DARK, "y": GOLD}),
-    "mail": (["#########", "#w#www#w#", "#ww#w#ww#", "#www#www#", "#wwwwwww#", "#########"],
+    "mail": ([".........", "#########", "#w#www#w#", "#ww#w#ww#", "#www#www#", "#wwwwwww#", "#########"],
              {"#": hx("b04a9b"), "w": hx("ffd6f2")}),
     "star": (["....#....", "...#y#...", "#########", ".#yyYyy#.", "..#yyy#..", ".#yy#yy#.", "#y#...#y#"],
              {"#": GOLD_DARK, "y": GOLD, "Y": GOLD_LIGHT}),
@@ -207,6 +204,58 @@ def generic_54():
         slot(img, 7 + c * 18, 197)
     return img
 
+def inventory():
+    """Inventaire du joueur (176 × 166) : armure, personnage, seconde main, artisanat 2 × 2, inventaire."""
+    img = Image.new("RGBA", (256, 256), CLEAR)
+    marble(img, (1, 1, 174, 164), 3)
+    frame(img, 0, 0, 175, 165)
+    d = ImageDraw.Draw(img)
+    for i in range(4):
+        slot(img, 7, 7 + i * 18)                       # armure
+    d.rectangle([25, 7, 76, 78], fill=INK, outline=GOLD_DARK)  # cadre du personnage
+    d.rectangle([26, 8, 75, 77], outline=hx("2f3360"))
+    slot(img, 76, 61)                                   # seconde main
+    for r in range(2):
+        for c in range(2):
+            slot(img, 97 + c * 18, 17 + r * 18)        # artisanat 2 × 2
+    arrow(img, 132, 31)
+    result_slot(img, 153, 27)
+    d.line([4, 79, 171, 79], fill=mix(GOLD, MARBLE, 0.45))
+    for r in range(3):
+        for c in range(9):
+            slot(img, 7 + c * 18, 83 + r * 18)
+    for c in range(9):
+        slot(img, 7 + c * 18, 141)
+    return img
+
+def crafting_table():
+    img = Image.new("RGBA", (256, 256), CLEAR)
+    marble(img, (1, 1, 174, 164), 4)
+    frame(img, 0, 0, 175, 165)
+    for r in range(3):
+        for c in range(3):
+            slot(img, 29 + c * 18, 16 + r * 18)
+    arrow(img, 92, 38)
+    result_slot(img, 123, 34)
+    for r in range(3):
+        for c in range(9):
+            slot(img, 7 + c * 18, 83 + r * 18)
+    for c in range(9):
+        slot(img, 7 + c * 18, 141)
+    return img
+
+def arrow(img, x, y):
+    d = ImageDraw.Draw(img)
+    d.rectangle([x, y + 3, x + 12, y + 6], fill=GOLD)
+    d.polygon([(x + 12, y), (x + 17, y + 4), (x + 17, y + 5), (x + 12, y + 9)], fill=GOLD)
+    d.line([x, y + 6, x + 12, y + 6], fill=GOLD_DARK)
+
+def result_slot(img, x, y):
+    d = ImageDraw.Draw(img)
+    d.rectangle([x - 2, y - 2, x + 19, y + 19], fill=GOLD_DARK)
+    d.rectangle([x - 1, y - 1, x + 18, y + 18], fill=GOLD)
+    slot(img, x, y)
+
 # ---------------------------------------------------------------- Boutons, barre rapide, barres de boss
 def button(fill_top, fill_bot, border, inner):
     img = Image.new("RGBA", (200, 20), CLEAR)
@@ -287,9 +336,14 @@ def build():
     for ch, img in sorted(GLYPHS.items()):
         name = "g%04x" % ord(ch)
         files["assets/godciv/textures/font/%s.png" % name] = png(img)
-        providers.append({"type": "bitmap", "file": "godciv:font/%s.png" % name, "ascent": 8, "height": img.height, "chars": [ch]})
-    files["assets/minecraft/font/default.json"] = json.dumps({"providers": providers}, ensure_ascii=True, indent=1).encode()
+        # Hauteur = nombre de lignes de l'image (échelle 1:1) ; base du texte à 7 px, comme les lettres.
+        providers.append({"type": "bitmap", "file": "godciv:font/%s.png" % name, "ascent": min(7, img.height), "height": img.height, "chars": [ch]})
+    font = json.dumps({"providers": providers}, ensure_ascii=True, indent=1).encode()
+    files["assets/minecraft/font/default.json"] = font
+    files["assets/minecraft/font/uniform.json"] = font
     files["assets/minecraft/textures/gui/container/generic_54.png"] = png(generic_54())
+    files["assets/minecraft/textures/gui/container/inventory.png"] = png(inventory())
+    files["assets/minecraft/textures/gui/container/crafting_table.png"] = png(crafting_table())
     sprites = "assets/minecraft/textures/gui/sprites/"
     nine = lambda: json.dumps({"gui": {"scaling": {"type": "nine_slice", "width": 200, "height": 20, "border": 3}}}).encode()
     files[sprites + "widget/button.png"] = png(button(hx("2b2f5c"), hx("1a1c38"), GOLD_DARK, hx("3d4280")))
@@ -316,6 +370,7 @@ def build():
         prev.paste(img, (4 + (i % 2) * 110, 4 + (i // 2) * 12), img)
     prev.resize((prev.width * 4, prev.height * 4), Image.NEAREST).save(os.path.join(OUT, "pack-badges.png"))
     generic_54().crop((0, 0, 176, 222)).resize((176 * 3, 222 * 3), Image.NEAREST).save(os.path.join(OUT, "pack-menu.png"))
+    inventory().crop((0, 0, 176, 166)).resize((176 * 3, 166 * 3), Image.NEAREST).save(os.path.join(OUT, "pack-inventory.png"))
     import hashlib
     print("pack.zip :", os.path.getsize(path), "octets, sha1", hashlib.sha1(open(path, "rb").read()).hexdigest(), ",", len(GLYPHS), "badges")
 

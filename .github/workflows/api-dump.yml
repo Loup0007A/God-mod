@@ -39,7 +39,7 @@ jobs:
             echo "=================== $c" >> out/api.txt
             javap -cp "$CP" -p "$c" >> out/api.txt 2>&1 || true
           done
-          wc -l out/api.txt
+          wc -l out/api.txt; cat out/api.txt
           for f in $(unzip -l "$J" | awk '{print $4}' | grep -E '^net/minecraft/client/input/.*\.class$|^net/minecraft/client/gui/ActiveText' ); do echo "$f" >> out/api.txt; done
       - uses: actions/upload-artifact@v4
         with:
