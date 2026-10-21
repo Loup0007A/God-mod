@@ -312,6 +312,38 @@
 [
 "/site",
 "Le site et le wiki du serveur"
+],
+[
+"/courrier",
+"Boîte aux lettres (lettres, objets et pièces, même hors ligne)"
+],
+[
+"/courrier envoyer <joueur> <message>",
+"Écrire à un joueur, même absent"
+],
+[
+"/courrier objet <joueur> [message]",
+"Envoyer l'objet tenu en main"
+],
+[
+"/courrier argent <joueur> <montant> [message]",
+"Envoyer des pièces avec un mot"
+],
+[
+"/prime [joueur montant]",
+"Primes : mettre de l'argent sur la tête d'un joueur, ou voir les primes"
+],
+[
+"/vu <joueur>",
+"Dernière connexion, palier, prime"
+],
+[
+"/ping [joueur]",
+"Latence de connexion"
+],
+[
+"/tps",
+"Santé du serveur (TPS, mémoire)"
 ]
 ]
 },

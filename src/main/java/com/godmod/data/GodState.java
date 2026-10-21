@@ -27,6 +27,11 @@ public class GodState {
     /** Tombes des joueurs morts. */
     public List<Grave> graves = new ArrayList<>();
     public long nextGraveId = 1;
+    /** Courrier : destinataire (uuid) → lettres. */
+    public Map<String, List<Letter>> mail = new HashMap<>();
+    public long nextLetterId = 1;
+    /** Primes : cible (uuid) → prime. */
+    public Map<String, Bounty> bounties = new HashMap<>();
     /** Historique par objet puis par jour : {quantité mise en vente, quantité vendue, pièces échangées}. */
     public Map<String, Map<String, long[]>> marketHistory = new HashMap<>();
 }

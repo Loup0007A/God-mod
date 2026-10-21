@@ -1038,7 +1038,129 @@ public final class GodCommands {
 
     // ------------------------------------------------------------------ Résidences, /back, kits, échanges, tombes
 
+    private static void registerUseful(CommandDispatcher<CommandSourceStack> d) {
+        // Courrier
+        for (String n : new String[]{"courrier", "mail", "lettres"}) {
+            d.register(Commands.literal(n)
+                    .executes(ctx -> open(ctx, com.godmod.system.MailSystem::open))
+                    .then(Commands.literal("envoyer").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                            .then(Commands.argument("message", StringArgumentType.greedyString())
+                                    .executes(ctx -> run(ctx, p -> com.godmod.system.MailSystem.send(p, StringArgumentType.getString(ctx, "joueur"),
+                                            StringArgumentType.getString(ctx, "message"), false, 0))))))
+                    .then(Commands.literal("objet").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.MailSystem.send(p, StringArgumentType.getString(ctx, "joueur"), "", true, 0)))
+                            .then(Commands.argument("message", StringArgumentType.greedyString())
+                                    .executes(ctx -> run(ctx, p -> com.godmod.system.MailSystem.send(p, StringArgumentType.getString(ctx, "joueur"),
+                                            StringArgumentType.getString(ctx, "message"), true, 0))))))
+                    .then(Commands.literal("argent").then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                            .then(Commands.argument("montant", com.mojang.brigadier.arguments.LongArgumentType.longArg(1))
+                                    .executes(ctx -> run(ctx, p -> com.godmod.system.MailSystem.send(p, StringArgumentType.getString(ctx, "joueur"), "", false,
+                                            com.mojang.brigadier.arguments.LongArgumentType.getLong(ctx, "montant"))))
+                                    .then(Commands.argument("message", StringArgumentType.greedyString())
+                                            .executes(ctx -> run(ctx, p -> com.godmod.system.MailSystem.send(p, StringArgumentType.getString(ctx, "joueur"),
+                                                    StringArgumentType.getString(ctx, "message"), false,
+                                                    com.mojang.brigadier.arguments.LongArgumentType.getLong(ctx, "montant")))))))));
+        }
+        // Primes
+        for (String n : new String[]{"prime", "primes", "bounty"}) {
+            d.register(Commands.literal(n)
+                    .executes(ctx -> run(ctx, com.godmod.system.BountySystem::list))
+                    .then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                            .then(Commands.argument("montant", com.mojang.brigadier.arguments.LongArgumentType.longArg(1))
+                                    .executes(ctx -> run(ctx, p -> com.godmod.system.BountySystem.place(p, StringArgumentType.getString(ctx, "joueur"),
+                                            com.mojang.brigadier.arguments.LongArgumentType.getLong(ctx, "montant")))))));
+        }
+        // Annonces automatiques (admins)
+        d.register(Commands.literal("annonces").requires(Moderation.require(Role.ADMIN))
+                .executes(ctx -> run(ctx, p -> {
+                    var st = GodData.settings();
+                    p.sendSystemMessage(Msg.header("Annonces automatiques"));
+                    p.sendSystemMessage(Msg.text((st.announcements ? "Activées" : "Désactivées") + " · toutes les " + st.announceMinutes + " min", ChatFormatting.GRAY));
+                    for (int i = 0; i < st.announceMessages.size(); i++) {
+                        p.sendSystemMessage(Msg.text((i + 1) + ". ", ChatFormatting.GRAY).append(com.godmod.system.Announcer.format(st.announceMessages.get(i)))
+                                .append(Msg.button("✖", "/annonces retirer " + (i + 1), "Retirer cette annonce", ChatFormatting.RED)));
+                    }
+                    p.sendSystemMessage(Msg.text("/annonces ajouter <texte> · intervalle <min> · on|off · maintenant", ChatFormatting.DARK_GRAY));
+                    return null;
+                }))
+                .then(Commands.literal("ajouter").then(Commands.argument("texte", StringArgumentType.greedyString()).executes(ctx -> {
+                    GodData.settings().announceMessages.add(StringArgumentType.getString(ctx, "texte"));
+                    GodData.dirty();
+                    return reply1(ctx, "Annonce ajoutée (" + GodData.settings().announceMessages.size() + ").");
+                })))
+                .then(Commands.literal("retirer").then(Commands.argument("numero", IntegerArgumentType.integer(1)).executes(ctx -> {
+                    var list = GodData.settings().announceMessages;
+                    int i = IntegerArgumentType.getInteger(ctx, "numero") - 1;
+                    if (i >= list.size()) return fail(ctx, "Il n'y a que " + list.size() + " annonce(s).");
+                    list.remove(i);
+                    GodData.dirty();
+                    return reply1(ctx, "Annonce retirée.");
+                })))
+                .then(Commands.literal("intervalle").then(Commands.argument("minutes", IntegerArgumentType.integer(1, 240)).executes(ctx -> {
+                    GodData.settings().announceMinutes = IntegerArgumentType.getInteger(ctx, "minutes");
+                    GodData.dirty();
+                    return reply1(ctx, "Une annonce toutes les " + GodData.settings().announceMinutes + " minutes.");
+                })))
+                .then(Commands.literal("on").executes(ctx -> {
+                    GodData.settings().announcements = true;
+                    GodData.dirty();
+                    return reply1(ctx, "Annonces activées.");
+                }))
+                .then(Commands.literal("off").executes(ctx -> {
+                    GodData.settings().announcements = false;
+                    GodData.dirty();
+                    return reply1(ctx, "Annonces désactivées.");
+                }))
+                .then(Commands.literal("maintenant").executes(ctx -> {
+                    String err = com.godmod.system.Announcer.next(ctx.getSource().getServer());
+                    return err == null ? 1 : fail(ctx, err);
+                })));
+        // Infos : /vu, /ping, /tps
+        for (String n : new String[]{"vu", "seen"}) {
+            d.register(Commands.literal(n).then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                    .executes(ctx -> run(ctx, p -> {
+                        PlayerProfile t = profileArg(ctx, "joueur");
+                        if (t == null) return "Joueur inconnu.";
+                        ServerPlayer on = p.level().getServer().getPlayerList().getPlayer(java.util.UUID.fromString(t.uuid));
+                        java.time.format.DateTimeFormatter f = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm").withZone(java.time.ZoneId.of("Europe/Paris"));
+                        p.sendSystemMessage(Msg.header(t.name));
+                        p.sendSystemMessage(Msg.text(on != null ? "● En ligne" : "○ Hors ligne · vu il y a " + Msg.time(System.currentTimeMillis() - t.lastSeen)
+                                + " (" + f.format(java.time.Instant.ofEpochMilli(t.lastSeen)) + ")", on != null ? ChatFormatting.GREEN : ChatFormatting.GRAY));
+                        if (t.firstSeen > 0) p.sendSystemMessage(Msg.text("Arrivé le " + f.format(java.time.Instant.ofEpochMilli(t.firstSeen)), ChatFormatting.GRAY));
+                        p.sendSystemMessage(Msg.text("Palier : ", ChatFormatting.GRAY).append(net.minecraft.network.chat.Component.literal(t.tier.label).withStyle(t.tier.color))
+                                .append(Msg.text(" · " + Msg.num(t.essence) + " Essence", ChatFormatting.LIGHT_PURPLE)));
+                        long b = com.godmod.system.BountySystem.amount(t.uuid);
+                        if (b > 0) p.sendSystemMessage(Msg.text("☠ Prime sur sa tête : " + Msg.money(b), ChatFormatting.RED));
+                        return null;
+                    }))));
+        }
+        d.register(Commands.literal("ping")
+                .executes(ctx -> run(ctx, p -> {
+                    Msg.info(p, "Votre ping : " + p.connection.latency() + " ms.");
+                    return null;
+                }))
+                .then(Commands.argument("joueur", StringArgumentType.word()).suggests(ONLINE).executes(ctx -> run(ctx, p -> {
+                    ServerPlayer t = p.level().getServer().getPlayerList().getPlayerByName(StringArgumentType.getString(ctx, "joueur"));
+                    if (t == null) return "Joueur hors ligne.";
+                    Msg.info(p, "Ping de " + t.getName().getString() + " : " + t.connection.latency() + " ms.");
+                    return null;
+                }))));
+        d.register(Commands.literal("tps").executes(ctx -> {
+            var server = ctx.getSource().getServer();
+            double mspt = server.getAverageTickTimeNanos() / 1_000_000.0;
+            double tps = Math.min(20.0, 1000.0 / Math.max(1, mspt));
+            ChatFormatting col = tps >= 19 ? ChatFormatting.GREEN : tps >= 15 ? ChatFormatting.YELLOW : ChatFormatting.RED;
+            Runtime rt = Runtime.getRuntime();
+            long used = (rt.totalMemory() - rt.freeMemory()) / 1_048_576, max = rt.maxMemory() / 1_048_576;
+            ctx.getSource().sendSuccess(() -> Msg.prefix().append(Msg.text(String.format(java.util.Locale.FRANCE, "TPS %.1f", tps), col, ChatFormatting.BOLD))
+                    .append(Msg.text(String.format(java.util.Locale.FRANCE, " · %.1f ms par tick · %d joueur(s) · mémoire %d / %d Mo",
+                            mspt, server.getPlayerCount(), used, max), ChatFormatting.GRAY)), false);
+            return 1;
+        }));
+    }
+
     private static void registerClient(CommandDispatcher<CommandSourceStack> d) {
+        registerUseful(d);
         // Envoyée automatiquement par le mod client.
         d.register(Commands.literal("godclient").then(Commands.argument("version", StringArgumentType.greedyString())
                 .executes(ctx -> run(ctx, p -> com.godmod.system.ClientMod.hello(p, StringArgumentType.getString(ctx, "version"))))));

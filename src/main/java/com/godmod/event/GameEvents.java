@@ -459,6 +459,7 @@ public final class GameEvents {
         com.godmod.system.ChatSystem.onLogin(sp);
         com.godmod.system.PackSystem.onLogin(sp);
         com.godmod.system.ClientMod.onLogin(sp);
+        if (!AuthSystem.isLocked(sp)) com.godmod.system.MailSystem.onLogin(sp);
         if (!AuthSystem.isLocked(sp)) com.godmod.system.VoteSystem.onLogin(sp);
         int kits = com.godmod.system.Kits.available(p);
         if (kits > 0 && !AuthSystem.isLocked(sp)) Msg.send(sp, Msg.prefix().append(Msg.text(kits + " kit(s) à récupérer ! ", ChatFormatting.GREEN))
@@ -487,6 +488,7 @@ public final class GameEvents {
         com.godmod.system.VoteSystem.onLogout(sp);
         com.godmod.system.ChatSystem.onLogout(sp);
         com.godmod.system.ClientMod.onLogout(sp);
+        com.godmod.system.MailSystem.onLogout(sp);
         PlayerProfile p = GodData.get(sp);
         p.lastSeen = System.currentTimeMillis();
         GodData.dirty();
@@ -530,6 +532,8 @@ public final class GameEvents {
         com.godmod.system.AfkSystem.tickSecond(server, minute);
         if (minute) com.godmod.system.Market.tickMinute(server);
         if (minute) com.godmod.system.PackSystem.tickMinute(server);
+        if (minute) com.godmod.system.BountySystem.tickMinute(server);
+        com.godmod.system.Announcer.tickSecond(server);
         com.godmod.system.Graves.tickSecond(server, (int) (tickCounter / 20));
         com.godmod.system.ClientMod.tickSecond(server);
         com.godmod.system.LagControl.tickSecond(server);
@@ -567,6 +571,7 @@ public final class GameEvents {
             }
             com.godmod.system.Homes.remember(victim, true); // /back : retour au lieu de la mort
             if (attacker instanceof ServerPlayer killer && killer != victim) {
+                com.godmod.system.BountySystem.onKill(killer, victim);
                 FaithSystem.onPlayerKill(killer, victim);
             } else {
                 PlayerProfile vp = GodData.get(victim);

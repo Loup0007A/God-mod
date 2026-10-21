@@ -56,6 +56,23 @@ public class Settings {
     public java.util.List<String> antibotAllowed = new java.util.ArrayList<>();
     public java.util.List<String> bannedIps = new java.util.ArrayList<>();
 
+    // --- Annonces automatiques ---
+    public boolean announcements = true;
+    public int announceMinutes = 10;
+    public java.util.List<String> announceMessages = new java.util.ArrayList<>(java.util.List.of(
+            "Votez pour le serveur et gagnez des clés : /vote",
+            "Vendez et achetez entre joueurs au marché : /market",
+            "Vos kits vous attendent : /kit",
+            "Wiki, statut du serveur et mod client : /site",
+            "Mettez une prime sur la tête d'un rival : /prime",
+            "Écrivez à un joueur absent, objets compris : /courrier",
+            "Une question ? Toutes les commandes : /aide"));
+
+    // --- Primes ---
+    public long bountyMin = 500;
+    public int bountyTaxPercent = 10;
+    public int bountyDays = 7;
+
     // --- Décor des caisses (joyaux, panneaux, particules) ---
     public boolean crateDecor = false;
     /** Hauteur supplémentaire des coffres 3D au-dessus des blocs de caisse (en blocs). */

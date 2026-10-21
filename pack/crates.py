@@ -85,11 +85,17 @@ def tex_top(p, seed):
     return img
 
 def tex_inner(p):
+    """Intérieur : lueur douce, plus claire au centre, avec quelques étincelles."""
     glow = hx(p["glow"])
-    img = Image.new("RGBA", (16, 16), mix(glow, (40, 30, 20, 255), 0.35))
-    d = ImageDraw.Draw(img)
-    for r in range(8, 0, -1):
-        d.ellipse([8 - r, 8 - r, 7 + r, 7 + r], fill=mix(glow, (60, 40, 30, 255), r / 9))
+    img = Image.new("RGBA", (16, 16), glow)
+    px = img.load()
+    rnd = random.Random(7)
+    for y in range(16):
+        for x in range(16):
+            d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5 / 10.6
+            px[x, y] = mix(mix(glow, (255, 255, 255, 255), 0.35), mix(glow, (70, 50, 40, 255), 0.45), min(1, d))
+    for _ in range(6):
+        px[rnd.randint(2, 13), rnd.randint(2, 13)] = (255, 255, 255, 255)
     return img
 
 def tex_gem(p):
@@ -118,49 +124,60 @@ def el(frm, to, tex, faces=None, rot=None):
         return [0, 0, round(min(16, max(0.5, w)), 2), round(min(16, max(0.5, h)), 2)]
     out = {"from": [round(v, 3) for v in frm], "to": [round(v, 3) for v in to], "faces": {}}
     for f in (faces or FACES):
-        t = tex[f] if isinstance(tex, dict) else tex
+        t = tex.get(f) if isinstance(tex, dict) else tex
         if t:
-            out["faces"][f] = {"uv": uv(f), "texture": "#" + t}
+            out["faces"][f] = {"uv": [0, 0, 16, 16] if t == "inner" else uv(f), "texture": "#" + t}
     if rot:
         out["rotation"] = rot
     return out
 
 def body(kind):
+    """Corps : aucune face n'est dans le même plan qu'une autre (sinon le jeu les fait « clignoter »)."""
     e = [
         el([1, 0, 1], [15, 1.5, 15], "trim"),                                     # socle
-        el([2, 1.5, 2], [14, 9, 14], {"north": "side", "south": "side", "east": "side", "west": "side", "up": "inner", "down": "side"}),
+        el([2, 1.5, 2], [14, 9, 14], {"north": "side", "south": "side", "east": "side", "west": "side", "up": "inner"}),
         el([1.6, 5.5, 1.6], [14.4, 6.5, 14.4], "trim", faces=("north", "south", "east", "west")),  # cerclage
-        el([1.6, 8.2, 1.6], [14.4, 9, 14.4], "trim", faces=("north", "south", "east", "west", "up")),
-        el([7, 3.5, 14], [9, 6.5, 14.6], "lock"),                                 # serrure (avant = sud)
+        # rebord du haut : un cadre (et non une plaque), plus haut que l'intérieur lumineux
+        el([1.6, 8.2, 12.8], [14.4, 9.4, 14.4], "trim"),
+        el([1.6, 8.2, 1.6], [14.4, 9.4, 3.2], "trim"),
+        el([1.6, 8.2, 3.2], [3.2, 9.4, 12.8], "trim", faces=("east", "west", "up", "down")),
+        el([12.8, 8.2, 3.2], [14.4, 9.4, 12.8], "trim", faces=("east", "west", "up", "down")),
+        el([7, 3.2, 14], [9, 5.4, 14.7], "lock"),                                 # serrure (avant = sud du modèle)
     ]
-    for x in (1.4, 12.6):                                                         # montants d'angle
-        for z in (1.4, 12.6):
-            e.append(el([x, 1.5, z], [x + 2, 9, z + 2], "trim"))
+    for x in (1.0, 13.0):                                                         # montants d'angle (dépassent du rebord)
+        for z in (1.0, 13.0):
+            e.append(el([x, 1.5, z], [x + 2, 9.8, z + 2], "trim"))
     if kind == "epique":                                                          # éclats d'améthyste
-        for x, z in ((0.6, 0.6), (13.4, 13.4), (0.6, 13.4), (13.4, 0.6)):
-            e.append(el([x, 9, z], [x + 2, 11.5, z + 2], "gem", rot={"angle": 22.5, "axis": "y", "origin": [x + 1, 9, z + 1]}))
+        for x, z in ((0.4, 0.4), (13.6, 13.6), (0.4, 13.6), (13.6, 0.4)):
+            e.append(el([x, 9.8, z], [x + 2, 12, z + 2], "gem", rot={"angle": 22.5, "axis": "y", "origin": [x + 1, 9.8, z + 1]}))
     if kind == "divine":                                                          # pieds en griffe dorés
-        for x in (0.5, 13.5):
-            for z in (0.5, 13.5):
-                e.append(el([x, 0, z], [x + 2, 2.5, z + 2], "trim"))
+        for x in (0.4, 13.6):
+            for z in (0.4, 13.6):
+                e.append(el([x, -0.4, z], [x + 2, 2.2, z + 2], "trim"))
     return e
 
+# Charnière du couvercle dans le corps (coordonnées du modèle) : au-dessus du rebord, à l'arrière.
+HINGE = (8, 9.4, 2)
+
 def lid(kind):
-    """Charnière en (8, 8, 8) : le couvercle s'étend de z = 8 (arrière) à z = 20 (avant)."""
+    """Charnière en (8, 8, 8) : le couvercle s'étend de z = 7.6 (arrière) à z = 20.4 (avant), posé sur le rebord."""
     e = [
-        el([2, 8, 8], [14, 11, 20], {"north": "side", "south": "side", "east": "side", "west": "side", "up": "top", "down": "inner"}),
-        el([1.6, 8, 7.6], [14.4, 9, 20.4], "trim", faces=("north", "south", "east", "west", "down")),
-        el([1.6, 10.6, 7.6], [14.4, 11.4, 20.4], "trim"),                       # rebord
-        el([7, 6.8, 20], [9, 10, 20.6], "lock"),                                  # moraillon
-        el([5, 11.4, 12], [11, 12.2, 16], "trim"),                                # écusson
+        el([1.6, 8, 7.6], [14.4, 10.8, 20.4], {"north": "side", "south": "side", "east": "side", "west": "side", "up": "top", "down": "inner"}),
+        # cadre doré sur le dessus (barres le long des bords, sans recouvrir le dessus)
+        el([1.6, 10.8, 19], [14.4, 11.4, 20.4], "trim"),
+        el([1.6, 10.8, 7.6], [14.4, 11.4, 9], "trim"),
+        el([1.6, 10.8, 9], [3, 11.4, 19], "trim", faces=("east", "west", "up")),
+        el([13, 10.8, 9], [14.4, 11.4, 19], "trim", faces=("east", "west", "up")),
+        el([7, 7.2, 20.4], [9, 10.4, 21], "lock"),                                # moraillon
+        el([5, 10.8, 12], [11, 11.6, 16], "trim", faces=("north", "south", "east", "west", "up")),  # écusson
     ]
     if kind in ("rare", "epique", "divine"):
-        e.append(el([7, 12.2, 13], [9, 13.2, 15], "gem"))
+        e.append(el([7, 11.6, 13], [9, 12.6, 15], "gem"))
     if kind == "divine":                                                          # couronne
-        for x in (2.2, 12.3):
-            for z in (8.6, 18.4):
-                e.append(el([x, 11.4, z], [x + 1.5, 14, z + 1.5], "trim"))
-        e.append(el([6.5, 12.2, 9], [9.5, 15, 10], "trim"))
+        for x in (1.8, 12.8):
+            for z in (7.8, 18.8):
+                e.append(el([x, 11.4, z], [x + 1.4, 14, z + 1.4], "trim"))
+        e.append(el([6.5, 11.4, 8.2], [9.5, 14.4, 9.2], "trim"))
     return e
 
 def gem(kind):
@@ -227,7 +244,7 @@ def preview(path, open_angle=-55):
         def lid_tf(v):
             x, y, z = v[0], v[1] - 8, v[2] - 8
             y2, z2 = y * math.cos(a) - z * math.sin(a), y * math.sin(a) + z * math.cos(a)
-            return (x, y2 + 9, z2 + 2)
+            return (x, y2 + HINGE[1], z2 + HINGE[2])
         add(lid(kind), lid_tf)
         add(gem(kind), lambda v: (v[0], v[1] + 14, v[2]))
         ox, oy = 130 + i * 240, 240

@@ -449,6 +449,32 @@ Le chat vanilla est remplacé par celui du mod (les messages restent dans le cha
 - **Groupes** : `/groupe creer|inviter <joueur>|accepter|refuser|quitter|expulser <joueur>|chef <joueur>`, 8 joueurs.
   `/groupe` liste les membres avec leur monde, leurs coordonnées et leur vie. Le groupe se défait au redémarrage.
 
+## Courrier (`/courrier`)
+
+Écrire à n'importe quel joueur, même hors ligne : `/courrier envoyer <joueur> <message>`, joindre l'objet tenu en main
+(`/courrier objet <joueur> [message]`) ou des pièces (`/courrier argent <joueur> <montant> [message]`).
+`/courrier` ouvre la boîte aux lettres (30 lettres au plus) : clic = lire et récupérer les pièces jointes, clic droit =
+répondre, shift-clic = supprimer. Notification à la réception et à la connexion. Un joueur muet ne peut pas écrire ;
+un joueur qui vous ignore ne reçoit pas vos lettres.
+
+## Primes (`/prime`)
+
+`/prime <joueur> <montant>` met de l'argent sur la tête d'un joueur (500 pièces au moins, taxe de 10 %, plusieurs joueurs
+peuvent cumuler). Le joueur recherché porte un **☠** rouge devant son nom (montant au survol). Celui qui le tue en combat
+touche la prime (sa propre participation lui est simplement rendue) ; annonce dans le chat. Sans preneur, la prime expire
+après 7 jours sans nouvelle mise et les participants sont remboursés. `/prime` : les 10 plus grosses primes.
+
+## Annonces automatiques (`/annonces`, admins)
+
+Toutes les 10 minutes (dès qu'un joueur est en ligne), une annonce de la liste est diffusée à tour de rôle ; les commandes
+qu'elle cite (/vote, /kit…) sont cliquables. 7 annonces par défaut (vote, marché, kits, site, primes, courrier, aide).
+`/annonces` (liste, avec ✖ pour retirer) · `ajouter <texte>` · `retirer <n>` · `intervalle <minutes>` · `on|off` · `maintenant`.
+
+## Infos (`/vu`, `/ping`, `/tps`)
+
+`/vu <joueur>` : en ligne ou dernière connexion, date d'arrivée, palier, prime. `/ping [joueur]` : latence.
+`/tps` : TPS, millisecondes par tick, joueurs, mémoire.
+
 ## Votes (`/vote`)
 
 `/vote` affiche les trois sites (liens cliquables) et le temps avant de pouvoir revoter sur chacun.

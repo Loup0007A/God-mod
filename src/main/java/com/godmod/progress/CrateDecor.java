@@ -76,10 +76,16 @@ public final class CrateDecor {
             ServerLevel l = server.getLevel(ResourceKey.create(Registries.DIMENSION, Identifier.parse(k[0])));
             if (l == null) continue;
             BlockPos pos = new BlockPos(Integer.parseInt(k[1]), Integer.parseInt(k[2]), Integer.parseInt(k[3]));
-            float yaw = 0;
+            // Le jeu affiche les objets tournés de 180° : on compense pour que l'avant du coffre (la serrure)
+            // regarde dans le sens du bloc de caisse (sud par défaut).
+            Direction facing = Direction.SOUTH;
             BlockState st = l.getBlockState(pos);
-            if (st.hasProperty(HorizontalDirectionalBlock.FACING)) yaw = st.getValue(HorizontalDirectionalBlock.FACING).toYRot();
-            out.add(new Spot(i++, l, pos, c, yaw));
+            if (st.hasProperty(HorizontalDirectionalBlock.FACING)) facing = st.getValue(HorizontalDirectionalBlock.FACING);
+            else if (st.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING)) {
+                Direction d = st.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
+                if (d.getAxis().isHorizontal()) facing = d;
+            }
+            out.add(new Spot(i++, l, pos, c, facing.toYRot() + 180F));
         }
         return out;
     }
@@ -119,9 +125,12 @@ public final class CrateDecor {
                 qx, qy, qw, ty, scale, scale, scale);
     }
 
-    /** Position de la charnière du couvercle (arrière du coffre, en haut du corps). */
+    /**
+     * Position de la charnière du couvercle : en haut du rebord (y = 9,4 du modèle), à l'arrière (z = 2).
+     * À cause du demi-tour appliqué par le jeu, l'arrière du modèle se retrouve du côté +z local.
+     */
     private static double[] hinge(Spot s) {
-        double dz = -6 / 16.0 * SCALE, dy = 1 / 16.0 * SCALE;
+        double dz = 6 / 16.0 * SCALE, dy = 1.4 / 16.0 * SCALE;
         double yaw = Math.toRadians(s.yaw());
         return new double[]{s.cx() - Math.sin(yaw) * dz, s.cy() + dy, s.cz() + Math.cos(yaw) * dz};
     }
@@ -129,6 +138,7 @@ public final class CrateDecor {
     /** Pose (ou repose) les coffres 3D sur toutes les caisses. Renvoie leur nombre. */
     public static int place(MinecraftServer server) {
         remove(server);
+        removeOldLabels(server); // les anciens panneaux « Caisse … / clic droit » se superposaient au nouveau
         List<Spot> spots = spots(server);
         for (Spot s : spots) {
             String common = "billboard:\"fixed\",brightness:{sky:15,block:12},view_range:1.5f";
@@ -210,7 +220,7 @@ public final class CrateDecor {
         if (best == null) return;
         Spot s = best;
         OPEN.put(s.index(), tick + 90);
-        merge(server, s.level(), "tag=" + TAG + "_" + s.index() + "_lid", "start_interpolation:0,interpolation_duration:6," + transform(-105, 0, 0, SCALE));
+        merge(server, s.level(), "tag=" + TAG + "_" + s.index() + "_lid", "start_interpolation:0,interpolation_duration:6," + transform(105, 0, 0, SCALE));
         merge(server, s.level(), "tag=" + TAG + "_" + s.index() + "_gem", "start_interpolation:0,interpolation_duration:30," + transform(0, 179, 0.7, 0.75F));
         s.level().playSound(null, s.pos().above(), SoundEvents.CHEST_OPEN, SoundSource.BLOCKS, 1.0F, 0.8F);
         s.level().playSound(null, s.pos().above(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 1.0F, 1.2F);
@@ -258,7 +268,7 @@ public final class CrateDecor {
             if (second && !open && (tick / 20) % 3 == 0) {
                 // Le couvercle « respire » : il s'entrouvre puis se referme.
                 merge(server, s.level(), "tag=" + TAG + "_" + s.index() + "_lid",
-                        "start_interpolation:0,interpolation_duration:15," + transform((tick / 60) % 2 == 0 ? -9 : 0, 0, 0, SCALE));
+                        "start_interpolation:0,interpolation_duration:15," + transform((tick / 60) % 2 == 0 ? 9 : 0, 0, 0, SCALE));
             }
             if (!fast) continue;
             if (s.level().players().stream().noneMatch(p -> p.distanceToSqr(s.cx(), s.cy(), s.cz()) < 48 * 48)) continue;

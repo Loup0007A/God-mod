@@ -51,6 +51,9 @@ public final class Ranks {
         PlayerProfile p = GodData.get(player);
         MutableComponent c = Component.empty();
         Role role = Moderation.roleOf(player);
+        long bounty = BountySystem.amount(p.uuid);
+        if (bounty > 0) c.append(Component.literal("☠ ").withStyle(s -> s.withColor(ChatFormatting.RED)
+                .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.literal("Prime : " + com.godmod.util.Msg.money(bounty))))));
         if (com.godmod.util.Glyphs.on()) {
             if (AfkSystem.isAfk(player)) c.append(com.godmod.util.Glyphs.of(com.godmod.util.Glyphs.AFK + " "));
             if (role == Role.ADMIN) c.append(com.godmod.util.Glyphs.of(com.godmod.util.Glyphs.ADMIN + " "));

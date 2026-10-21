@@ -121,7 +121,15 @@ public final class Help {
                 p("/vote", "Voter pour le serveur (récompenses à chaque vote)"),
                 p("/vote recuperer", "Récupérer les récompenses après avoir voté"),
                 p("/vote top", "Les meilleurs voteurs du mois"),
-                p("/site", "Le site et le wiki du serveur"));
+                p("/site", "Le site et le wiki du serveur"),
+                p("/courrier", "Boîte aux lettres (lettres, objets et pièces, même hors ligne)"),
+                p("/courrier envoyer <joueur> <message>", "Écrire à un joueur, même absent"),
+                p("/courrier objet <joueur> [message]", "Envoyer l'objet tenu en main"),
+                p("/courrier argent <joueur> <montant> [message]", "Envoyer des pièces avec un mot"),
+                p("/prime [joueur montant]", "Primes : mettre de l'argent sur la tête d'un joueur, ou voir les primes"),
+                p("/vu <joueur>", "Dernière connexion, palier, prime"),
+                p("/ping [joueur]", "Latence de connexion"),
+                p("/tps", "Santé du serveur (TPS, mémoire)"));
         cat("economie", "Économie", ChatFormatting.YELLOW,
                 p("/argent", "Votre solde"),
                 p("/payer <joueur> <montant>", "Donner de l'argent à un joueur"),
