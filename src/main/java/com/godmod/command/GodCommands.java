@@ -1014,7 +1014,120 @@ public final class GodCommands {
 
     // ------------------------------------------------------------------ Résidences, /back, kits, échanges, tombes
 
+    private static void registerChat(CommandDispatcher<CommandSourceStack> d) {
+        String[] chans = {"global", "local", "commerce", "groupe"};
+        String[] tabs = {"tout", "global", "local", "commerce", "groupe", "mp"};
+        d.register(Commands.literal("chat")
+                .executes(ctx -> run(ctx, p -> {
+                    p.sendSystemMessage(com.godmod.system.ChatSystem.tabBar(p));
+                    Msg.send(p, Msg.text("Cliquez sur un onglet pour n'afficher que ce canal. /canal pour choisir où vous écrivez, "
+                            + "/chat masquer <canal> pour cacher un canal de l'onglet Tout.", ChatFormatting.GRAY));
+                    return null;
+                }))
+                .then(Commands.literal("onglet").then(Commands.argument("onglet", StringArgumentType.word()).suggests(words(tabs))
+                        .executes(ctx -> run(ctx, p -> {
+                            String t = StringArgumentType.getString(ctx, "onglet");
+                            if (t.equalsIgnoreCase("tout")) {
+                                com.godmod.system.ChatSystem.showTab(p, null);
+                                return null;
+                            }
+                            var c = com.godmod.system.ChatSystem.Channel.parse(t);
+                            if (c == null || c == com.godmod.system.ChatSystem.Channel.SYSTEME) return "Onglets : " + String.join(", ", tabs) + ".";
+                            com.godmod.system.ChatSystem.showTab(p, c);
+                            return null;
+                        }))))
+                .then(Commands.literal("masquer").then(Commands.argument("canal", StringArgumentType.word()).suggests(words(chans))
+                        .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.toggleHidden(p,
+                                com.godmod.system.ChatSystem.Channel.parse(StringArgumentType.getString(ctx, "canal")))))))
+                .then(Commands.literal("effacer").executes(ctx -> run(ctx, p -> {
+                    for (int i = 0; i < 100; i++) p.sendSystemMessage(net.minecraft.network.chat.Component.empty());
+                    p.sendSystemMessage(com.godmod.system.ChatSystem.tabBar(p));
+                    return null;
+                }))));
+        d.register(Commands.literal("canal")
+                .executes(ctx -> run(ctx, p -> {
+                    com.godmod.system.ChatSystem.channelPicker(p);
+                    return null;
+                }))
+                .then(Commands.argument("canal", StringArgumentType.word()).suggests(words(chans))
+                        .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.setChannel(p,
+                                com.godmod.system.ChatSystem.Channel.parse(StringArgumentType.getString(ctx, "canal")))))
+                        .then(Commands.argument("message", StringArgumentType.greedyString())
+                                .executes(ctx -> run(ctx, p -> {
+                                    var c = com.godmod.system.ChatSystem.Channel.parse(StringArgumentType.getString(ctx, "canal"));
+                                    if (c == null || !c.writable()) return "Canaux : global, local, commerce, groupe.";
+                                    return com.godmod.system.ChatSystem.say(p, c, StringArgumentType.getString(ctx, "message"));
+                                })))));
+        String[][] shortcuts = {{"g", "global"}, {"local", "local"}, {"commerce", "commerce"}, {"p", "groupe"}};
+        for (String[] sc : shortcuts) {
+            var c = com.godmod.system.ChatSystem.Channel.parse(sc[1]);
+            d.register(Commands.literal(sc[0])
+                    .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.setChannel(p, c)))
+                    .then(Commands.argument("message", StringArgumentType.greedyString())
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.say(p, c, StringArgumentType.getString(ctx, "message"))))));
+        }
+        d.register(Commands.literal("mp")
+                .then(Commands.literal("off").executes(ctx -> run(ctx, p -> {
+                    GodData.get(p).mpBlocked = true;
+                    GodData.dirty();
+                    Msg.info(p, "Messages privés désactivés (l'équipe peut toujours vous écrire). /mp on pour les réactiver.");
+                    return null;
+                })))
+                .then(Commands.literal("on").executes(ctx -> run(ctx, p -> {
+                    GodData.get(p).mpBlocked = false;
+                    GodData.dirty();
+                    Msg.info(p, "Messages privés activés.");
+                    return null;
+                })))
+                .then(Commands.argument("joueur", StringArgumentType.word()).suggests(OTHERS)
+                        .then(Commands.argument("message", StringArgumentType.greedyString())
+                                .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.privateMessage(p,
+                                        p.level().getServer().getPlayerList().getPlayerByName(StringArgumentType.getString(ctx, "joueur")),
+                                        StringArgumentType.getString(ctx, "message")))))));
+        for (String n : new String[]{"r", "reponse"}) {
+            d.register(Commands.literal(n).then(Commands.argument("message", StringArgumentType.greedyString())
+                    .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.reply(p, StringArgumentType.getString(ctx, "message"))))));
+        }
+        d.register(Commands.literal("ignorer")
+                .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.toggleIgnore(p, null)))
+                .then(Commands.argument("joueur", StringArgumentType.word()).suggests(KNOWN_PLAYERS)
+                        .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.toggleIgnore(p, StringArgumentType.getString(ctx, "joueur"))))));
+        d.register(Commands.literal("espion").requires(Moderation.require(Role.MODERATEUR)).executes(ctx -> run(ctx, p -> {
+            PlayerProfile pr = GodData.get(p);
+            pr.chatSpy = !pr.chatSpy;
+            GodData.dirty();
+            Msg.info(p, pr.chatSpy ? "Espion activé : vous voyez les messages privés des joueurs." : "Espion désactivé.");
+            return null;
+        })));
+        SuggestionProvider<CommandSourceStack> members = (ctx, b) -> {
+            ServerPlayer p = ctx.getSource().getPlayer();
+            return SharedSuggestionProvider.suggest(p == null ? java.util.List.of() : com.godmod.system.ChatSystem.groupMembersNames(p), b);
+        };
+        for (String n : new String[]{"groupe", "party"}) {
+            d.register(Commands.literal(n)
+                    .executes(ctx -> run(ctx, com.godmod.system.ChatSystem::groupList))
+                    .then(Commands.literal("creer").executes(ctx -> run(ctx, com.godmod.system.ChatSystem::groupCreate)))
+                    .then(Commands.literal("inviter").then(Commands.argument("joueur", StringArgumentType.word()).suggests(OTHERS)
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.groupInvite(p,
+                                    p.level().getServer().getPlayerList().getPlayerByName(StringArgumentType.getString(ctx, "joueur")))))))
+                    .then(Commands.literal("accepter")
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.groupAccept(p, null)))
+                            .then(Commands.argument("chef", StringArgumentType.word())
+                                    .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.groupAccept(p, StringArgumentType.getString(ctx, "chef"))))))
+                    .then(Commands.literal("refuser")
+                            .executes(ctx -> run(ctx, com.godmod.system.ChatSystem::groupDeny))
+                            .then(Commands.argument("chef", StringArgumentType.word()).executes(ctx -> run(ctx, com.godmod.system.ChatSystem::groupDeny))))
+                    .then(Commands.literal("quitter").executes(ctx -> run(ctx, com.godmod.system.ChatSystem::groupLeave)))
+                    .then(Commands.literal("expulser").then(Commands.argument("joueur", StringArgumentType.word()).suggests(members)
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.groupKick(p, StringArgumentType.getString(ctx, "joueur"))))))
+                    .then(Commands.literal("chef").then(Commands.argument("joueur", StringArgumentType.word()).suggests(members)
+                            .executes(ctx -> run(ctx, p -> com.godmod.system.ChatSystem.groupLeader(p,
+                                    p.level().getServer().getPlayerList().getPlayerByName(StringArgumentType.getString(ctx, "joueur"))))))));
+        }
+    }
+
     private static void registerVote(CommandDispatcher<CommandSourceStack> d) {
+        registerChat(d);
         SuggestionProvider<CommandSourceStack> sites = (ctx, b) -> SharedSuggestionProvider.suggest(
                 com.godmod.system.VoteSystem.SITES.stream().map(com.godmod.system.VoteSystem.Site::id).toList(), b);
         for (String n : new String[]{"vote", "voter"}) {

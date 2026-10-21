@@ -384,6 +384,29 @@ Agilité (vitesse), Esprit (Foi max, régénération, puissance et recharge des 
 `/shop` : Nether, End, ressources, artefacts. Revente 5 à 10 fois moins chère que l'achat.
 **Premium** (Gemmes, attribuées par un admin) : désactivé par défaut, `/pay enable` / `/pay disable`.
 
+## Chat (`/chat`, `/canal`, `/mp`, `/groupe`)
+
+Le chat vanilla est remplacé par celui du mod (les messages restent dans le chat normal du jeu).
+- **Mise en forme** : `[G]` canal (survol : heure ; clic : écrire dans ce canal) · rang et palier · pseudo avec sa
+  fiche au survol (palier, Essence, dieu, fidèles, monde, AFK) et clic = message privé · « » » · message.
+  `[item]` montre l'objet en main (description complète au survol) ; un pseudo connecté (ou `@pseudo`) est
+  mis en valeur et le joueur mentionné entend une notification ; liens cliquables ; couleurs `&a`… pour les admins.
+  Anti-répétition (1 message par seconde, pas deux fois le même en 6 s ; l'équipe n'est pas limitée).
+- **Canaux** : Global, Local (100 blocs, même monde), Commerce, Groupe. `/canal [canal]` choisit où l'on écrit
+  (menu cliquable sans argument) ; `/g`, `/local`, `/commerce`, `/p <message>` pour un message ponctuel ;
+  `!message` = Global depuis n'importe quel canal.
+- **Onglets** : un serveur ne peut pas ajouter de vrais onglets au chat du jeu ; ils sont simulés. `/chat` affiche la
+  barre `[Tout] [Global (3)] [Local] [Commerce] [Groupe] [Privé]` : un clic efface l'écran, réaffiche les 60 derniers
+  messages du canal et n'affiche plus que lui (messages du serveur compris) ; les autres canaux sont comptés et un
+  message privé ou une mention s'annonce dans la barre d'action. `/chat masquer <canal>` cache un canal de l'onglet
+  Tout. `/chat effacer`. L'historique est gardé en mémoire (120 lignes par joueur) ; les messages purement vanilla
+  (morts, progrès) ne sont pas réaffichés. Dans l'onglet Privé, écrire normalement répond au dernier correspondant.
+- **Messages privés** : `/mp <joueur> <message>`, `/r <message>`, `/mp off|on`, `/ignorer [joueur]`
+  (l'équipe ne peut pas être ignorée). Un joueur muet ne peut rien envoyer. Équipe : `/espion` (voir les MP).
+  Les messages (canaux et MP) sont écrits dans la console du serveur.
+- **Groupes** : `/groupe creer|inviter <joueur>|accepter|refuser|quitter|expulser <joueur>|chef <joueur>`, 8 joueurs.
+  `/groupe` liste les membres avec leur monde, leurs coordonnées et leur vie. Le groupe se défait au redémarrage.
+
 ## Votes (`/vote`)
 
 `/vote` affiche les trois sites (liens cliquables) et le temps avant de pouvoir revoter sur chacun.

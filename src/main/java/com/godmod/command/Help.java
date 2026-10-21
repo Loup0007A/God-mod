@@ -97,6 +97,18 @@ public final class Help {
                 p("/tpaccept [joueur]", "Accepter une demande"),
                 p("/tpdeny [joueur]", "Refuser une demande"),
                 p("/tpatoggle", "Bloquer ou autoriser les demandes de téléportation"));
+        cat("chat", "Chat, messages et groupes", ChatFormatting.AQUA,
+                p("/chat", "Onglets du chat : Tout, Global, Local, Commerce, Groupe, Privé"),
+                p("/chat onglet <onglet>", "N'afficher qu'un canal (l'historique est réaffiché)"),
+                p("/chat masquer <canal>", "Cacher un canal dans l'onglet Tout (ex. commerce)"),
+                p("/canal [canal] [message]", "Choisir où vous écrivez : global, local (100 blocs), commerce, groupe"),
+                p("/g · /local · /commerce · /p <message>", "Écrire une fois dans un canal ; « ! » au début = Global"),
+                p("/mp <joueur> <message>", "Message privé (clic sur un pseudo dans le chat)"),
+                p("/r <message>", "Répondre au dernier message privé"),
+                p("/mp off|on", "Refuser ou accepter les messages privés"),
+                p("/ignorer [joueur]", "Ne plus voir les messages d'un joueur"),
+                p("/groupe", "Votre groupe (8 joueurs) : creer, inviter, accepter, quitter, expulser, chef"),
+                p("[item] dans un message", "Montre l'objet tenu en main, avec sa description au survol"));
         cat("confort", "Résidences, kits, échanges", ChatFormatting.GREEN,
                 p("/sethome [nom]", "Poser une résidence ici (1 + 1 par palier)"),
                 p("/home [nom]", "Retourner à une résidence"),

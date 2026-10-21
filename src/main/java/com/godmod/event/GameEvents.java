@@ -373,9 +373,13 @@ public final class GameEvents {
                     + (p.muteReason == null ? "." : " : " + p.muteReason));
             return true;
         }
-        EventSystem.onChat(sp, e.getRawText());
-        sp.level().getServer().execute(() -> com.godmod.system.AfkSystem.onActivity(sp));
-        return false;
+        // Le chat est géré par le mod (canaux, onglets, mise en forme) : le message vanilla est annulé.
+        String raw = e.getRawText();
+        sp.level().getServer().execute(() -> {
+            com.godmod.system.AfkSystem.onActivity(sp);
+            com.godmod.system.ChatSystem.onChat(sp, raw);
+        });
+        return true;
     }
 
     private static boolean onCommand(CommandEvent e) {
@@ -388,7 +392,8 @@ public final class GameEvents {
             // Un joueur muet ne contourne pas la sanction par les messages privés.
             PlayerProfile p = GodData.get(sp);
             String root = (cmd.startsWith("/") ? cmd.substring(1) : cmd).split(" ", 2)[0].toLowerCase();
-            if (Moderation.isMuted(p) && java.util.Set.of("msg", "tell", "w", "me", "teammsg", "tm", "say").contains(root)) {
+            if (Moderation.isMuted(p) && java.util.Set.of("msg", "tell", "w", "me", "teammsg", "tm", "say",
+                    "mp", "r", "reponse", "g", "p", "local", "commerce", "canal").contains(root)) {
                 Msg.err(sp, "Vous êtes muet encore " + Msg.time(p.mutedUntil - System.currentTimeMillis()) + " : messages privés impossibles.");
                 return true;
             }
@@ -442,6 +447,7 @@ public final class GameEvents {
         if (!AuthSystem.isLocked(sp)) GameStart.afterAuth(sp, p);
         else PowerSystem.applyAttributes(sp);
         com.godmod.system.Market.onLogin(sp);
+        com.godmod.system.ChatSystem.onLogin(sp);
         if (!AuthSystem.isLocked(sp)) com.godmod.system.VoteSystem.onLogin(sp);
         int kits = com.godmod.system.Kits.available(p);
         if (kits > 0 && !AuthSystem.isLocked(sp)) Msg.send(sp, Msg.prefix().append(Msg.text(kits + " kit(s) à récupérer ! ", ChatFormatting.GREEN))
@@ -468,6 +474,7 @@ public final class GameEvents {
         com.godmod.system.Trade.onLogout(sp);
         com.godmod.system.Homes.onLogout(sp);
         com.godmod.system.VoteSystem.onLogout(sp);
+        com.godmod.system.ChatSystem.onLogout(sp);
         PlayerProfile p = GodData.get(sp);
         p.lastSeen = System.currentTimeMillis();
         GodData.dirty();

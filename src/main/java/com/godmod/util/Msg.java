@@ -37,7 +37,11 @@ public final class Msg {
     }
 
     public static void send(Player p, Component c) {
-        if (p instanceof ServerPlayer sp && !com.godmod.system.Trailer.isViewer(sp)) sp.sendSystemMessage(prefix().append(c));
+        if (p instanceof ServerPlayer sp && !com.godmod.system.Trailer.isViewer(sp)) {
+            Component line = prefix().append(c);
+            sp.sendSystemMessage(line);
+            com.godmod.system.ChatSystem.recordSystem(sp, line);
+        }
     }
 
     public static void broadcast(MinecraftServer server, String s, ChatFormatting color) {
@@ -46,6 +50,7 @@ public final class Msg {
         for (ServerPlayer sp : server.getPlayerList().getPlayers()) {
             if (com.godmod.system.Trailer.isViewer(sp)) continue; // le réalisateur du trailer ne voit aucun message
             sp.sendSystemMessage(c);
+            com.godmod.system.ChatSystem.recordSystem(sp, c);
         }
     }
 

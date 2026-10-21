@@ -212,6 +212,56 @@
 ]
 },
 {
+"id": "chat",
+"label": "Chat, messages et groupes",
+"items": [
+[
+"/chat",
+"Onglets du chat : Tout, Global, Local, Commerce, Groupe, Privé"
+],
+[
+"/chat onglet <onglet>",
+"N'afficher qu'un canal (l'historique est réaffiché)"
+],
+[
+"/chat masquer <canal>",
+"Cacher un canal dans l'onglet Tout (ex. commerce)"
+],
+[
+"/canal [canal] [message]",
+"Choisir où vous écrivez : global, local (100 blocs), commerce, groupe"
+],
+[
+"/g · /local · /commerce · /p <message>",
+"Écrire une fois dans un canal ; « ! » au début = Global"
+],
+[
+"/mp <joueur> <message>",
+"Message privé (clic sur un pseudo dans le chat)"
+],
+[
+"/r <message>",
+"Répondre au dernier message privé"
+],
+[
+"/mp off|on",
+"Refuser ou accepter les messages privés"
+],
+[
+"/ignorer [joueur]",
+"Ne plus voir les messages d'un joueur"
+],
+[
+"/groupe",
+"Votre groupe (8 joueurs) : creer, inviter, accepter, quitter, expulser, chef"
+],
+[
+"[item] dans un message",
+"Montre l'objet tenu en main, avec sa description au survol"
+]
+]
+},
+{
 "id": "confort",
 "label": "Résidences, kits, échanges",
 "items": [
