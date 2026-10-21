@@ -56,6 +56,11 @@ public class Settings {
     public java.util.List<String> antibotAllowed = new java.util.ArrayList<>();
     public java.util.List<String> bannedIps = new java.util.ArrayList<>();
 
+    // --- Mod client (facultatif) ---
+    public boolean clientPrompt = true;
+    public boolean clientRequired = false;
+    public String clientUrl = "https://loup0007a.github.io/God-mod/#client";
+
     // --- Pack de ressources ---
     public boolean packEnabled = true;
     /** Obligatoire : le joueur doit l'accepter ; les badges du chat sont alors des images. */

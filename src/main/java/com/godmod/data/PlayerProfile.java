@@ -7,6 +7,9 @@ import java.util.Map;
  * Tout ce que le mod sait d'un joueur. Sérialisé en JSON dans les données du monde.
  */
 public class PlayerProfile {
+    /** Jour où l'installation du mod client a été proposée. */
+    public String clientPromptDay = "";
+
     /** Chat : canal où l'on écrit, canaux masqués dans l'onglet Tout, joueurs ignorés, espion (équipe), MP refusés. */
     public String chatChannel = "global";
     public java.util.List<String> chatHidden = new java.util.ArrayList<>();

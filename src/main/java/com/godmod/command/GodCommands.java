@@ -1014,7 +1014,32 @@ public final class GodCommands {
 
     // ------------------------------------------------------------------ Résidences, /back, kits, échanges, tombes
 
+    private static void registerClient(CommandDispatcher<CommandSourceStack> d) {
+        // Envoyée automatiquement par le mod client.
+        d.register(Commands.literal("godclient").then(Commands.argument("version", StringArgumentType.greedyString())
+                .executes(ctx -> run(ctx, p -> com.godmod.system.ClientMod.hello(p, StringArgumentType.getString(ctx, "version"))))));
+        d.register(Commands.literal("client").requires(Moderation.require(Role.ADMIN))
+                .executes(ctx -> reply1(ctx, com.godmod.system.ClientMod.status(ctx.getSource().getServer())))
+                .then(Commands.literal("demande").then(Commands.argument("etat", StringArgumentType.word()).suggests(words("on", "off")).executes(ctx -> {
+                    GodData.settings().clientPrompt = on(StringArgumentType.getString(ctx, "etat"));
+                    GodData.dirty();
+                    return reply1(ctx, com.godmod.system.ClientMod.status(ctx.getSource().getServer()));
+                })))
+                .then(Commands.literal("obligatoire").then(Commands.argument("etat", StringArgumentType.word()).suggests(words("on", "off")).executes(ctx -> {
+                    GodData.settings().clientRequired = on(StringArgumentType.getString(ctx, "etat"));
+                    GodData.dirty();
+                    return reply1(ctx, com.godmod.system.ClientMod.status(ctx.getSource().getServer())
+                            + (GodData.settings().clientRequired ? " — les joueurs sans le mod sont expulsés 45 s après leur connexion." : ""));
+                })))
+                .then(Commands.literal("url").then(Commands.argument("adresse", StringArgumentType.greedyString()).executes(ctx -> {
+                    GodData.settings().clientUrl = StringArgumentType.getString(ctx, "adresse").trim();
+                    GodData.dirty();
+                    return reply1(ctx, com.godmod.system.ClientMod.status(ctx.getSource().getServer()));
+                }))));
+    }
+
     private static void registerPack(CommandDispatcher<CommandSourceStack> d) {
+        registerClient(d);
         d.register(Commands.literal("pack")
                 .executes(ctx -> run(ctx, com.godmod.system.PackSystem::resend))
                 .then(Commands.literal("etat").requires(Moderation.require(Role.ADMIN)).executes(ctx -> reply1(ctx, com.godmod.system.PackSystem.status())))

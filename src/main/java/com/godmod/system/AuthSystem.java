@@ -225,7 +225,7 @@ public final class AuthSystem {
     public static boolean allowedCommand(String command) {
         String c = command.startsWith("/") ? command.substring(1) : command;
         String root = c.split(" ", 2)[0].toLowerCase();
-        return java.util.Set.of("login", "register", "l", "reg", "connexion", "inscription").contains(root);
+        return java.util.Set.of("login", "register", "l", "reg", "connexion", "inscription", "godclient").contains(root);
     }
 
     // ------------------------------------------------------------------ Hachage

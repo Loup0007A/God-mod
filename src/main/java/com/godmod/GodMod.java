@@ -18,7 +18,13 @@ public final class GodMod {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public GodMod(FMLJavaModLoadingContext context) {
-        // Mod 100 % serveur : aucun objet ni bloc ajouté, les joueurs gardent un Minecraft normal.
+        // Le même .jar sert au serveur et, facultativement, aux joueurs (chat à onglets).
+        // Sur un client, seule la partie interface est active : le jeu du mod ne tourne que sur un serveur dédié.
+        if (net.minecraftforge.fml.loading.FMLEnvironment.dist.isClient()) {
+            com.godmod.client.ClientInit.init();
+            LOGGER.info("God Civilisation : interface client chargée.");
+            return;
+        }
         GameEvents.register();
         LOGGER.info("God Mod chargé : que les dieux s'affrontent !");
     }

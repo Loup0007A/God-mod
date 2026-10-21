@@ -401,6 +401,21 @@ Le serveur envoie à chaque connexion un pack de ressources (≈ 21 Ko), **oblig
   une vraie interface façon NationsGlory (onglets dans le chat, HUD sur mesure), il faudrait un mod à installer
   chez chaque joueur.
 
+## Mod client facultatif (`godmod.jar` chez le joueur)
+
+Le même `.jar` s'installe aussi chez les joueurs (Forge 1.21.11) ; sur un client, seule l'interface est active
+(le jeu du mod ne tourne que sur le serveur dédié). Il remplace le chat par un **panneau à vrais onglets** :
+Tout, Global, Local, Commerce, Groupe, Privé (compteurs de non-lus), canal d'écriture cliquable (`✎ Global`,
+clic droit = canal précédent), défilement à la molette, info-bulles et clics des messages. Chat fermé : les derniers
+messages de l'onglet actif s'estompent comme d'habitude. Les messages sont classés grâce au badge de canal.
+Le mod se signale (`/godclient`) uniquement sur God Civilisation.
+- Téléchargement (mis à jour à chaque compilation) : https://github.com/Loup0007A/God-mod/releases/download/mod/godmod.jar ;
+  instructions sur le site, section « Mod client ».
+- Le serveur propose l'installation une fois par jour aux joueurs qui ne l'ont pas. Admins : `/client` (qui l'a) ·
+  `/client demande on|off` · `/client obligatoire on|off` (sans le mod : expulsion après 45 s, avec le lien) ·
+  `/client url <adresse>`.
+- Les joueurs sans le mod gardent le chat du serveur (onglets simulés avec `/chat`).
+
 ## Chat (`/chat`, `/canal`, `/mp`, `/groupe`)
 
 Le chat vanilla est remplacé par celui du mod (les messages restent dans le chat normal du jeu).
