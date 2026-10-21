@@ -7,6 +7,14 @@ import java.util.Map;
  * Tout ce que le mod sait d'un joueur. Sérialisé en JSON dans les données du monde.
  */
 public class PlayerProfile {
+    /** Votes : dernier vote récompensé par site, compteurs. */
+    public java.util.Map<String, Long> voteLast = new java.util.HashMap<>();
+    public int votesTotal = 0;
+    public int votesMonth = 0;
+    public String voteMonth = "";
+    public int votesToday = 0;
+    public String voteDay = "";
+
     /** Résidences (/sethome), par nom en minuscules. */
     public java.util.Map<String, Warp> homes = new java.util.LinkedHashMap<>();
     /** Dernière utilisation de chaque kit (ms). */

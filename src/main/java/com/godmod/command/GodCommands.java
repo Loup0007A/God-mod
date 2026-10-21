@@ -1014,7 +1014,60 @@ public final class GodCommands {
 
     // ------------------------------------------------------------------ Résidences, /back, kits, échanges, tombes
 
+    private static void registerVote(CommandDispatcher<CommandSourceStack> d) {
+        SuggestionProvider<CommandSourceStack> sites = (ctx, b) -> SharedSuggestionProvider.suggest(
+                com.godmod.system.VoteSystem.SITES.stream().map(com.godmod.system.VoteSystem.Site::id).toList(), b);
+        for (String n : new String[]{"vote", "voter"}) {
+            d.register(Commands.literal(n)
+                    .executes(ctx -> run(ctx, com.godmod.system.VoteSystem::show))
+                    .then(Commands.literal("recuperer").executes(ctx -> run(ctx, com.godmod.system.VoteSystem::claim)))
+                    .then(Commands.literal("top").executes(ctx -> run(ctx, com.godmod.system.VoteSystem::top)))
+                    .then(Commands.literal("config").requires(Moderation.require(Role.ADMIN))
+                            .executes(ctx -> reply1(ctx, com.godmod.system.VoteSystem.status()))
+                            .then(Commands.argument("site", StringArgumentType.word()).suggests(sites)
+                                    .then(Commands.argument("cle", StringArgumentType.greedyString()).executes(ctx -> {
+                                        String site = StringArgumentType.getString(ctx, "site");
+                                        if (com.godmod.system.VoteSystem.site(site) == null) return fail(ctx, "Site inconnu : top-serveurs, serveur-prive ou liste-serveurs.");
+                                        com.godmod.system.VoteSystem.setKey(site.toLowerCase(), StringArgumentType.getString(ctx, "cle"));
+                                        return reply1(ctx, com.godmod.system.VoteSystem.status());
+                                    }))))
+                    .then(Commands.literal("recompense").requires(Moderation.require(Role.ADMIN))
+                            .then(Commands.argument("pieces", IntegerArgumentType.integer(0, 1_000_000))
+                                    .then(Commands.argument("essence", IntegerArgumentType.integer(0, 1_000_000)).executes(ctx -> {
+                                        GodData.settings().voteMoney = IntegerArgumentType.getInteger(ctx, "pieces");
+                                        GodData.settings().voteEssence = IntegerArgumentType.getInteger(ctx, "essence");
+                                        GodData.dirty();
+                                        return reply1(ctx, "Récompense par vote : " + Msg.money(GodData.settings().voteMoney) + ", "
+                                                + GodData.settings().voteEssence + " Essence et une clé Commune.");
+                                    })))));
+        }
+        for (String n : new String[]{"site", "wiki"}) {
+            d.register(Commands.literal(n)
+                    .executes(ctx -> run(ctx, p -> {
+                        String url = GodData.settings().siteUrl;
+                        p.sendSystemMessage(Msg.prefix().append(Msg.text("Site et wiki du serveur : ", ChatFormatting.AQUA))
+                                .append(net.minecraft.network.chat.Component.literal(url).withStyle(st -> st.withColor(ChatFormatting.YELLOW).withUnderlined(true)
+                                        .withClickEvent(new net.minecraft.network.chat.ClickEvent.OpenUrl(java.net.URI.create(url))))));
+                        return null;
+                    }))
+                    .then(Commands.literal("definir").requires(Moderation.require(Role.ADMIN))
+                            .then(Commands.argument("adresse", StringArgumentType.greedyString()).executes(ctx -> {
+                                String url = StringArgumentType.getString(ctx, "adresse").trim();
+                                if (!url.startsWith("http")) url = "https://" + url;
+                                try {
+                                    java.net.URI.create(url);
+                                } catch (Exception e) {
+                                    return fail(ctx, "Adresse invalide.");
+                                }
+                                GodData.settings().siteUrl = url;
+                                GodData.dirty();
+                                return reply1(ctx, "Adresse du site : " + url);
+                            }))));
+        }
+    }
+
     private static void registerEssentials(CommandDispatcher<CommandSourceStack> d) {
+        registerVote(d);
         SuggestionProvider<CommandSourceStack> homes = (ctx, b) -> {
             ServerPlayer p = ctx.getSource().getPlayer();
             return SharedSuggestionProvider.suggest(p == null || !GodData.ready() ? java.util.List.of() : com.godmod.system.Homes.names(GodData.get(p)), b);

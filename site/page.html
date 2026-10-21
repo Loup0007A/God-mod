@@ -1,0 +1,726 @@
+<title>God Civilisation</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="God Civilisation : serveur Minecraft 1.21.11 où chaque joueur commence mortel et peut devenir un dieu. Wiki, vote et statut en direct.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Mise en page : une nuit au-dessus du Sanctuaire — en-tête collant, héros avec l'échelle des paliers,
+   puis bandes pleine largeur (rejoindre, wiki en deux colonnes, vote, joueurs). Thème unique, sombre, assumé. */
+:root {
+  --night: #0d0e19;        /* fond : encre bleu-violet */
+  --panel: #151729;        /* surfaces */
+  --panel-2: #1c1f36;
+  --line: #2b2e4a;
+  --text: #ebe7f4;
+  --muted: #a6a2bd;
+  --gold: #e6b84c;         /* feuille d'or : l'accent */
+  --gold-ink: #1a1405;
+  --amethyst: #a984e6;     /* secondaire, rare */
+  --ok: #62d696;
+  --off: #e2706f;
+  --display: "Cinzel", "Trajan Pro", "Times New Roman", serif;
+  --body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  /* couleurs des paliers, celles du jeu */
+  --t-mortel: #aaaaaa; --t-eveille: #55ff55; --t-demi: #55ffff; --t-dieu: #ffaa00; --t-supreme: #ff55ff;
+  --t-titan: #e04848; --t-primordial: #22c4c4; --t-astral: #7a7aff; --t-eternel: #ffff55; --t-createur: #ffffff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition: none !important; animation: none !important; } }
+body {
+  margin: 0; background: var(--night); color: var(--text);
+  font: 18px/1.6 var(--body);
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,.55) 50%, transparent 51%),
+    radial-gradient(1px 1px at 72% 9%, rgba(255,255,255,.4) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 38% 31%, rgba(230,184,76,.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 36%, rgba(255,255,255,.35) 50%, transparent 51%),
+    radial-gradient(1px 1px at 55% 4%, rgba(169,132,230,.6) 50%, transparent 51%),
+    radial-gradient(900px 520px at 78% -8%, rgba(169,132,230,.16), transparent 70%);
+  background-repeat: no-repeat;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--night); }
+a { color: var(--gold); text-underline-offset: 3px; }
+a:hover { color: #f3d27f; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
+code, kbd, .cmd { font-family: var(--mono); font-size: .84em; }
+code { background: var(--panel-2); border: 1px solid var(--line); padding: .05em .4em; border-radius: 4px; color: #f1dca3; overflow-wrap: anywhere; }
+/* Les grilles à une colonne ne doivent jamais s'élargir à cause d'un tableau ou d'une commande longue. */
+.band-head, .feature, .how li, article.entry, .articles, .reward-box, .live-card, .cmd-group, .vote-card, .toc { grid-template-columns: minmax(0, 1fr); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.15; margin: 0; letter-spacing: .02em; }
+h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); font-weight: 700; }
+h3 { font-size: 1.22rem; font-weight: 700; }
+p { margin: 0; }
+.wrap { width: 100%; max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.eyebrow { font: 600 .74rem/1 var(--mono); text-transform: uppercase; letter-spacing: .16em; color: var(--amethyst); }
+.lede { color: var(--muted); max-width: 62ch; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* ---------- En-tête ---------- */
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: rgba(13,14,25,.88); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+header.top .wrap { display: flex; align-items: center; gap: 20px; padding-block: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font: 900 1.02rem/1 var(--display); letter-spacing: .08em; white-space: nowrap; }
+.brand svg { flex: none; }
+nav.main { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; }
+nav.main a { color: var(--muted); text-decoration: none; font-weight: 500; padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+nav.main a:hover { color: var(--text); background: var(--panel-2); }
+.ip-mini { display: flex; align-items: center; gap: 8px; font: 600 .82rem/1 var(--mono); color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; cursor: pointer; white-space: nowrap; }
+.ip-mini:hover { border-color: var(--gold); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.on { background: var(--ok); box-shadow: 0 0 0 4px rgba(98,214,150,.16); }
+.dot.off { background: var(--off); }
+@media (max-width: 720px) { .ip-mini .ip-text { display: none; } .brand span { display: none; } }
+
+/* ---------- Héros ---------- */
+.hero .wrap { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 48px; align-items: end; padding-block: 72px 56px; }
+.hero h1 { font-size: clamp(2.7rem, 7.4vw, 5.6rem); font-weight: 900; letter-spacing: .03em; line-height: .98; }
+.hero h1 em { font-style: normal; color: var(--gold); display: block; }
+.hero .tag { font-size: 1.28rem; color: var(--text); margin-top: 18px; max-width: 34ch; }
+.hero .sub { color: var(--muted); margin-top: 10px; max-width: 52ch; }
+.join { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.ip-big { display: inline-flex; align-items: center; gap: 14px; background: var(--panel); border: 1px solid var(--gold); border-radius: 12px; padding: 12px 14px 12px 18px; cursor: pointer; color: var(--text); font: inherit; }
+.ip-big .addr { font: 600 1.15rem/1 var(--mono); letter-spacing: .02em; }
+.ip-big .copy { font: 700 .78rem/1 var(--mono); text-transform: uppercase; letter-spacing: .1em; background: var(--gold); color: var(--gold-ink); padding: 8px 10px; border-radius: 7px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 700; padding: 13px 18px; border-radius: 12px; border: 1px solid var(--line); color: var(--text); background: var(--panel-2); }
+.btn:hover { border-color: var(--amethyst); color: var(--text); }
+.btn.gold { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
+.btn.gold:hover { background: #f0c968; color: var(--gold-ink); }
+.status-line { margin-top: 18px; display: flex; align-items: baseline; gap: 10px; color: var(--muted); font-size: .98rem; }
+.status-line .dot { transform: translateY(-1px); }
+.status-line strong { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* L'échelle divine : 10 marches, une par palier */
+.ladder { position: relative; margin: 0; }
+.ladder figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+.ladder figcaption span { color: var(--muted); font-size: .9rem; }
+.steps { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); align-items: end; gap: 6px; height: 330px; border-bottom: 1px solid var(--line); }
+.step { position: relative; height: calc(var(--h) * 1%); background: linear-gradient(to top, color-mix(in srgb, var(--c) 30%, transparent), color-mix(in srgb, var(--c) 8%, transparent)); border-top: 3px solid var(--c); border-radius: 4px 4px 0 0; transition: transform .2s ease, background .2s ease; }
+.step:hover, .step:focus-visible { transform: translateY(-4px); background: linear-gradient(to top, color-mix(in srgb, var(--c) 48%, transparent), color-mix(in srgb, var(--c) 14%, transparent)); }
+.step .sym { position: absolute; top: 8px; left: 0; right: 0; text-align: center; font-size: 1.05rem; color: var(--c); }
+.step .nm { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%) rotate(180deg); writing-mode: vertical-rl; font: 700 .78rem/1 var(--body); color: var(--text); white-space: nowrap; letter-spacing: .02em; }
+.trans { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.trans span { grid-column: 6 / 11; border-top: 1px solid var(--amethyst); padding-top: 6px; text-align: center; font: 600 .66rem/1 var(--mono); color: var(--amethyst); text-transform: uppercase; letter-spacing: .12em; }
+.step-labels { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.step-labels div { font: 600 .7rem/1.25 var(--mono); color: var(--muted); text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) {
+  .hero .wrap { grid-template-columns: minmax(0, 1fr); gap: 40px; padding-block: 48px 40px; }
+  .steps { height: 220px; }
+}
+@media (max-width: 520px) { .step-labels div { font-size: .54rem; } .step .nm { font-size: .64rem; bottom: 5px; } .step .sym { font-size: .78rem; top: 5px; } .steps, .step-labels, .trans { gap: 3px; } }
+
+/* ---------- Bandes ---------- */
+section.band { border-top: 1px solid var(--line); }
+section.band > .wrap { padding-block: 72px; }
+.band-head { display: grid; gap: 10px; margin-bottom: 36px; }
+.band.alt { background: linear-gradient(180deg, rgba(21,23,41,.75), rgba(13,14,25,0)); }
+
+/* Rejoindre */
+.how { margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; counter-reset: s; }
+.how li { list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 8px; align-content: start; }
+.how li::before { counter-increment: s; content: counter(s); font: 900 1.6rem/1 var(--display); color: var(--gold); }
+.how p { color: var(--muted); font-size: .98rem; }
+.how ul { margin: 0; padding: 0; }
+@media (max-width: 900px) { .how { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .how { grid-template-columns: 1fr; } }
+
+/* Fonctionnalités */
+.features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.feature { background: var(--night); padding: 24px; display: grid; gap: 8px; align-content: start; }
+.feature .glyph { font-size: 1.5rem; color: var(--gold); line-height: 1; }
+.feature p { color: var(--muted); font-size: .98rem; }
+.feature .cmds { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+@media (max-width: 900px) { .features { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
+
+/* Wiki */
+.wiki { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 44px; align-items: start; }
+.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 84px); display: grid; gap: 14px; }
+.search { position: relative; }
+.search input { width: 100%; font: inherit; font-size: .98rem; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 10px 36px; }
+.search input:focus { border-color: var(--gold); outline: none; }
+.search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.toc ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; max-height: calc(100vh - 200px); overflow: auto; }
+.toc a { display: block; color: var(--muted); text-decoration: none; padding: 6px 10px; border-radius: 8px; font-size: .96rem; border-left: 2px solid transparent; }
+.toc a:hover { color: var(--text); background: var(--panel); }
+.toc a.active { color: var(--text); border-left-color: var(--gold); background: var(--panel); }
+.toc .hint { color: var(--muted); font-size: .85rem; }
+.articles { display: grid; gap: 56px; min-width: 0; }
+article.entry { display: grid; gap: 14px; min-width: 0; }
+article.entry > header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+article.entry > header .eyebrow { margin-left: auto; }
+article.entry p, article.entry li { color: #d7d3e6; max-width: 70ch; }
+article.entry ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+article.entry h3 { margin-top: 10px; color: var(--text); }
+.note { border-left: 3px solid var(--amethyst); background: var(--panel); padding: 12px 16px; border-radius: 0 10px 10px 0; color: var(--muted); max-width: 70ch; }
+.table { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 .7rem/1.2 var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); background: var(--panel); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--mono); font-size: .86rem; }
+.tier { font-weight: 700; white-space: nowrap; }
+.empty { color: var(--muted); padding: 18px; border: 1px dashed var(--line); border-radius: 12px; }
+mark { background: rgba(230,184,76,.28); color: inherit; border-radius: 3px; }
+@media (max-width: 900px) { .wiki { grid-template-columns: minmax(0, 1fr); } .toc { position: static; } .toc ol { display: flex; flex-wrap: wrap; gap: 6px; max-height: none; } .toc a { border: 1px solid var(--line); border-left-width: 1px; } }
+
+/* Commandes */
+.cmd-group { display: grid; gap: 8px; }
+.cmd-group h3 { font-size: 1rem; color: var(--gold); }
+.cmd-list { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.cmd-list > div { padding: 9px 14px; border-bottom: 1px solid var(--line); min-width: 0; }
+.cmd-list > div:nth-child(odd) { background: var(--panel); font-family: var(--mono); font-size: .84rem; color: #f1dca3; overflow-wrap: anywhere; }
+.cmd-list > div:nth-child(even) { color: #d7d3e6; font-size: .95rem; }
+.cmd-list > div:nth-last-child(-n+2) { border-bottom: 0; }
+@media (max-width: 560px) { .cmd-list { grid-template-columns: 1fr; } .cmd-list > div:nth-child(odd) { border-bottom: 0; padding-bottom: 2px; } .cmd-list > div:nth-last-child(2) { border-bottom: 0; } }
+
+/* Vote */
+.votes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.vote-card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 14px; align-content: start; }
+.vote-card .row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.vote-card .n { font: 900 2rem/1 var(--display); color: var(--gold); }
+.vote-card .cd { font: 600 .74rem/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.vote-card .state { font-size: .95rem; color: var(--muted); min-height: 1.5em; }
+.vote-card .state.wait { color: var(--amethyst); }
+.vote-card .btn { justify-content: center; }
+.rewards { margin-top: 28px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+.reward-box { border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 12px; align-content: start; }
+.reward-box ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; color: #d7d3e6; }
+@media (max-width: 900px) { .votes, .rewards { grid-template-columns: 1fr; } }
+
+/* Joueurs */
+.live { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.live-card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 16px; }
+.big-count { font: 900 3.2rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.big-count small { font-size: 1.1rem; color: var(--muted); }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 14px; font-size: .95rem; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+.motd { font-family: var(--mono); font-size: .84rem; color: #d7d3e6; background: var(--night); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; }
+.players { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.player { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.player .av { position: relative; width: 32px; height: 32px; border-radius: 6px; background: var(--panel-2); display: grid; place-items: center; font: 700 .9rem/1 var(--display); color: var(--gold); flex: none; overflow: hidden; }
+.player .av img { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.player span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) { .live { grid-template-columns: 1fr; } }
+
+footer { border-top: 1px solid var(--line); }
+footer .wrap { padding-block: 36px; display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: space-between; color: var(--muted); font-size: .92rem; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--gold); color: var(--gold-ink); font-weight: 700; padding: 10px 16px; border-radius: 10px; z-index: 30; }
+</style>
+<!--BODY-->
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#accueil" aria-label="God Civilisation, accueil">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M13 2 L15.6 9.4 L23.5 9.6 L17.2 14.4 L19.5 22 L13 17.5 L6.5 22 L8.8 14.4 L2.5 9.6 L10.4 9.4 Z" fill="var(--gold)"/></svg>
+      <span>GOD CIVILISATION</span>
+    </a>
+    <nav class="main" aria-label="Sections">
+      <a href="#rejoindre">Rejoindre</a>
+      <a href="#wiki">Wiki</a>
+      <a href="#commandes">Commandes</a>
+      <a href="#vote">Voter</a>
+      <a href="#joueurs">Joueurs</a>
+    </nav>
+    <button class="ip-mini" type="button" data-copy aria-label="Copier l'adresse du serveur">
+      <span class="dot" data-dot></span><span class="ip-text" data-addr>godwar.falix.me</span>
+    </button>
+  </div>
+</header>
+
+<main id="accueil">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">Serveur Minecraft Java · 1.21.11 · aucun mod à installer</p>
+        <h1>God <em>Civilisation</em></h1>
+        <p class="tag">Créez votre civilisation et vainquez les autres dieux.</p>
+        <p class="sub">Chacun commence mortel. Métiers, quêtes et combats donnent de l'Essence ; à 8&nbsp;000, vous devenez Dieu, recevez votre île et convertissez vos premiers fidèles. Puis il faut tenir le trône.</p>
+        <div class="join">
+          <button class="ip-big" type="button" data-copy aria-label="Copier l'adresse godwar.falix.me">
+            <span class="addr" data-addr>godwar.falix.me</span><span class="copy">Copier</span>
+          </button>
+          <a class="btn gold" href="#vote">Voter pour le serveur</a>
+        </div>
+        <p class="status-line" aria-live="polite"><span class="dot" data-dot></span><span data-status>Vérification du statut…</span></p>
+      </div>
+
+      <figure class="ladder" aria-label="Les dix paliers, de Mortel à Créateur, avec l'Essence requise">
+        <figcaption><h3>L'échelle divine</h3><span>Essence requise</span></figcaption>
+        <div class="steps" id="steps"></div>
+        <div class="step-labels" id="step-labels"></div>
+        <div class="trans" aria-hidden="true"><span>Transcendance</span></div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="band alt" id="rejoindre">
+    <div class="wrap">
+      <div class="band-head">
+        <p class="eyebrow">En deux minutes</p>
+        <h2>Rejoindre le serveur</h2>
+      </div>
+      <ol class="how">
+        <li><h3>Lancez Minecraft Java 1.21.11</h3><p>Sans mod ni pack de ressources : tout se passe côté serveur. Les comptes non officiels sont acceptés.</p></li>
+        <li><h3>Ajoutez le serveur</h3><p>Multijoueur → Ajouter un serveur → adresse <code>godwar.falix.me</code>.</p></li>
+        <li><h3>Créez votre mot de passe</h3><p>À la première connexion : <code>/register motdepasse motdepasse</code>. Ensuite : <code>/login motdepasse</code>.</p></li>
+        <li><h3>Ouvrez le Panthéon</h3><p>Clic droit avec le Codex divin (case 9) ou <code>/dieu</code>. Puis <code>/kit depart</code> et <code>/recompense</code>.</p></li>
+      </ol>
+
+      <div class="band-head" style="margin-top:64px">
+        <p class="eyebrow">Ce qui vous attend</p>
+        <h2>Un serveur de dieux</h2>
+      </div>
+      <div class="features">
+        <div class="feature"><span class="glyph" aria-hidden="true">✦</span><h3>De mortel à Créateur</h3><p>Dix paliers. Au-delà du Dieu suprême, la transcendance demande fidèles, métiers, générateur et une offrande.</p><div class="cmds"><code>/progression</code><code>/transcender</code></div></div>
+        <div class="feature"><span class="glyph" aria-hidden="true">⛏</span><h3>Cinq métiers</h3><p>Mineur, Bûcheron, Fermier, Chasseur, Pêcheur : 50 niveaux chacun, talents comme le filon ou l'abattage d'arbre entier.</p><div class="cmds"><code>/metiers</code></div></div>
+        <div class="feature"><span class="glyph" aria-hidden="true">⚔</span><h3>Fidèles et déicide</h3><p>Un demi-dieu qui bat un joueur plus faible en fait son fidèle. Un mortel qui tue un dieu peut lui voler son trône.</p><div class="cmds"><code>/rebellion</code><code>/guerre</code></div></div>
+        <div class="feature"><span class="glyph" aria-hidden="true">◈</span><h3>Votre île divine</h3><p>Un seul bloc de terre au départ, un générateur lave + eau qui monte jusqu'au prestige XX, et des permissions pour chaque visiteur.</p><div class="cmds"><code>/monde</code><code>/generateur</code></div></div>
+        <div class="feature"><span class="glyph" aria-hidden="true">⛃</span><h3>Une vraie économie</h3><p>Boutique, marché entre joueurs avec prix moyens et courbes d'offre et de demande, échanges sécurisés.</p><div class="cmds"><code>/shop</code><code>/market</code><code>/echange</code></div></div>
+        <div class="feature"><span class="glyph" aria-hidden="true">☄</span><h3>Événements toutes les 45 min</h3><p>Assaut du Titan, chasse au trésor, Éclipse divine, concours de métier, questions des dieux…</p><div class="cmds"><code>/event</code></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="wiki">
+    <div class="wrap">
+      <div class="band-head">
+        <p class="eyebrow">Le savoir des dieux</p>
+        <h2>Wiki</h2>
+        <p class="lede">Tout ce qu'il faut savoir pour progresser. En jeu, <code>/aide</code> liste toutes les commandes et <code>/progression</code> ouvre le guide.</p>
+      </div>
+      <div class="wiki">
+        <aside class="toc">
+          <label class="search" for="wiki-search">
+            <span class="sr">Rechercher dans le wiki</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11 L14.5 14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <input id="wiki-search" type="search" placeholder="Rechercher : tombe, filon, Titan…" autocomplete="off">
+          </label>
+          <ol id="toc"></ol>
+          <p class="hint" id="wiki-count"></p>
+        </aside>
+        <div class="articles" id="articles">
+
+          <article class="entry" id="w-debuter" data-title="Bien débuter">
+            <header><h3>Bien débuter</h3><span class="eyebrow">Premiers pas</span></header>
+            <p>Chaque connexion commence au <strong>Sanctuaire des Dieux</strong>, une île flottante protégée : impossible d'y casser, de poser ou de se battre (hors duels). Vous y trouvez les portails du monde ressource, la boutique, les warps des joueurs, l'Arène et les quatre caisses.</p>
+            <ul>
+              <li><strong>Compte</strong> : <code>/register mdp mdp</code> la première fois, <code>/login mdp</code> ensuite. Changer : <code>/motdepasse ancien nouveau</code>.</li>
+              <li><strong>Le Codex divin</strong> reste dans la 9ᵉ case : clic droit pour ouvrir le menu, accroupi + clic droit pour les pouvoirs. Perdu ? <code>/dieu codex</code>.</li>
+              <li><strong>À l'écran</strong> : la barre du haut montre votre palier et le suivant ; le tableau de droite affiche argent, Foi, métier, quête suivie et le compte à rebours du nettoyage des objets au sol (toutes les 90 s).</li>
+              <li><strong>Premier quart d'heure</strong> : <code>/kit depart</code>, <code>/recompense</code>, <code>/quetes</code> (acceptez-en 5), puis <code>/mine</code> pour récolter.</li>
+            </ul>
+          </article>
+
+          <article class="entry" id="w-paliers" data-title="Paliers et Essence">
+            <header><h3>Paliers et Essence</h3><span class="eyebrow">Progression</span></header>
+            <p>L'<strong>Essence</strong> fait monter de palier. Elle vient des métiers (0,5 par point d'XP), des quêtes, des montées de niveau, du temps de jeu, du PvP, des conversions, des tournois et des votes.</p>
+            <div class="table"><table>
+              <thead><tr><th>Palier</th><th>Essence</th><th>Condition</th><th>Plafond de carac.</th></tr></thead>
+              <tbody id="tier-rows"></tbody>
+            </table></div>
+            <h3>Transcendance</h3>
+            <p>Au-delà du Dieu suprême, on ne monte plus tout seul : <code>/transcender</code> vérifie les conditions (fidèles au total, niveaux de métier cumulés, prestige du générateur) puis fait l'offrande. Chaque palier transcendant donne +5 % d'XP de métier et d'Essence, plus de Foi, une île plus grande et plus de warps.</p>
+          </article>
+
+          <article class="entry" id="w-pouvoirs" data-title="Caractéristiques, Foi et pouvoirs">
+            <header><h3>Caractéristiques, Foi et pouvoirs</h3><span class="eyebrow">Divin</span></header>
+            <p>Vous gagnez 1 point de caractéristique tous les 200 d'Essence, plus 3 à chaque palier : <strong>Force</strong> (dégâts), <strong>Vitalité</strong> (vie), <strong>Agilité</strong> (vitesse), <strong>Esprit</strong> (Foi maximale, régénération, puissance des artefacts). Répartissez-les avec <code>/dieu stats &lt;carac&gt; [points]</code>.</p>
+            <p>La <strong>Foi</strong> alimente les pouvoirs ; elle remonte avec le temps, l'Esprit et le nombre de fidèles. Chaque pouvoir a son coût et son temps de recharge (<code>/pouvoir</code>). Les pouvoirs offensifs sont désactivés au Sanctuaire.</p>
+            <div class="table"><table>
+              <thead><tr><th>Palier</th><th>Pouvoirs débloqués</th></tr></thead>
+              <tbody>
+                <tr><td class="tier" style="color:var(--t-eveille)">Éveillé</td><td>Bénédiction (soins et buffs de groupe) · Ailes célestes (bond et chute lente)</td></tr>
+                <tr><td class="tier" style="color:var(--t-demi)">Demi-dieu</td><td>Foudre divine (60 blocs) · Châtiment · Miracle (pousse, nourrit, soigne)</td></tr>
+                <tr><td class="tier" style="color:var(--t-dieu)">Dieu</td><td>Convocation des fidèles · Aura de domination · Pluie de météores</td></tr>
+                <tr><td class="tier" style="color:var(--t-supreme)">Dieu suprême</td><td>Jugement · Maîtrise du temps · Maîtrise de l'espace</td></tr>
+              </tbody>
+            </table></div>
+            <h3>Artefacts</h3>
+            <p>Réservés aux dieux du bon domaine (<code>/dieu specialisation &lt;ocean|ciel|cosmos&gt;</code>) : le <strong>Trident des Marées</strong> (vague, 30 Foi), le <strong>Sceptre de Foudre</strong> (foudre visée, 40 Foi) et l'<strong>Orbe du Néant</strong> (trou noir, 60 Foi).</p>
+          </article>
+
+          <article class="entry" id="w-metiers" data-title="Métiers">
+            <header><h3>Métiers</h3><span class="eyebrow">Progression</span></header>
+            <p>50 niveaux par métier. Chaque niveau rapporte argent et Essence ; une clé tous les 5 niveaux (Rare tous les 10, Épique aux niveaux 25 et 40, Divine au 50). Chaque jour, un <strong>métier en vogue</strong> donne 50 % d'XP en plus. Les blocs posés par un joueur ne rapportent rien. S'accroupir désactive l'abattage, le filon et la moisson large.</p>
+            <div class="table"><table>
+              <thead><tr><th>Métier</th><th>XP gagnée en</th><th>Talents (niveau)</th></tr></thead>
+              <tbody>
+                <tr><td class="tier">⛏ Mineur</td><td>pierre, minerais, lingots</td><td>minerai doublé (1) · vision nocturne (10) · Célérité I (15) · <strong>filon</strong> (25) · Célérité II (35) · fortune divine (50)</td></tr>
+                <tr><td class="tier">♣ Bûcheron</td><td>bûches</td><td>bûche doublée (1) · Vitesse I (10) · <strong>abattage</strong> de l'arbre entier (20) · pommes et pousses (30) · abattage 160 bûches + Force I (40)</td></tr>
+                <tr><td class="tier">✿ Fermier</td><td>cultures mûres, élevage</td><td>récolte doublée (1) · replantation (5) · faim qui remonte (10) · engrais divin (20) · <strong>moisson 3×3</strong> (30) · carottes dorées (40)</td></tr>
+                <tr><td class="tier">⚔ Chasseur</td><td>créatures</td><td>prime en pièces (1) · Régénération (10) · Force après chaque monstre (20) · clés trophées (30) · <strong>générateur du monstre tué</strong> (40) · prime doublée (50)</td></tr>
+                <tr><td class="tier">≈ Pêcheur</td><td>prises</td><td>prise doublée (1) · clés à l'hameçon (10) · Chance (20) · trésors engloutis (30) · respiration + grâce du dauphin (40) · clés Rares (50)</td></tr>
+              </tbody>
+            </table></div>
+          </article>
+
+          <article class="entry" id="w-quetes" data-title="Quêtes et ascension">
+            <header><h3>Quêtes et ascension</h3><span class="eyebrow">Progression</span></header>
+            <ul>
+              <li><strong>Quêtes du jour</strong> (<code>/quetes</code>) : 7 propositions par jour, de ★ facile à ★★★★ épique, 5 actives au plus. Gains de 300 à 3 000 pièces, +20 % par palier. <code>/quetes renouveler</code> : gratuit une fois par jour.</li>
+              <li><strong>Assiduité</strong> : 3 quêtes dans la journée → clé Commune + 500 pièces ; 5 quêtes → clé Rare + 1 500 pièces.</li>
+              <li><strong>Défis de la semaine</strong> (<code>/quetes semaine</code>) : 3 grands objectifs renouvelés le lundi, 6 000 pièces, 1 800 Essence et une clé Rare chacun, clé Épique pour les trois.</li>
+              <li><strong>Ascension</strong> (<code>/ascension</code>) : un fil rouge de 21 étapes, de « Premiers pas » à « Créateur », qui se valide tout seul.</li>
+            </ul>
+          </article>
+
+          <article class="entry" id="w-caisses" data-title="Caisses, clés et générateurs">
+            <header><h3>Caisses, clés et générateurs</h3><span class="eyebrow">Récompenses</span></header>
+            <p>Quatre caisses au Sanctuaire : <strong>Commune</strong>, <strong>Rare</strong>, <strong>Épique</strong> et <strong>Divine</strong>. Clic droit avec une clé pour lancer la roulette, sans clé pour voir les gains. Les clés viennent des métiers, quêtes, événements, votes, de la récompense du jour et de la boutique AFK ; on peut aussi les acheter dans <code>/cles</code> (2 500 · 10 000 · 40 000 · 150 000 pièces).</p>
+            <p>Les <strong>générateurs de créatures</strong> (caisses, boutique Divin, talent Chasseur 40) produisent leur créature une fois posés, et se récupèrent intacts quand on les casse. Au plus 15 créatures d'un même type par chunk.</p>
+          </article>
+
+          <article class="entry" id="w-mondes" data-title="Mondes et île divine">
+            <header><h3>Mondes et île divine</h3><span class="eyebrow">Mondes</span></header>
+            <ul>
+              <li><strong>Monde ressource</strong> (<code>/mine</code>) : arrivée en parachute haut dans le ciel, sans dégât de chute jusqu'au sol (accroupi pour replier). Il est réinitialisé de temps en temps.</li>
+              <li><strong>Monde divin</strong> (<code>/monde</code>) : réservé aux dieux. Votre île démarre avec un seul bloc de terre ; son rayon vaut 16 + 8 par fidèle + 8 par palier (400 au plus), avec une bordure visible.</li>
+              <li><strong>Permissions</strong> (<code>/ile</code>) : pour vos fidèles, les visiteurs et chaque joueur ajouté : Entrer, Casser, Poser, Interagir, Coffres, et le PvP.</li>
+              <li><strong>Nether et End</strong> sont scellés : leurs objets sont vendus à la boutique.</li>
+            </ul>
+            <h3>Générateur de l'île</h3>
+            <p>Lave + eau sur votre île donne des blocs tirés au sort selon le prestige du générateur (<code>/generateur</code>), de 2 000 pièces pour le II à environ 440 000 pour le XX. Il faut aussi un niveau de Mineur (2 × prestige − 2).</p>
+            <div class="table"><table>
+              <thead><tr><th>Prestige</th><th>Nouveaux blocs</th></tr></thead>
+              <tbody>
+                <tr><td class="num">II</td><td>pierre, charbon</td></tr>
+                <tr><td class="num">III – V</td><td>cuivre, fer, andésite, diorite, granite</td></tr>
+                <tr><td class="num">VI – IX</td><td>lapis, redstone, or, ardoise des abîmes</td></tr>
+                <tr><td class="num">X – XIV</td><td>diamant, émeraude, améthyste</td></tr>
+                <tr><td class="num">XV – XX</td><td>obsidienne, diamant des abîmes, débris antiques, quartz</td></tr>
+              </tbody>
+            </table></div>
+          </article>
+
+          <article class="entry" id="w-voyages" data-title="Voyages, résidences et tombes">
+            <header><h3>Voyages, résidences et tombes</h3><span class="eyebrow">Confort</span></header>
+            <ul>
+              <li><strong>Téléportations</strong> : 3 secondes sans bouger, et aucune pendant 12 s après un coup échangé avec un joueur. <code>/spawn</code> · <code>/tpa</code> · <code>/tpahere</code> · <code>/warp</code>.</li>
+              <li><strong>Résidences</strong> : <code>/sethome [nom]</code>, <code>/home [nom]</code>, <code>/homes</code>. Une de plus à chaque palier (10 pour un Créateur).</li>
+              <li><strong>Retour</strong> : <code>/back</code> ramène au lieu de votre mort ou d'avant votre dernière téléportation.</li>
+              <li><strong>Tombes</strong> : à votre mort, vos objets vont dans une tombe (un crâne flottant). Marchez dessus pour tout reprendre. Votre tueur peut la piller tout de suite, tout le monde après 10 minutes ; elle disparaît au bout de 2 heures. <code>/tombe</code> : liste et récupération à distance (500 pièces, gratuite après une chute dans le vide).</li>
+              <li><strong>Kits</strong> (<code>/kit</code>) : départ (une fois), quotidien, puis un kit par palier de l'Éveillé au Titan.</li>
+              <li><strong>AFK</strong> (<code>/afk</code>) : 1 jeton AFK et 5 pièces par minute, 8 h par jour au plus, à dépenser dans <code>/afkshop</code>.</li>
+            </ul>
+          </article>
+
+          <article class="entry" id="w-economie" data-title="Économie et marché">
+            <header><h3>Économie et marché</h3><span class="eyebrow">Économie</span></header>
+            <ul>
+              <li><strong>Boutique</strong> (<code>/shop</code>) : objets du Nether et de l'End, ressources, artefacts, générateurs. La revente rapporte 5 à 10 fois moins que l'achat.</li>
+              <li><strong>Marché</strong> (<code>/market</code>) : vendez vos objets aux autres joueurs à votre prix, avec <code>/market vendre &lt;prix&gt;</code> l'objet en main. Taxe de 1 pièce par objet vendu, 15 offres de 7 jours. Tri, recherche, prix moyen sur 7 jours, prix de la boutique et courbes de l'offre et de la demande (<code>/market courbe</code>).</li>
+              <li><strong>Échange sécurisé</strong> (<code>/echange &lt;joueur&gt;</code>) : chacun dépose objets et pièces, les deux valident, l'échange a lieu 3 secondes plus tard. Toute modification annule les validations.</li>
+              <li><code>/payer &lt;joueur&gt; &lt;montant&gt;</code> · <code>/baltop</code> · <code>/argent</code>.</li>
+            </ul>
+            <h3>Privilèges</h3>
+            <p>Des commandes de confort achetées une fois pour toutes (<code>/privileges</code>), en pièces ou en jetons AFK.</p>
+            <div class="table"><table>
+              <thead><tr><th>Commande</th><th>Effet</th><th>Pièces</th><th>Jetons AFK</th></tr></thead>
+              <tbody>
+                <tr><td><code>/chapeau</code></td><td>porter l'objet en main sur la tête</td><td class="num">15 000</td><td class="num">400</td></tr>
+                <tr><td><code>/craft</code></td><td>établi portable</td><td class="num">25 000</td><td class="num">600</td></tr>
+                <tr><td><code>/manger</code></td><td>se rassasier (toutes les 10 min)</td><td class="num">30 000</td><td class="num">700</td></tr>
+                <tr><td><code>/ec</code></td><td>coffre de l'Ender portable</td><td class="num">40 000</td><td class="num">900</td></tr>
+                <tr><td><code>/enclume</code></td><td>enclume portable</td><td class="num">50 000</td><td class="num">1 200</td></tr>
+                <tr><td><code>/tete</code></td><td>tête d'un joueur (toutes les heures)</td><td class="num">60 000</td><td class="num">1 500</td></tr>
+                <tr><td><code>/soin</code></td><td>soin complet (toutes les 30 min, hors combat)</td><td class="num">80 000</td><td class="num">2 000</td></tr>
+                <tr><td><code>/reparer</code></td><td>répare l'objet en main (toutes les 2 h)</td><td class="num">120 000</td><td class="num">3 000</td></tr>
+                <tr><td><code>/vol</code></td><td>voler dans son propre monde divin</td><td class="num">200 000</td><td class="num">5 000</td></tr>
+              </tbody>
+            </table></div>
+          </article>
+
+          <article class="entry" id="w-conflits" data-title="Fidèles, déicide et guerres">
+            <header><h3>Fidèles, déicide et guerres</h3><span class="eyebrow">Conflits</span></header>
+            <ul>
+              <li><strong>Conversion</strong> : un demi-dieu ou un dieu qui tue un joueur moins puissant en fait son fidèle. Le fidèle reverse 10 % de ses gains à son dieu.</li>
+              <li><strong>Déicide</strong> : un non-dieu qui tue un dieu le fait chuter (il redevient mortel et perd la moitié de son Essence). Le vainqueur peut devenir dieu et l'asservir.</li>
+              <li><strong>Rébellion</strong> (<code>/rebellion</code>) : un fidèle se soulève contre son dieu, une fois tous les 3 jours. Réussite : le dieu chute. Échec : −30 % d'Essence, −25 % d'argent et 3 jours de Parjure.</li>
+              <li><strong>Tournois</strong> (<code>/tournoi</code>) : duels 1 contre 1 dans l'Arène, sans perte à la mort. Un dieu inactif 7 jours peut perdre son trône (<code>/trone reclamer</code>).</li>
+              <li><strong>Guerre</strong> (<code>/guerre</code>) : 30 minutes. Tuer le dieu adverse soumet tout son panthéon, et les îles des deux camps peuvent être saccagées.</li>
+            </ul>
+          </article>
+
+          <article class="entry" id="w-events" data-title="Événements et récompenses">
+            <header><h3>Événements et récompenses</h3><span class="eyebrow">Événements</span></header>
+            <p>Toutes les 45 minutes (dès 2 joueurs connectés), un événement est annoncé 2 minutes à l'avance.</p>
+            <div class="table"><table>
+              <thead><tr><th>Événement</th><th>Durée</th><th>Principe</th></tr></thead>
+              <tbody>
+                <tr><td class="tier">Bénédiction des artisans</td><td class="num">15 min</td><td>XP de métier ×2</td></tr>
+                <tr><td class="tier">Éclipse divine</td><td class="num">15 min</td><td>Essence ×2</td></tr>
+                <tr><td class="tier">Ruée vers l'or</td><td class="num">15 min</td><td>la boutique rachète tout 50 % plus cher</td></tr>
+                <tr><td class="tier">Concours de métier</td><td class="num">10 min</td><td>podium sur le métier tiré au sort : clé Rare et 4 000 / 2 000 / 1 000 pièces</td></tr>
+                <tr><td class="tier">Assaut du Titan</td><td class="num">10 min</td><td>un Titan géant envahit l'Arène (<code>/event rejoindre</code>), clés selon les dégâts</td></tr>
+                <tr><td class="tier">Chasse au trésor</td><td class="num">15 min</td><td>un coffre caché dans le monde ressource : 3 000 pièces, clé Épique, 8 diamants</td></tr>
+                <tr><td class="tier">Question des dieux</td><td class="num">~4 min</td><td>le premier qui répond juste dans le chat gagne</td></tr>
+                <tr><td class="tier">Faveur divine</td><td class="num">5 min</td><td>la foudre bénie offre clés et pièces au hasard</td></tr>
+              </tbody>
+            </table></div>
+            <p><strong>Récompense quotidienne</strong> (<code>/recompense</code>) : un cycle de 7 jours, de 250 à 2 500 pièces, avec des clés aux jours 3, 5 et 7. Chaque semaine complète ajoute 10 %, jusqu'à +100 %.</p>
+          </article>
+
+          <article class="entry" id="w-regles" data-title="Règles du serveur">
+            <header><h3>Règles du serveur</h3><span class="eyebrow">À respecter</span></header>
+            <ul>
+              <li>Respect dans le chat : pas d'insultes, de harcèlement ni de publicité pour d'autres serveurs.</li>
+              <li>Pas de triche : clients modifiés, x-ray, duplication ou exploitation de bugs. Un bug trouvé se signale à l'équipe.</li>
+              <li>Le PvP fait partie du jeu (conversions, déicide, guerres), mais l'arnaque lors d'un échange est interdite : utilisez <code>/echange</code>.</li>
+              <li>Un compte par joueur. Les comptes de robots et les connexions par VPN pour un nouveau compte sont refusés.</li>
+              <li>Un problème ? <code>/signaler &lt;joueur&gt; &lt;raison&gt;</code> prévient l'équipe connectée.</li>
+            </ul>
+          </article>
+
+          <p class="empty" id="wiki-empty" hidden>Aucun article ne parle de « <span data-q></span> ». Essayez un autre mot, ou cherchez dans les commandes plus bas.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band alt" id="commandes">
+    <div class="wrap">
+      <div class="band-head">
+        <p class="eyebrow" id="cmd-total">Commandes des joueurs</p>
+        <h2>Toutes les commandes</h2>
+        <p class="lede">La même liste que <code>/aide</code> en jeu. Les &lt;chevrons&gt; sont obligatoires, les [crochets] facultatifs.</p>
+      </div>
+      <label class="search" for="cmd-search" style="max-width:420px;margin-bottom:28px">
+        <span class="sr">Filtrer les commandes</span>
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11 L14.5 14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input id="cmd-search" type="search" placeholder="Filtrer : home, market, vote…" autocomplete="off">
+      </label>
+      <div id="cmds" style="display:grid;gap:28px"></div>
+    </div>
+  </section>
+
+  <section class="band" id="vote">
+    <div class="wrap">
+      <div class="band-head">
+        <p class="eyebrow">Soutenir le serveur</p>
+        <h2>Voter pour God Civilisation</h2>
+        <p class="lede">Chaque vote fait monter le serveur dans les classements et vous rapporte des récompenses en jeu. Votez sur les trois sites dès que le délai le permet.</p>
+      </div>
+      <div class="votes" id="votes"></div>
+      <div class="rewards">
+        <div class="reward-box">
+          <h3>Récompenses par vote</h3>
+          <ul>
+            <li>750 pièces et 100 Essence</li>
+            <li>1 clé Commune</li>
+            <li>1 clé Rare en plus si vous votez sur les 3 sites le même jour</li>
+            <li>Classement des voteurs du mois : <code>/vote top</code></li>
+          </ul>
+        </div>
+        <div class="reward-box">
+          <h3>Récupérer en jeu</h3>
+          <ul>
+            <li>Votez depuis la même connexion internet que votre Minecraft : le serveur vérifie votre vote par votre adresse.</li>
+            <li>Puis tapez <code>/vote recuperer</code> sur le serveur.</li>
+            <li><code>/vote</code> affiche les liens et le temps avant de pouvoir revoter sur chaque site.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band alt" id="joueurs">
+    <div class="wrap">
+      <div class="band-head">
+        <p class="eyebrow">En direct</p>
+        <h2>Sur le serveur maintenant</h2>
+      </div>
+      <div class="live">
+        <div class="live-card">
+          <div class="big-count"><span data-count>–</span> <small>/ <span data-max>50</span> joueurs</small></div>
+          <dl class="kv">
+            <dt>État</dt><dd><span data-state>…</span></dd>
+            <dt>Adresse</dt><dd><code data-addr>godwar.falix.me</code></dd>
+            <dt>Version</dt><dd data-version>1.21.11</dd>
+            <dt>Mis à jour</dt><dd data-updated>–</dd>
+          </dl>
+          <div class="motd" data-motd hidden></div>
+        </div>
+        <div>
+          <div class="players" id="players"></div>
+          <p class="empty" id="players-empty">La liste des joueurs connectés s'affiche ici dès que le statut du serveur est disponible.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>God Civilisation · <code data-addr>godwar.falix.me</code> · Minecraft Java 1.21.11</span>
+    <span>Site non officiel, sans lien avec Mojang ou Microsoft.</span>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script type="application/json" id="commands-data">__COMMANDS__</script>
+<script>
+(function () {
+  "use strict";
+  var ADDRESS = "godwar.falix.me";
+  var VOTES = [
+    { id: "top-serveurs", name: "Top-Serveurs", url: "https://top-serveurs.net/minecraft/vote/god-civilisation", cooldown: 120 },
+    { id: "serveur-prive", name: "Serveur-Privé", url: "https://serveur-prive.net/minecraft/god-civilisation/vote", cooldown: 90 },
+    { id: "liste-serveurs", name: "Liste-Serveurs-Minecraft", url: "https://www.liste-serveurs-minecraft.org/vote/?idc=209022", cooldown: 180 }
+  ];
+  var SHORT = ["Mortel", "Éveillé", "Demi-dieu", "Dieu", "Suprême", "Titan", "Primordial", "Astral", "Éternel", "Créateur"];
+  var TIERS = [
+    ["Mortel", "mortel", 0, "—", 3, ""],
+    ["Éveillé", "eveille", 500, "—", 6, ""],
+    ["Demi-dieu", "demi", 2500, "peut convertir (3 fidèles max)", 10, ""],
+    ["Dieu", "dieu", 8000, "1 fidèle direct · reçoit son monde divin", 15, "✦"],
+    ["Dieu suprême", "supreme", 30000, "8 fidèles au total", 25, ""],
+    ["Titan", "titan", 80000, "8 fidèles, 100 niv. de métier, générateur V, offrande 100 000", 30, "⚡"],
+    ["Primordial", "primordial", 200000, "9 fidèles, 140 niv., générateur VIII, offrande 250 000", 35, "✺"],
+    ["Divinité astrale", "astral", 450000, "10 fidèles, 180 niv., générateur XII, offrande 600 000", 40, "✧"],
+    ["Éternel", "eternel", 1000000, "11 fidèles, 220 niv., générateur XVI, offrande 1 500 000", 45, "∞"],
+    ["Créateur", "createur", 2500000, "12 fidèles, 250 niv., générateur XX, offrande 4 000 000", 50, "☀"]
+  ];
+  var fmt = function (n) { return n.toLocaleString("fr-FR").replace(/ | /g, " "); };
+  var short = function (n) { return n >= 1e6 ? (n / 1e6).toLocaleString("fr-FR") + " M" : n >= 1000 ? (n / 1000).toLocaleString("fr-FR") + " k" : String(n); };
+  function el(tag, attrs, text) { var e = document.createElement(tag); if (attrs) for (var k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; }
+  function store(key, val) { try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) { return null; } }
+
+  /* Échelle divine */
+  var steps = document.getElementById("steps"), labels = document.getElementById("step-labels"), rows = document.getElementById("tier-rows");
+  TIERS.forEach(function (t, i) {
+    var s = el("div", { "class": "step", tabindex: "0", style: "--h:" + (24 + i * 8.4) + ";--c:var(--t-" + t[1] + ")", title: t[0] + " : " + fmt(t[2]) + " Essence", "aria-label": t[0] + ", " + fmt(t[2]) + " Essence" });
+    if (t[5]) s.appendChild(el("span", { "class": "sym", "aria-hidden": "true" }, t[5]));
+    s.appendChild(el("span", { "class": "nm", "aria-hidden": "true" }, SHORT[i]));
+    steps.appendChild(s);
+    labels.appendChild(el("div", null, short(t[2])));
+    var tr = el("tr");
+    var td = el("td", { "class": "tier", style: "color:var(--t-" + t[1] + ")" }, (t[5] && i > 4 ? t[5] + " " : "") + t[0]);
+    tr.appendChild(td); tr.appendChild(el("td", { "class": "num" }, fmt(t[2]))); tr.appendChild(el("td", null, t[3])); tr.appendChild(el("td", { "class": "num" }, String(t[4])));
+    rows.appendChild(tr);
+  });
+
+  /* Copier l'adresse */
+  var toast = document.getElementById("toast"), toastTimer;
+  function say(msg) { toast.textContent = msg; toast.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { toast.hidden = true; }, 2200); }
+  document.querySelectorAll("[data-copy]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var done = function () { say("Adresse copiée : " + ADDRESS); };
+      var fallback = function () {
+        var r = document.createRange(), t = b.querySelector("[data-addr]"); if (!t) return;
+        r.selectNodeContents(t); var s = getSelection(); s.removeAllRanges(); s.addRange(r); say("Adresse sélectionnée : Ctrl+C pour copier");
+      };
+      try { navigator.clipboard.writeText(ADDRESS).then(done, fallback); } catch (e) { fallback(); }
+    });
+  });
+
+  /* Statut en direct (api.mcsrvstat.us) */
+  var $ = function (s) { return document.querySelectorAll(s); };
+  function setText(sel, v) { $(sel).forEach(function (e) { e.textContent = v; }); }
+  function renderPlayers(list) {
+    var box = document.getElementById("players"), empty = document.getElementById("players-empty");
+    box.textContent = "";
+    if (!list || !list.length) { empty.hidden = false; return; }
+    empty.hidden = true;
+    list.forEach(function (p) {
+      var name = p.name || p, row = el("div", { "class": "player" }), av = el("div", { "class": "av", "aria-hidden": "true" }, name.charAt(0).toUpperCase());
+      var img = el("img", { alt: "", loading: "lazy", src: "https://mc-heads.net/avatar/" + encodeURIComponent(name) + "/64" });
+      img.addEventListener("error", function () { img.remove(); });
+      av.appendChild(img); row.appendChild(av); row.appendChild(el("span", null, name)); box.appendChild(row);
+    });
+  }
+  function status() {
+    fetch("https://api.mcsrvstat.us/3/" + ADDRESS, { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      var on = !!d.online, n = on && d.players ? d.players.online : 0, max = d.players && d.players.max ? d.players.max : 50;
+      $("[data-dot]").forEach(function (e) { e.className = "dot " + (on ? "on" : "off"); });
+      setText("[data-status]", on ? "En ligne · " + n + " / " + max + " joueur" + (n > 1 ? "s" : "") : "Hors ligne pour le moment");
+      setText("[data-count]", on ? String(n) : "0"); setText("[data-max]", String(max));
+      setText("[data-state]", on ? "En ligne" : "Hors ligne");
+      if (d.version) setText("[data-version]", d.version);
+      setText("[data-updated]", new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }));
+      var motd = document.querySelector("[data-motd]");
+      if (on && d.motd && d.motd.clean && d.motd.clean.length) { motd.textContent = d.motd.clean.join("\n"); motd.hidden = false; } else motd.hidden = true;
+      var list = on && d.players && d.players.list ? d.players.list : [];
+      renderPlayers(list);
+      var empty = document.getElementById("players-empty");
+      if (on && n > 0 && !list.length) { empty.hidden = false; empty.textContent = n + " joueur(s) connecté(s) ; le serveur ne publie pas leurs pseudos."; }
+      else if (on && n === 0) { empty.hidden = false; empty.textContent = "Personne pour l'instant. Soyez le premier dieu de la journée !"; }
+      else if (!on) { empty.hidden = false; empty.textContent = "Le serveur est hors ligne. Il redémarre peut-être : réessayez dans quelques minutes."; }
+    }).catch(function () {
+      setText("[data-status]", "Statut en direct indisponible ici · adresse : " + ADDRESS);
+      setText("[data-state]", "Inconnu");
+    });
+  }
+  status(); setInterval(status, 60000);
+
+  /* Vote : délai mémorisé dans ce navigateur après un clic */
+  var voteBox = document.getElementById("votes");
+  function wait(v) { var t = parseInt(store("vote:" + v.id) || "0", 10); return Math.max(0, t + v.cooldown * 60000 - Date.now()); }
+  function hm(ms) { var m = Math.ceil(ms / 60000), h = Math.floor(m / 60); return (h ? h + " h " : "") + (m % 60 ? (m % 60) + " min" : ""); }
+  VOTES.forEach(function (v, i) {
+    var card = el("div", { "class": "vote-card" });
+    var row = el("div", { "class": "row" }); row.appendChild(el("span", { "class": "n" }, String(i + 1))); row.appendChild(el("span", { "class": "cd" }, "toutes les " + hm(v.cooldown * 60000)));
+    card.appendChild(row); card.appendChild(el("h3", null, v.name));
+    var st = el("p", { "class": "state", "data-vote": v.id }); card.appendChild(st);
+    var a = el("a", { "class": "btn gold", href: v.url, target: "_blank", rel: "noopener" }, "Voter sur " + v.name);
+    a.addEventListener("click", function () { store("vote:" + v.id, String(Date.now())); setTimeout(refreshVotes, 50); });
+    card.appendChild(a); voteBox.appendChild(card);
+  });
+  function refreshVotes() {
+    VOTES.forEach(function (v) {
+      var st = document.querySelector('[data-vote="' + v.id + '"]'), w = wait(v);
+      st.className = "state" + (w ? " wait" : "");
+      st.textContent = w ? "Déjà voté depuis ce navigateur · revoter dans " + hm(w) : "Disponible maintenant";
+    });
+  }
+  refreshVotes(); setInterval(refreshVotes, 30000);
+
+  /* Commandes */
+  var cmds = JSON.parse(document.getElementById("commands-data").textContent), cmdBox = document.getElementById("cmds"), total = 0;
+  cmds.forEach(function (c) {
+    var g = el("div", { "class": "cmd-group", "data-group": "" }); g.appendChild(el("h3", null, c.label));
+    var list = el("div", { "class": "cmd-list" });
+    c.items.forEach(function (it) { total++; list.appendChild(el("div", { "data-c": "" }, it[0])); list.appendChild(el("div", { "data-d": "" }, it[1])); });
+    g.appendChild(list); cmdBox.appendChild(g);
+  });
+  document.getElementById("cmd-total").textContent = total + " commandes des joueurs";
+  var cmdEmpty = el("p", { "class": "empty" }); cmdEmpty.hidden = true; cmdBox.appendChild(cmdEmpty);
+  function norm(s) { return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+  document.getElementById("cmd-search").addEventListener("input", function (e) {
+    var q = norm(e.target.value.trim()), shown = 0;
+    cmdBox.querySelectorAll("[data-group]").forEach(function (g) {
+      var cells = g.querySelectorAll(".cmd-list > div"), any = false;
+      for (var i = 0; i < cells.length; i += 2) {
+        var hit = !q || norm(cells[i].textContent + " " + cells[i + 1].textContent).indexOf(q) >= 0;
+        cells[i].hidden = cells[i + 1].hidden = !hit; if (hit) { any = true; shown++; }
+      }
+      g.hidden = !any;
+    });
+    cmdEmpty.hidden = shown > 0; cmdEmpty.textContent = "Aucune commande ne contient « " + e.target.value + " ».";
+  });
+
+  /* Wiki : sommaire, recherche, section active */
+  var articles = Array.prototype.slice.call(document.querySelectorAll("article.entry")), toc = document.getElementById("toc"), links = {};
+  articles.forEach(function (a) {
+    var li = el("li"), l = el("a", { href: "#" + a.id }, a.getAttribute("data-title")); li.appendChild(l); toc.appendChild(li); links[a.id] = l;
+    a._text = norm(a.textContent);
+  });
+  var count = document.getElementById("wiki-count"), wEmpty = document.getElementById("wiki-empty");
+  count.textContent = articles.length + " articles";
+  document.getElementById("wiki-search").addEventListener("input", function (e) {
+    var q = norm(e.target.value.trim()), n = 0;
+    articles.forEach(function (a) { var hit = !q || a._text.indexOf(q) >= 0; a.hidden = !hit; links[a.id].parentNode.hidden = !hit; if (hit) n++; });
+    count.textContent = q ? n + " article" + (n > 1 ? "s" : "") + " sur " + articles.length : articles.length + " articles";
+    wEmpty.hidden = n > 0; wEmpty.querySelector("[data-q]").textContent = e.target.value;
+  });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (en) { if (en.isIntersecting) { for (var k in links) links[k].classList.remove("active"); links[en.target.id].classList.add("active"); } });
+    }, { rootMargin: "-30% 0px -60% 0px" });
+    articles.forEach(function (a) { io.observe(a); });
+  }
+  if (location.hash && document.getElementById(location.hash.slice(1))) document.getElementById(location.hash.slice(1)).scrollIntoView();
+})();
+</script>

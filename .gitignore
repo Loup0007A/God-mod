@@ -24,3 +24,4 @@ run
 # Files from Forge MDK
 forge_README.txt
 forge*changelog.txt
+site/dist/

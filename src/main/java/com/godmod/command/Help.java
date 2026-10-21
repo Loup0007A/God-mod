@@ -105,7 +105,11 @@ public final class Help {
                 p("/back", "Revenir au lieu de sa mort ou d'avant sa dernière téléportation"),
                 p("/kit", "Kits : départ, quotidien, et un par palier"),
                 p("/echange <joueur>", "Échange sécurisé d'objets et d'argent"),
-                p("/tombe", "Vos tombes : vos objets après une mort"));
+                p("/tombe", "Vos tombes : vos objets après une mort"),
+                p("/vote", "Voter pour le serveur (récompenses à chaque vote)"),
+                p("/vote recuperer", "Récupérer les récompenses après avoir voté"),
+                p("/vote top", "Les meilleurs voteurs du mois"),
+                p("/site", "Le site et le wiki du serveur"));
         cat("economie", "Économie", ChatFormatting.YELLOW,
                 p("/argent", "Votre solde"),
                 p("/payer <joueur> <montant>", "Donner de l'argent à un joueur"),

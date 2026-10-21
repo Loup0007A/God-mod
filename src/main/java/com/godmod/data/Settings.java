@@ -56,6 +56,14 @@ public class Settings {
     public java.util.List<String> antibotAllowed = new java.util.ArrayList<>();
     public java.util.List<String> bannedIps = new java.util.ArrayList<>();
 
+    // --- Votes et site web ---
+    public String voteTopServeursToken = "";
+    public String voteServeurPriveKey = "";
+    public String voteListeServeursId = "209022";
+    public long voteMoney = 750;
+    public long voteEssence = 100;
+    public String siteUrl = "https://loup0007a.github.io/God-mod/";
+
     // --- Tombes ---
     public boolean graves = true;
     public int graveOpenMinutes = 10;

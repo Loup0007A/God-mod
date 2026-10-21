@@ -442,6 +442,7 @@ public final class GameEvents {
         if (!AuthSystem.isLocked(sp)) GameStart.afterAuth(sp, p);
         else PowerSystem.applyAttributes(sp);
         com.godmod.system.Market.onLogin(sp);
+        if (!AuthSystem.isLocked(sp)) com.godmod.system.VoteSystem.onLogin(sp);
         int kits = com.godmod.system.Kits.available(p);
         if (kits > 0 && !AuthSystem.isLocked(sp)) Msg.send(sp, Msg.prefix().append(Msg.text(kits + " kit(s) à récupérer ! ", ChatFormatting.GREEN))
                 .append(Msg.button("[/kit]", "/kit", "Ouvrir les kits", ChatFormatting.YELLOW)));
@@ -466,6 +467,7 @@ public final class GameEvents {
         com.godmod.system.Market.onLogout(sp);
         com.godmod.system.Trade.onLogout(sp);
         com.godmod.system.Homes.onLogout(sp);
+        com.godmod.system.VoteSystem.onLogout(sp);
         PlayerProfile p = GodData.get(sp);
         p.lastSeen = System.currentTimeMillis();
         GodData.dirty();

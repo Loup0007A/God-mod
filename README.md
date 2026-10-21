@@ -137,7 +137,8 @@ Les positions sont enregistrées : `/tuto actualiser` redessine tous les tableau
 et `/tuto` indique ✔/✖ ceux qui sont posés. Après chaque pose, un bouton propose le tableau suivant.
 
 Pages : 1 Bienvenue · 2 Essence et paliers · 3 Métiers · 4 Quêtes · 5 Caisses et clés · 6 Monde ressource ·
-7 Pouvoirs et Foi · 8 Fidèles et conflits · 9 Monde divin · 10 Économie · 11 Événements et cadeaux · 12 À vous de jouer.
+7 Pouvoirs et Foi · 8 Fidèles et conflits · 9 Monde divin · 10 Économie · 11 Marché et échanges · 12 Confort ·
+13 Événements et cadeaux · 14 À vous de jouer.
 
 ## Objets pour l'équipe (`/donner`, admins)
 
@@ -382,6 +383,30 @@ Agilité (vitesse), Esprit (Foi max, régénération, puissance et recharge des 
 
 `/shop` : Nether, End, ressources, artefacts. Revente 5 à 10 fois moins chère que l'achat.
 **Premium** (Gemmes, attribuées par un admin) : désactivé par défaut, `/pay enable` / `/pay disable`.
+
+## Votes (`/vote`)
+
+`/vote` affiche les trois sites (liens cliquables) et le temps avant de pouvoir revoter sur chacun.
+Après avoir voté, `/vote recuperer` vérifie le vote auprès de chaque site (par l'adresse IP du joueur) et donne
+**750 pièces, 100 Essence et une clé Commune** par vote, plus une **clé Rare** si les trois sites sont votés le même
+jour. Chaque vote est annoncé dans le chat. `/vote top` : meilleurs voteurs du mois. Rappel à la connexion.
+
+| Site | Délai | Vérification |
+|---|---|---|
+| liste-serveurs-minecraft.org | 3 h | prête (identifiant 209022) |
+| top-serveurs.net | 2 h | `/vote config top-serveurs <jeton>` (jeton du serveur, panel du site → API) |
+| serveur-prive.net | 1 h 30 | `/vote config serveur-prive <clé>` (clé d'API, panel du site → API) |
+
+Admins : `/vote config` (état) · `/vote config <site> <clé|aucun>` · `/vote recompense <pièces> <essence>`.
+
+## Site web (`site/`)
+
+Le site du serveur (accueil, statut en direct, wiki, toutes les commandes, page de vote) est dans `site/page.html`.
+Le workflow `.github/workflows/site.yml` le construit (`python3 site/build.py`, qui relit aussi les commandes de
+`/aide` dans le code) et le publie sur GitHub Pages à chaque modification :
+**https://loup0007a.github.io/God-mod/**. À faire une seule fois : dépôt → *Settings* → *Pages* → *Source* :
+**GitHub Actions**. Le statut et la liste des joueurs viennent de l'API publique mcsrvstat.us.
+En jeu : `/site` (ou `/wiki`) donne le lien ; `/site definir <adresse>` si vous le mettez ailleurs.
 
 ## Résidences et retour (`/sethome`, `/home`, `/homes`, `/delhome`, `/back`)
 

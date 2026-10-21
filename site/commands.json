@@ -1,0 +1,416 @@
+[
+{
+"id": "base",
+"label": "Essentiel",
+"items": [
+[
+"/dieu",
+"Ouvre le Panthéon : tout le jeu est accessible depuis ce menu"
+],
+[
+"/progression",
+"Le guide : comment gagner de l'Essence et monter de palier"
+],
+[
+"/recompense",
+"Récompense quotidienne (série de 7 jours, de plus en plus généreuse)"
+],
+[
+"/event",
+"Événement en cours et prochain événement"
+],
+[
+"/event rejoindre",
+"Rejoindre l'événement en cours (Titan, chasse au trésor)"
+],
+[
+"/hud [on|off]",
+"Affiche ou masque la barre de progression et le tableau latéral"
+],
+[
+"/stats [joueur|serveur]",
+"Panneau de statistiques (combat, récolte, artisanat, temps) et records"
+],
+[
+"/generateur",
+"Prestige du générateur lave + eau de votre île (I à XX)"
+],
+[
+"/afk",
+"Zone AFK : 1 jeton et 5 pièces par minute, sans être expulsé"
+],
+[
+"/afkshop",
+"Dépenser ses jetons AFK : clés, boosts, générateurs, privilèges"
+],
+[
+"/dieu codex",
+"Récupérer un Codex divin perdu"
+]
+]
+},
+{
+"id": "progression",
+"label": "Progression",
+"items": [
+[
+"/metiers [métier]",
+"Vos 5 métiers, leurs talents, le barème d'XP et le classement"
+],
+[
+"/quetes",
+"Quêtes du jour (5 en même temps), défis de la semaine, ascension"
+],
+[
+"/quetes liste",
+"Résumé de toutes vos quêtes dans le chat"
+],
+[
+"/quetes renouveler",
+"Nouvelles propositions (gratuit une fois par jour)"
+],
+[
+"/quetes semaine",
+"Les 3 défis de la semaine"
+],
+[
+"/transcender",
+"Les 5 paliers au-delà du Dieu suprême : conditions et offrande"
+],
+[
+"/ascension",
+"Le fil rouge de mortel à Créateur (21 étapes)"
+],
+[
+"/cles",
+"Vos clés de caisse et l'achat de clés"
+],
+[
+"/dieu stats [caractéristique]",
+"Dépenser vos points : force, vitalite, agilite, esprit"
+],
+[
+"/dieu profil [joueur]",
+"Profil détaillé d'un joueur"
+],
+[
+"/classement [puissance|argent|metiers|quetes|evenements]",
+"Les meilleurs joueurs du serveur"
+]
+]
+},
+{
+"id": "divin",
+"label": "Pouvoirs et fidèles",
+"items": [
+[
+"/pouvoir",
+"Menu des pouvoirs divins (Foi et temps de recharge)"
+],
+[
+"/pouvoir <nom>",
+"Lancer un pouvoir : benir, ailes, foudre, miracle, aura, meteores, jugement…"
+],
+[
+"/pouvoir chatier <fidèle>",
+"Châtier un de vos fidèles"
+],
+[
+"/pouvoir temps <jour|nuit|pluie|orage|clair>",
+"Maîtrise du temps (Dieu suprême)"
+],
+[
+"/pouvoir espace <joueur>",
+"Se téléporter auprès d'un joueur (Dieu suprême)"
+],
+[
+"/dieu specialisation <ocean|ciel|cosmos>",
+"Choisir votre domaine (palier Dieu)"
+],
+[
+"/dieu fideles",
+"Liste de vos fidèles"
+],
+[
+"/dieu liberer <fidèle>",
+"Libérer un fidèle"
+],
+[
+"/dieu choix <trone|refuser>",
+"Après un déicide : prendre le trône ou refuser"
+]
+]
+},
+{
+"id": "monde",
+"label": "Mondes et voyages",
+"items": [
+[
+"/spawn",
+"Retour au Sanctuaire"
+],
+[
+"/mine",
+"Monde ressource (endroit aléatoire et sûr)"
+],
+[
+"/monde",
+"Votre monde divin (palier Dieu)"
+],
+[
+"/monde visiter <joueur>",
+"Visiter le monde divin d'un autre joueur"
+],
+[
+"/ile",
+"Permissions de votre monde divin"
+],
+[
+"/ile ajouter|retirer <joueur>",
+"Donner ou retirer tous les droits sur votre île"
+],
+[
+"/ile perm <joueur|fideles|visiteurs> <permission> <on|off>",
+"Permission précise : entrer, casser, poser, interagir, coffres"
+],
+[
+"/ile pvp <on|off>",
+"Combat entre joueurs sur votre île"
+],
+[
+"/warp [nom]",
+"Liste des warps ou s'y rendre"
+],
+[
+"/setwarp <nom>",
+"Créer ou déplacer votre warp"
+],
+[
+"/delwarp <nom>",
+"Supprimer un de vos warps"
+],
+[
+"/tpa <joueur>",
+"Demander à aller auprès d'un joueur"
+],
+[
+"/tpahere <joueur>",
+"Demander à un joueur de venir"
+],
+[
+"/tpaccept [joueur]",
+"Accepter une demande"
+],
+[
+"/tpdeny [joueur]",
+"Refuser une demande"
+],
+[
+"/tpatoggle",
+"Bloquer ou autoriser les demandes de téléportation"
+]
+]
+},
+{
+"id": "confort",
+"label": "Résidences, kits, échanges",
+"items": [
+[
+"/sethome [nom]",
+"Poser une résidence ici (1 + 1 par palier)"
+],
+[
+"/home [nom]",
+"Retourner à une résidence"
+],
+[
+"/homes",
+"Vos résidences (cliquables)"
+],
+[
+"/delhome <nom>",
+"Supprimer une résidence"
+],
+[
+"/back",
+"Revenir au lieu de sa mort ou d'avant sa dernière téléportation"
+],
+[
+"/kit",
+"Kits : départ, quotidien, et un par palier"
+],
+[
+"/echange <joueur>",
+"Échange sécurisé d'objets et d'argent"
+],
+[
+"/tombe",
+"Vos tombes : vos objets après une mort"
+],
+[
+"/vote",
+"Voter pour le serveur (récompenses à chaque vote)"
+],
+[
+"/vote recuperer",
+"Récupérer les récompenses après avoir voté"
+],
+[
+"/vote top",
+"Les meilleurs voteurs du mois"
+],
+[
+"/site",
+"Le site et le wiki du serveur"
+]
+]
+},
+{
+"id": "economie",
+"label": "Économie",
+"items": [
+[
+"/argent",
+"Votre solde"
+],
+[
+"/payer <joueur> <montant>",
+"Donner de l'argent à un joueur"
+],
+[
+"/baltop",
+"Les joueurs les plus riches"
+],
+[
+"/shop",
+"La boutique divine (Nether, End, ressources, artefacts)"
+],
+[
+"/shop vendre",
+"Vendre la pile tenue en main"
+],
+[
+"/shop vendre un",
+"Vendre un seul exemplaire"
+],
+[
+"/shop vendre tout",
+"Vendre tous les exemplaires de cet objet dans l'inventaire"
+],
+[
+"/market",
+"Le marché des joueurs : acheter, trier, rechercher"
+],
+[
+"/market vendre <prix> [quantité]",
+"Mettre en vente l'objet tenu (taxe : 1 pièce par objet vendu)"
+],
+[
+"/market recherche <texte|main>",
+"Chercher un objet (nom anglais, identifiant ou pseudo)"
+],
+[
+"/market tri <ordre>",
+"recent, prix, prix_desc, affaires, quantite, nom"
+],
+[
+"/market prix",
+"Prix moyen, prix du shop et tendances de l'objet tenu"
+],
+[
+"/market courbe [objet]",
+"Graphique de l'offre, de la demande et du prix"
+],
+[
+"/market mesventes",
+"Vos offres (cliquez pour retirer)"
+],
+[
+"/market recuperer",
+"Récupérer les objets d'offres expirées"
+]
+]
+},
+{
+"id": "conflits",
+"label": "Conflits",
+"items": [
+[
+"/rebellion [declarer|rejoindre]",
+"Se soulever contre son dieu (tous les 3 jours)"
+],
+[
+"/tournoi [rejoindre|quitter]",
+"Tournoi 1v1 en cours"
+],
+[
+"/trone reclamer <dieu>",
+"Lancer un tournoi pour le trône d'un dieu inactif"
+],
+[
+"/guerre [declarer <dieu>]",
+"Guerre entre panthéons (30 min)"
+]
+]
+},
+{
+"id": "privileges",
+"label": "Privilèges",
+"items": [
+[
+"/privileges",
+"Acheter des privilèges (aussi dans /shop et /afkshop)"
+],
+[
+"/craft",
+"Établi portable"
+],
+[
+"/ec",
+"Coffre de l'Ender portable"
+],
+[
+"/enclume",
+"Enclume portable"
+],
+[
+"/manger",
+"Se rassasier (toutes les 10 min)"
+],
+[
+"/soin",
+"Se soigner (toutes les 30 min, hors combat)"
+],
+[
+"/chapeau",
+"Porter l'objet en main sur la tête"
+],
+[
+"/tete [joueur]",
+"Tête d'un joueur (toutes les heures)"
+],
+[
+"/reparer",
+"Réparer l'objet en main (toutes les 2 h)"
+],
+[
+"/vol",
+"Voler dans son propre monde divin"
+]
+]
+},
+{
+"id": "compte",
+"label": "Compte",
+"items": [
+[
+"/motdepasse <ancien> <nouveau>",
+"Changer de mot de passe"
+],
+[
+"/signaler <joueur> <raison>",
+"Prévenir l'équipe d'un problème"
+]
+]
+}
+]
