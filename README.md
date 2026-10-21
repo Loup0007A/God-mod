@@ -384,6 +384,23 @@ Agilité (vitesse), Esprit (Foi max, régénération, puissance et recharge des 
 `/shop` : Nether, End, ressources, artefacts. Revente 5 à 10 fois moins chère que l'achat.
 **Premium** (Gemmes, attribuées par un admin) : désactivé par défaut, `/pay enable` / `/pay disable`.
 
+## Pack de ressources (`pack/`, `/pack`)
+
+Le serveur envoie à chaque connexion un pack de ressources (≈ 21 Ko), **obligatoire par défaut**. Il est dessiné par
+`pack/build_pack.py` (aucune texture de Mojang) et publié avec le site : **https://loup0007a.github.io/God-mod/pack.zip**.
+- **Badges en images dans le texte** : `ADMIN`, `MODO`, `AFK`, les 10 paliers, les canaux du chat (G, L, C, P, ✉),
+  le préfixe `PANTHÉON` des messages du serveur, et des icônes (pièces, Essence, Foi, clés) dans le tableau de droite.
+- **Interface** : coffres et menus en marbre et or (toutes les interfaces de coffre), boutons, barre d'objets
+  et barres de boss redessinés.
+- Le serveur télécharge le pack au démarrage puis toutes les 30 minutes pour connaître son empreinte : une
+  nouvelle version publiée est proposée aux joueurs à leur connexion suivante (ou tout de suite avec `/pack recharger`).
+- `/pack` : le renvoyer. Admins : `/pack etat` · `/pack recharger` · `/pack activer on|off` ·
+  `/pack obligatoire on|off` (facultatif = les badges redeviennent du texte, puisqu'un joueur sans pack verrait des
+  carrés) · `/pack url <adresse>`.
+- Limites : un pack ne peut ajouter ni fenêtre ni bouton (les onglets du chat restent les liens cliquables). Pour
+  une vraie interface façon NationsGlory (onglets dans le chat, HUD sur mesure), il faudrait un mod à installer
+  chez chaque joueur.
+
 ## Chat (`/chat`, `/canal`, `/mp`, `/groupe`)
 
 Le chat vanilla est remplacé par celui du mod (les messages restent dans le chat normal du jeu).

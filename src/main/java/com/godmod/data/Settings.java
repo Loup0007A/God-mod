@@ -56,6 +56,13 @@ public class Settings {
     public java.util.List<String> antibotAllowed = new java.util.ArrayList<>();
     public java.util.List<String> bannedIps = new java.util.ArrayList<>();
 
+    // --- Pack de ressources ---
+    public boolean packEnabled = true;
+    /** Obligatoire : le joueur doit l'accepter ; les badges du chat sont alors des images. */
+    public boolean packRequired = true;
+    public String packUrl = "https://loup0007a.github.io/God-mod/pack.zip";
+    public String packPrompt = "Ce pack ajoute les badges, les menus et l'interface du serveur. Il est léger (moins de 50 Ko).";
+
     // --- Votes et site web ---
     public String voteTopServeursToken = "";
     public String voteServeurPriveKey = "";

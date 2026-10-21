@@ -3,7 +3,7 @@ name: Publier le site
 on:
   push:
     branches: [main]
-    paths: ["site/**", "src/main/java/com/godmod/command/Help.java", ".github/workflows/site.yml"]
+    paths: ["site/**", "pack/**", "src/main/java/com/godmod/command/Help.java", ".github/workflows/site.yml"]
   workflow_dispatch:
 
 permissions:
@@ -25,6 +25,10 @@ jobs:
       - uses: actions/checkout@v5
       - name: Construire le site
         run: python3 site/build.py
+      - name: Construire le pack de ressources
+        run: |
+          pip install --quiet pillow
+          python3 pack/build_pack.py site/dist
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -15,6 +15,7 @@ public final class Msg {
     }
 
     public static MutableComponent prefix() {
+        if (Glyphs.on()) return Glyphs.of(Glyphs.PANTHEON).append(Component.literal(" "));
         return Component.literal("✦ ").withStyle(ChatFormatting.GOLD)
                 .append(Component.literal("Panthéon").withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD))
                 .append(Component.literal(" » ").withStyle(ChatFormatting.DARK_GRAY));

@@ -1014,7 +1014,43 @@ public final class GodCommands {
 
     // ------------------------------------------------------------------ Résidences, /back, kits, échanges, tombes
 
+    private static void registerPack(CommandDispatcher<CommandSourceStack> d) {
+        d.register(Commands.literal("pack")
+                .executes(ctx -> run(ctx, com.godmod.system.PackSystem::resend))
+                .then(Commands.literal("etat").requires(Moderation.require(Role.ADMIN)).executes(ctx -> reply1(ctx, com.godmod.system.PackSystem.status())))
+                .then(Commands.literal("recharger").requires(Moderation.require(Role.ADMIN)).executes(ctx -> {
+                    var server = ctx.getSource().getServer();
+                    com.godmod.system.PackSystem.refresh(server, () -> {
+                        for (ServerPlayer sp : server.getPlayerList().getPlayers()) com.godmod.system.PackSystem.send(sp);
+                        ctx.getSource().sendSuccess(() -> Msg.text(com.godmod.system.PackSystem.status() + " — renvoyé à tous les joueurs.", ChatFormatting.GREEN), false);
+                    });
+                    return reply1(ctx, "Téléchargement du pack…");
+                }))
+                .then(Commands.literal("activer").requires(Moderation.require(Role.ADMIN))
+                        .then(Commands.argument("etat", StringArgumentType.word()).suggests(words("on", "off")).executes(ctx -> {
+                            GodData.settings().packEnabled = on(StringArgumentType.getString(ctx, "etat"));
+                            GodData.dirty();
+                            if (GodData.settings().packEnabled) com.godmod.system.PackSystem.refresh(ctx.getSource().getServer(), null);
+                            return reply1(ctx, com.godmod.system.PackSystem.status());
+                        })))
+                .then(Commands.literal("obligatoire").requires(Moderation.require(Role.ADMIN))
+                        .then(Commands.argument("etat", StringArgumentType.word()).suggests(words("on", "off")).executes(ctx -> {
+                            GodData.settings().packRequired = on(StringArgumentType.getString(ctx, "etat"));
+                            GodData.dirty();
+                            for (ServerPlayer sp : ctx.getSource().getServer().getPlayerList().getPlayers()) com.godmod.system.Ranks.refresh(sp);
+                            return reply1(ctx, com.godmod.system.PackSystem.status());
+                        })))
+                .then(Commands.literal("url").requires(Moderation.require(Role.ADMIN))
+                        .then(Commands.argument("adresse", StringArgumentType.greedyString()).executes(ctx -> {
+                            GodData.settings().packUrl = StringArgumentType.getString(ctx, "adresse").trim();
+                            GodData.dirty();
+                            com.godmod.system.PackSystem.refresh(ctx.getSource().getServer(), null);
+                            return reply1(ctx, com.godmod.system.PackSystem.status());
+                        }))));
+    }
+
     private static void registerChat(CommandDispatcher<CommandSourceStack> d) {
+        registerPack(d);
         String[] chans = {"global", "local", "commerce", "groupe"};
         String[] tabs = {"tout", "global", "local", "commerce", "groupe", "mp"};
         d.register(Commands.literal("chat")

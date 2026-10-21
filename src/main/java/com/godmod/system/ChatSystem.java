@@ -301,8 +301,26 @@ public final class ChatSystem {
 
     // ------------------------------------------------------------------ Mise en forme
 
+    private static String glyph(Channel c) {
+        return switch (c) {
+            case GLOBAL -> com.godmod.util.Glyphs.CH_GLOBAL;
+            case LOCAL -> com.godmod.util.Glyphs.CH_LOCAL;
+            case COMMERCE -> com.godmod.util.Glyphs.CH_COMMERCE;
+            case GROUPE -> com.godmod.util.Glyphs.CH_GROUPE;
+            case MP -> com.godmod.util.Glyphs.CH_MP;
+            case SYSTEME -> com.godmod.util.Glyphs.STAR;
+        };
+    }
+
     private static MutableComponent badge(Channel c) {
         String hour = LocalTime.now(com.godmod.progress.QuestSystem.ZONE).format(HOUR);
+        if (com.godmod.util.Glyphs.on()) {
+            return com.godmod.util.Glyphs.of(glyph(c)).withStyle(s -> s
+                    .withHoverEvent(new HoverEvent.ShowText(Component.literal("Canal " + c.label + " · " + hour
+                            + (c.writable() ? "\nCliquez pour écrire dans ce canal" : ""))))
+                    .withClickEvent(c.writable() ? new ClickEvent.RunCommand("/canal " + c.id()) : null))
+                    .append(Component.literal(" "));
+        }
         return Component.literal("[").withStyle(ChatFormatting.DARK_GRAY)
                 .append(Component.literal(c.tag).withStyle(s -> s.withColor(c.color).withBold(true)
                         .withHoverEvent(new HoverEvent.ShowText(Component.literal("Canal " + c.label + " · " + hour

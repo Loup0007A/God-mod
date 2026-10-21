@@ -51,6 +51,15 @@ public final class Ranks {
         PlayerProfile p = GodData.get(player);
         MutableComponent c = Component.empty();
         Role role = Moderation.roleOf(player);
+        if (com.godmod.util.Glyphs.on()) {
+            if (AfkSystem.isAfk(player)) c.append(com.godmod.util.Glyphs.of(com.godmod.util.Glyphs.AFK + " "));
+            if (role == Role.ADMIN) c.append(com.godmod.util.Glyphs.of(com.godmod.util.Glyphs.ADMIN + " "));
+            else if (role == Role.MODERATEUR) c.append(com.godmod.util.Glyphs.of(com.godmod.util.Glyphs.MODO + " "));
+            c.append(com.godmod.util.Glyphs.of(com.godmod.util.Glyphs.tier(p.tier) + " ")
+                    .withStyle(s -> s.withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.literal(p.tier.label).withStyle(p.tier.color)))));
+            c.append(name.copy().withStyle(p.tier.isGod() ? p.tier.color : ChatFormatting.WHITE));
+            return c;
+        }
         if (AfkSystem.isAfk(player)) c.append(Component.literal("[AFK] ").withStyle(ChatFormatting.DARK_GRAY));
         if (role == Role.ADMIN) c.append(Component.literal("[Admin] ").withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
         else if (role == Role.MODERATEUR) c.append(Component.literal("[Modo] ").withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));

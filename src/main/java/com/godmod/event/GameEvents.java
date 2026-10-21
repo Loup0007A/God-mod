@@ -343,6 +343,7 @@ public final class GameEvents {
 
     private static void onServerStarted(MinecraftServer server) {
         if (!GodData.ready()) GodData.load(server);
+        com.godmod.system.PackSystem.refresh(server, null);
         try {
             WorldBuilder.onServerStarted(server);
         } catch (Exception ex) {
@@ -448,6 +449,7 @@ public final class GameEvents {
         else PowerSystem.applyAttributes(sp);
         com.godmod.system.Market.onLogin(sp);
         com.godmod.system.ChatSystem.onLogin(sp);
+        com.godmod.system.PackSystem.onLogin(sp);
         if (!AuthSystem.isLocked(sp)) com.godmod.system.VoteSystem.onLogin(sp);
         int kits = com.godmod.system.Kits.available(p);
         if (kits > 0 && !AuthSystem.isLocked(sp)) Msg.send(sp, Msg.prefix().append(Msg.text(kits + " kit(s) à récupérer ! ", ChatFormatting.GREEN))
@@ -516,6 +518,7 @@ public final class GameEvents {
         boolean minute = tickCounter % 1200 == 0;
         com.godmod.system.AfkSystem.tickSecond(server, minute);
         if (minute) com.godmod.system.Market.tickMinute(server);
+        if (minute) com.godmod.system.PackSystem.tickMinute(server);
         com.godmod.system.Graves.tickSecond(server, (int) (tickCounter / 20));
         com.godmod.system.LagControl.tickSecond(server);
         com.godmod.system.ZoneSystem.tickSecond(server);

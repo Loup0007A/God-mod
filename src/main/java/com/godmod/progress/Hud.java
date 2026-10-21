@@ -115,9 +115,10 @@ public final class Hud {
         List<Component> lines = new ArrayList<>();
         lines.add(Component.literal(" "));
         lines.add(kv("Palier", Component.literal(Ranks.tierTag(p.tier)).withStyle(p.tier.color)));
-        lines.add(kv("Essence", Component.literal(String.valueOf(p.essence)).withStyle(ChatFormatting.LIGHT_PURPLE)));
-        lines.add(kv("Argent", Component.literal(String.format(java.util.Locale.FRANCE, "%,d", p.money) + " ⛃").withStyle(ChatFormatting.GOLD)));
-        if (p.tier.atLeast(Tier.EVEILLE)) lines.add(kv("Foi", Component.literal((int) p.faith + " / " + (int) p.maxFaith()).withStyle(ChatFormatting.AQUA)));
+        boolean g = com.godmod.util.Glyphs.on();
+        lines.add(kv(g ? com.godmod.util.Glyphs.ESSENCE + " Essence" : "Essence", Component.literal(String.valueOf(p.essence)).withStyle(ChatFormatting.LIGHT_PURPLE)));
+        lines.add(kv(g ? com.godmod.util.Glyphs.COIN + " Argent" : "Argent", Component.literal(String.format(java.util.Locale.FRANCE, "%,d", p.money) + (g ? "" : " ⛃")).withStyle(ChatFormatting.GOLD)));
+        if (p.tier.atLeast(Tier.EVEILLE)) lines.add(kv(g ? com.godmod.util.Glyphs.FAITH + " Foi" : "Foi", Component.literal((int) p.faith + " / " + (int) p.maxFaith()).withStyle(ChatFormatting.AQUA)));
         lines.add(Component.literal("  "));
         Job best = JobSystem.best(p);
         lines.add(kv("Métier", Component.literal(best.icon + " " + best.label + " " + JobSystem.level(p, best)
@@ -126,7 +127,7 @@ public final class Hud {
         lines.add(kv("Quêtes " + p.quests.size() + "/" + QuestSystem.MAX_ACTIVE, Component.literal(tracked == null ? "aucune (/quetes)" : tracked).withStyle(ChatFormatting.YELLOW)));
         String asc = AscensionQuests.hud(p);
         if (asc != null) lines.add(kv("Ascension", Component.literal(asc).withStyle(ChatFormatting.LIGHT_PURPLE)));
-        lines.add(kv("Clés", Component.literal(String.valueOf(CrateSystem.totalKeys(p))).withStyle(ChatFormatting.GREEN)));
+        lines.add(kv(g ? com.godmod.util.Glyphs.KEY + " Clés" : "Clés", Component.literal(String.valueOf(CrateSystem.totalKeys(p))).withStyle(ChatFormatting.GREEN)));
         if (p.master != null) {
             PlayerProfile m = GodData.find(p.master);
             lines.add(kv("Dieu", Component.literal(m == null ? "?" : m.name).withStyle(ChatFormatting.GOLD)));
@@ -156,6 +157,10 @@ public final class Hud {
     }
 
     private static Component kv(String key, Component value) {
+        // Les images du pack (caractères privés) restent en blanc : la couleur grise les teinterait.
+        if (!key.isEmpty() && key.charAt(0) >= '\ue000' && key.charAt(0) <= '\uf8ff') {
+            return com.godmod.util.Glyphs.of(key.substring(0, 1)).append(Component.literal(key.substring(1) + " : ").withStyle(ChatFormatting.GRAY)).append(value);
+        }
         return Component.literal(key + " : ").withStyle(ChatFormatting.GRAY).append(value);
     }
 
