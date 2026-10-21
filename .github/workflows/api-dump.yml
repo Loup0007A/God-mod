@@ -1,0 +1,47 @@
+name: Extraire les signatures client
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [api-dump]
+
+jobs:
+  dump:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Préparer Minecraft
+        run: chmod +x ./gradlew && ./gradlew compileJava --stacktrace -q || true
+      - name: Signatures
+        run: |
+          J=""
+          for j in $(find ~/.gradle ~/.m2 build .gradle -name '*.jar' 2>/dev/null); do
+            if unzip -l "$j" 2>/dev/null | grep -q 'net/minecraft/client/gui/screens/ChatScreen.class'; then J="$j"; echo "JAR: $j"; break; fi
+          done
+          [ -n "$J" ] || { echo "pas de jar client"; exit 1; }
+          CP="$J"
+          for j in $(find ~/.gradle -name '*.jar' 2>/dev/null | grep -E 'forge-1.21.11|joml|brigadier|datafixer|authlib|guava'); do CP="$CP:$j"; done
+          mkdir -p out
+          for c in net.minecraft.client.gui.screens.ChatScreen net.minecraft.client.gui.screens.Screen net.minecraft.client.gui.GuiGraphics \
+                   net.minecraft.client.gui.Font net.minecraft.client.gui.components.ChatComponent net.minecraft.client.GuiMessage \
+                   'net.minecraft.client.GuiMessage$Line' net.minecraft.client.gui.components.ComponentRenderUtils net.minecraft.client.StringSplitter \
+                   net.minecraft.client.Minecraft net.minecraft.client.Options net.minecraft.client.multiplayer.ClientPacketListener \
+                   net.minecraft.client.gui.components.EditBox net.minecraft.client.input.MouseButtonEvent net.minecraft.client.input.MouseButtonInfo \
+                   net.minecraft.client.gui.Gui net.minecraft.client.gui.components.CommandSuggestions net.minecraft.client.input.KeyEvent \
+                   net.minecraft.client.gui.components.events.GuiEventListener net.minecraft.client.gui.ActiveTextCollector \
+                   net.minecraft.client.gui.components.Renderable net.minecraft.client.KeyMapping net.minecraft.util.FormattedCharSequence \
+                   net.minecraft.client.gui.screens.ChatScreen\$ChatConstructor ; do
+            echo "=================== $c" >> out/api.txt
+            javap -cp "$CP" -p "$c" >> out/api.txt 2>&1 || true
+          done
+          wc -l out/api.txt
+          for f in $(unzip -l "$J" | awk '{print $4}' | grep -E '^net/minecraft/client/input/.*\.class$|^net/minecraft/client/gui/ActiveText' ); do echo "$f" >> out/api.txt; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api
+          path: out/api.txt
