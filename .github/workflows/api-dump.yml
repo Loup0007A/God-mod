@@ -5,6 +5,7 @@ on:
   push:
     branches: [api-dump]
     paths: ['.github/workflows/api-dump.yml']
+# v2
 
 permissions:
   contents: write
@@ -25,12 +26,15 @@ jobs:
         run: |
           J=""
           for j in $(find ~/.gradle ~/.m2 build .gradle -name '*.jar' 2>/dev/null); do
-            if unzip -l "$j" 2>/dev/null | grep -q 'net/minecraft/client/gui/screens/ChatScreen.class'; then J="$j"; echo "JAR: $j"; break; fi
+            if unzip -l "$j" 2>/dev/null | grep -q 'net/minecraft/client/gui/screens/ChatScreen.class'; then
+              echo "candidat: $j"
+              if ! javap -cp "$j" -p net.minecraft.client.gui.screens.ChatScreen 2>/dev/null | grep -q ' m_[0-9]'; then J="$j"; echo "JAR: $j"; break; fi
+            fi
           done
           [ -n "$J" ] || { echo "pas de jar client"; exit 1; }
           CP="$J"
           for j in $(find ~/.gradle -name '*.jar' 2>/dev/null | grep -E 'forge-1.21.11|joml|brigadier|datafixer|authlib|guava'); do CP="$CP:$j"; done
-          mkdir -p out
+          mkdir -p out; rm -f out/api.txt
           for c in net.minecraft.client.gui.screens.ChatScreen net.minecraft.client.gui.screens.Screen net.minecraft.client.gui.GuiGraphics \
                    net.minecraft.client.gui.Font net.minecraft.client.gui.components.ChatComponent net.minecraft.client.GuiMessage \
                    'net.minecraft.client.GuiMessage$Line' net.minecraft.client.gui.components.ComponentRenderUtils net.minecraft.client.StringSplitter \
@@ -39,7 +43,9 @@ jobs:
                    net.minecraft.client.gui.Gui net.minecraft.client.gui.components.CommandSuggestions net.minecraft.client.input.KeyEvent \
                    net.minecraft.client.gui.components.events.GuiEventListener net.minecraft.client.gui.ActiveTextCollector \
                    net.minecraft.client.gui.components.Renderable net.minecraft.client.KeyMapping net.minecraft.util.FormattedCharSequence \
-                   net.minecraft.client.gui.screens.ChatScreen\$ChatConstructor ; do
+                   net.minecraft.network.chat.Style net.minecraft.client.gui.components.ChatComponent\$State 'net.minecraft.client.gui.screens.ChatScreen$ExitReason' \
+                   net.minecraft.client.gui.components.AbstractWidget net.minecraft.client.gui.components.Button net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent \
+                   net.minecraft.client.player.LocalPlayer net.minecraft.client.gui.render.state.GuiRenderState net.minecraft.client.renderer.RenderPipelines ; do
             echo "=================== $c" >> out/api.txt
             javap -cp "$CP" -p "$c" >> out/api.txt 2>&1 || true
           done
