@@ -335,10 +335,14 @@ Clic droit = aperçu ; clés : métiers, quêtes, votes, événements, récompen
   (Commun ≥ 12 %, Peu commun ≥ 6 %, Rare ≥ 3 %, Épique ≥ 1,5 %, Légendaire), la chance exacte et une jauge.
 - **Ouverture** : roulette au cadre animé, ralentissement, révélation dorée de la récompense au centre.
   **Ouverture rapide ×5** (bouton, ou `/caisses ouvrir <caisse> <nombre>`) : sans animation, gains résumés dans le chat.
-- **Décor** (admins, à lancer une fois) : `/caisses decor` pose au-dessus de chaque caisse un joyau qui tourne et brille
-  à sa couleur (quartz, cœur de la mer, cristal de l'End, étoile du Nether), un panneau « ✦ CAISSE … ✦ » et un anneau
-  de particules. Ce ne sont que des entités d'affichage : **aucun bloc n'est modifié**. `/caisses decor retirer` les
-  enlève ; `/caisses decor anciens` supprime les anciens panneaux posés automatiquement juste au-dessus des caisses.
+- **Coffres 3D** (admins, à lancer une fois : `/caisses decor`) : au-dessus de chaque caisse, le bloc existant sert de
+  socle (**aucun bloc n'est modifié**) et un vrai coffre modélisé dans le pack de ressources apparaît — corps,
+  couvercle articulé, joyau flottant, un style par rareté (bois et fer, bleu et argent, obsidienne et améthyste,
+  marbre et or avec couronne). Au repos le couvercle s'entrouvre, le joyau tourne et brille, un anneau de particules
+  l'entoure ; quand un joueur ouvre une caisse, le couvercle s'ouvre grand, le joyau s'élève avec une colonne de
+  lumière, puis tout se referme. Clic droit sur le coffre = aperçu de la caisse. `/caisses decor hauteur <blocs>`
+  (le monter ou le descendre), `/caisses decor retirer`, `/caisses decor anciens` (supprime les anciens panneaux
+  « Caisse … / clic droit »). Modèles et textures : `pack/crates.py`.
 
 ### Générateurs (spawners)
 

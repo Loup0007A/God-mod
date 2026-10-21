@@ -353,6 +353,9 @@ def build():
         files[sprites + "widget/%s.png.mcmeta" % n] = nine()
     files[sprites + "hud/hotbar.png"] = png(hotbar())
     files[sprites + "hud/hotbar_selection.png"] = png(hotbar_selection())
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import crates
+    files.update(crates.files(png))
     for name, col in BOSS.items():
         files[sprites + "boss_bar/%s_background.png" % name] = png(boss_bg())
         files[sprites + "boss_bar/%s_progress.png" % name] = png(boss_progress(col))
@@ -370,6 +373,7 @@ def build():
         prev.paste(img, (4 + (i % 2) * 110, 4 + (i // 2) * 12), img)
     prev.resize((prev.width * 4, prev.height * 4), Image.NEAREST).save(os.path.join(OUT, "pack-badges.png"))
     generic_54().crop((0, 0, 176, 222)).resize((176 * 3, 222 * 3), Image.NEAREST).save(os.path.join(OUT, "pack-menu.png"))
+    crates.preview(os.path.join(OUT, "pack-caisses.png"))
     inventory().crop((0, 0, 176, 166)).resize((176 * 3, 166 * 3), Image.NEAREST).save(os.path.join(OUT, "pack-inventory.png"))
     import hashlib
     print("pack.zip :", os.path.getsize(path), "octets, sha1", hashlib.sha1(open(path, "rb").read()).hexdigest(), ",", len(GLYPHS), "badges")

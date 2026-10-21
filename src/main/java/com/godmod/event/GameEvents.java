@@ -234,6 +234,14 @@ public final class GameEvents {
         });
         PlayerInteractEvent.LeftClickBlock.BUS.addListener((Predicate<PlayerInteractEvent.LeftClickBlock>) e -> locked(e.getEntity())
                 || (e.getEntity() instanceof ServerPlayer wp && GodData.ready() && com.godmod.system.ZoneSystem.click(wp, e.getPos(), true)));
+        // Coffres 3D des caisses : la zone cliquable ouvre l'aperçu de la caisse.
+        PlayerInteractEvent.EntityInteract.BUS.addListener((Predicate<PlayerInteractEvent.EntityInteract>) e -> {
+            if (!GodData.ready() || !(e.getEntity() instanceof ServerPlayer sp)) return false;
+            com.godmod.progress.CrateSystem.Crate c = com.godmod.progress.CrateDecor.crateOf(e.getTarget());
+            if (c == null) return false;
+            if (!locked(sp)) sp.level().getServer().execute(() -> com.godmod.progress.CrateSystem.openPreview(sp, c));
+            return true;
+        });
         PlayerInteractEvent.EntityInteract.BUS.addListener((Predicate<PlayerInteractEvent.EntityInteract>) e ->
                 locked(e.getEntity()) || entityInteractDenied(e.getEntity(), e.getTarget()));
         AttackEntityEvent.BUS.addListener((Predicate<AttackEntityEvent>) e -> locked(e.getEntity()) || frozen(e.getEntity()));

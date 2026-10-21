@@ -753,8 +753,15 @@ public final class GodCommands {
         for (String name : new String[]{"cles", "keys"}) d.register(Commands.literal(name).executes(ctx -> open(ctx, Menus::openKeys)));
         d.register(Commands.literal("caisses").executes(ctx -> open(ctx, Menus::openKeys))
                 .then(Commands.literal("decor").requires(Moderation.require(Role.ADMIN))
-                        .executes(ctx -> reply1(ctx, "Décor posé sur " + com.godmod.progress.CrateDecor.place(ctx.getSource().getServer())
-                                + " caisse(s) : joyau tournant, panneau et particules (aucun bloc modifié). /caisses decor retirer pour l'enlever."))
+                        .executes(ctx -> reply1(ctx, "Coffres 3D posés sur " + com.godmod.progress.CrateDecor.place(ctx.getSource().getServer())
+                                + " caisse(s), au-dessus des blocs existants (aucun bloc modifié). /caisses decor hauteur <blocs> pour les monter, /caisses decor retirer pour les enlever."))
+                        .then(Commands.literal("hauteur").then(Commands.argument("blocs", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(-2, 5))
+                                .executes(ctx -> {
+                                    GodData.settings().crateModelOffset = com.mojang.brigadier.arguments.DoubleArgumentType.getDouble(ctx, "blocs");
+                                    GodData.dirty();
+                                    int n = com.godmod.progress.CrateDecor.place(ctx.getSource().getServer());
+                                    return reply1(ctx, "Coffres 3D replacés (" + n + ") à " + GodData.settings().crateModelOffset + " bloc(s) au-dessus de leur socle.");
+                                })))
                         .then(Commands.literal("retirer").executes(ctx -> {
                             com.godmod.progress.CrateDecor.remove(ctx.getSource().getServer());
                             return reply1(ctx, "Décor des caisses retiré.");

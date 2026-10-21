@@ -58,6 +58,8 @@ public class Settings {
 
     // --- Décor des caisses (joyaux, panneaux, particules) ---
     public boolean crateDecor = false;
+    /** Hauteur supplémentaire des coffres 3D au-dessus des blocs de caisse (en blocs). */
+    public double crateModelOffset = 0;
 
     // --- Mod client (facultatif) ---
     public boolean clientPrompt = true;

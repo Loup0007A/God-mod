@@ -266,6 +266,7 @@ public final class CrateSystem {
         }
         QuestSystem.progress(player, List.of("crate:any"), n);
         GodData.dirty();
+        CrateDecor.onOpen(player, c);
         GodData.log("CAISSE : " + p.name + " ouvre " + n + " caisses " + c.label);
         Fx.sound(player, SoundEvents.PLAYER_LEVELUP, 1.0F, 1.2F);
         Msg.send(player, Msg.text(n + " caisses " + c.label + " ouvertes :", c.color, ChatFormatting.BOLD));
@@ -290,6 +291,7 @@ public final class CrateSystem {
         for (int i = 28; i <= 34; i++) page.set(i, Page.icon(Items.BLACK_STAINED_GLASS_PANE, " ", ChatFormatting.DARK_GRAY));
         page.set(13, Page.icon(Items.HOPPER, "▼", ChatFormatting.GOLD));
         page.set(31, Page.icon(Items.HOPPER, "▲", ChatFormatting.GOLD));
+        CrateDecor.onOpen(player, c);
         Roll roll = new Roll(player, c, page.container(), list, win);
         roll.fill();
         page.open(player);
