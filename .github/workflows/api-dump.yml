@@ -4,6 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: [api-dump]
+    paths: ['.github/workflows/api-dump.yml']
+
+permissions:
+  contents: write
 
 jobs:
   dump:
@@ -41,7 +45,8 @@ jobs:
           done
           wc -l out/api.txt; cat out/api.txt
           for f in $(unzip -l "$J" | awk '{print $4}' | grep -E '^net/minecraft/client/input/.*\.class$|^net/minecraft/client/gui/ActiveText' ); do echo "$f" >> out/api.txt; done
-      - uses: actions/upload-artifact@v4
-        with:
-          name: api
-          path: out/api.txt
+      - name: Enregistrer dans la branche
+        run: |
+          git config user.name "api-dump"; git config user.email "api-dump@users.noreply.github.com"
+          mkdir -p dump && cp out/api.txt dump/api.txt
+          git add dump/api.txt && git commit -m "dump [skip ci]" && git push
